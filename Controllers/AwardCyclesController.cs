@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using EOM.Web.Data;
 using EOM.Web.Models;
+using System.Linq;
 
 namespace EOM.Web.Controllers;
 
@@ -56,9 +57,35 @@ public class AwardCyclesController : Controller
     }
 
     // GET: AwardCycles/Create
-    public IActionResult Create()
+    public async Task<IActionResult> Create()
     {
-        ViewData["AwardTypeId"] = new SelectList(_context.AwardTypes.Where(at => at.IsActive), "AwardTypeId", "Name");
+        // Check if there's already an active cycle
+        var activeCycle = await _context.AwardCycles
+            .Where(c => c.Status == CycleStatus.Nomination || c.Status == CycleStatus.Evaluating)
+            .FirstOrDefaultAsync();
+
+        if (activeCycle != null)
+        {
+            TempData["Error"] = "لا يمكن إنشاء دورة جديدة. يوجد دورة نشطة بالفعل يجب إغلاقها أولاً.";
+            return RedirectToAction(nameof(Index));
+        }
+
+        var awardTypes = _context.AwardTypes.Where(at => at.IsActive).ToList();
+
+        if (!awardTypes.Any())
+        {
+            TempData["Error"] = "لا يوجد أي أنواع جوائز مفعّلة. الرجاء إنشاء نوع جائزة أولاً من لوحة المسؤول.";
+            return RedirectToAction(nameof(Index));
+        }
+
+        // If only one active award type exists, select it by default
+        int? selectedAwardTypeId = awardTypes.Count == 1 ? awardTypes.First().AwardTypeId : null;
+
+        ViewData["AwardTypeId"] = new SelectList(awardTypes, "AwardTypeId", "Name", selectedAwardTypeId);
+
+        // Debug: Check if we have award types
+        System.Diagnostics.Debug.WriteLine($"Found {awardTypes.Count} active award types");
+
         return View();
     }
 
@@ -67,12 +94,38 @@ public class AwardCyclesController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Create([Bind("AwardTypeId,Month,Year,NominationStart,NominationEnd,Status")] AwardCycle awardCycle)
     {
+        // Check if there's already an active cycle
+        var activeCycle = await _context.AwardCycles
+            .Where(c => c.Status == CycleStatus.Nomination || c.Status == CycleStatus.Evaluating)
+            .FirstOrDefaultAsync();
+
+        if (activeCycle != null)
+        {
+            TempData["Error"] = "لا يمكن إنشاء دورة جديدة. يوجد دورة نشطة بالفعل يجب إغلاقها أولاً.";
+            return RedirectToAction(nameof(Index));
+        }
+
+        // Debug: Log model state errors (removed user-facing error message)
+        if (!ModelState.IsValid)
+        {
+            var errors = ModelState
+                .Where(x => x.Value?.Errors.Count > 0)
+                .Select(x => new { Field = x.Key, Errors = x.Value?.Errors.Select(e => e.ErrorMessage) ?? Enumerable.Empty<string>() })
+                .ToList();
+            
+            // For debugging only - log to console
+            System.Diagnostics.Debug.WriteLine($"Model validation errors: {string.Join(", ", errors.Select(e => $"{e.Field}: {string.Join(", ", e.Errors)}"))}");
+        }
+        
         if (ModelState.IsValid)
         {
             _context.Add(awardCycle);
             await _context.SaveChangesAsync();
+            TempData.Remove("Error"); // Clear any previous error messages
+            TempData["Success"] = "تم إنشاء الدورة بنجاح.";
             return RedirectToAction(nameof(Index));
         }
+        
         ViewData["AwardTypeId"] = new SelectList(_context.AwardTypes.Where(at => at.IsActive), "AwardTypeId", "Name", awardCycle.AwardTypeId);
         return View(awardCycle);
     }

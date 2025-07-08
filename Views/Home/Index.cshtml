@@ -1,5 +1,8 @@
 @{
     ViewData["Title"] = "الصفحة الرئيسية";
+    var openCycles = ViewBag.OpenCycles as List<EOM.Web.Models.AwardCycle> ?? new List<EOM.Web.Models.AwardCycle>();
+    var hasNominations = ViewBag.HasNominations as bool? ?? false;
+    var pastCycles = ViewBag.PastCycles as List<EOM.Web.Models.AwardCycle> ?? new List<EOM.Web.Models.AwardCycle>();
 }
 
 <div class="glass-fade-in">
@@ -8,38 +11,147 @@
         <p class="lead">نظام إدارة ترشيحات وتقييمات جوائز الموظف المثالي</p>
     </div>
     
-    <div class="row g-4">
-        <div class="col-md-4">
-            <div class="stat-card text-center">
-                <div class="mb-3">
-                    <i class="fas fa-calendar-alt" style="font-size: 3rem; color: var(--glass-text-primary);"></i>
+    @if (User.IsInRole("Manager") && openCycles.Any())
+    {
+        <div class="row mb-5">
+            <div class="col-12">
+                <div class="glass-card alert-card">
+                    <div class="card-header bg-primary text-white">
+                        <h4 class="mb-0">
+                            <i class="fas fa-bell me-2"></i>
+                            دورات مفتوحة للترشيح
+                        </h4>
+                    </div>
+                    <div class="card-body">
+                        @foreach (var cycle in openCycles)
+                        {
+                            <div class="alert alert-info mb-3">
+                                <div class="row align-items-center">
+                                    <div class="col-md-8">
+                                        <h5 class="alert-heading">
+                                            @cycle.AwardType?.Name - @cycle.Month/@cycle.Year
+                                        </h5>
+                                        <p class="mb-1">
+                                            <strong>فترة الترشيح:</strong> 
+                                            من @cycle.NominationStart.ToString("dd/MM/yyyy") 
+                                            إلى @cycle.NominationEnd.ToString("dd/MM/yyyy")
+                                        </p>
+                                        @if (!hasNominations)
+                                        {
+                                            <p class="mb-0 text-danger">
+                                                <i class="fas fa-exclamation-triangle me-1"></i>
+                                                لم تقم بترشيح أي موظف بعد!
+                                            </p>
+                                        }
+                                    </div>
+                                    <div class="col-md-4 text-end">
+                                        <a href="@Url.Action("Create", "Nominations", new { cycleId = cycle.CycleId })" 
+                                           class="btn btn-success btn-lg">
+                                            <i class="fas fa-user-plus me-2"></i>
+                                            ترشيح موظف
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
                 </div>
-                <h5 class="card-title">إدارة الدورات</h5>
-                <p class="card-text">إنشاء وإدارة دورات الجوائز الشهرية</p>
-                <a href="@Url.Action("Index", "AwardCycles")" class="btn btn-primary">عرض الدورات</a>
             </div>
         </div>
-        <div class="col-md-4">
-            <div class="stat-card text-center">
-                <div class="mb-3">
-                    <i class="fas fa-user-plus" style="font-size: 3rem; color: var(--glass-text-primary);"></i>
+    }
+
+    @if (User.IsInRole("Manager") && pastCycles.Any())
+    {
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="glass-card">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0"><i class="fas fa-history me-2"></i>الدورات السابقة</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-sm table-hover align-middle">
+                                <thead>
+                                    <tr>
+                                        <th>الشهر/السنة</th>
+                                        <th>نوع الجائزة</th>
+                                        <th>الحالة</th>
+                                        <th>الإجراءات</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var cycle in pastCycles)
+                                    {
+                                        <tr>
+                                            <td>@cycle.Month/@cycle.Year</td>
+                                            <td>@cycle.AwardType?.Name</td>
+                                            <td>
+                                                @if (cycle.Status == CycleStatus.Closed)
+                                                {
+                                                    <span class="badge bg-dark">مغلقة</span>
+                                                }
+                                                else if (cycle.Status == CycleStatus.Published)
+                                                {
+                                                    <span class="badge bg-success">منشورة</span>
+                                                }
+                                            </td>
+                                            <td>
+                                                <a href="@Url.Action("Details", "AwardCycles", new { id = cycle.CycleId })" class="btn btn-outline-info btn-sm">
+                                                    تفاصيل
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
                 </div>
-                <h5 class="card-title">الترشيحات</h5>
-                <p class="card-text">ترشيح الموظفين وإدخال التقييمات</p>
-                <a href="@Url.Action("Index", "Nominations")" class="btn btn-success">عرض الترشيحات</a>
             </div>
         </div>
-        <div class="col-md-4">
-            <div class="stat-card text-center">
-                <div class="mb-3">
-                    <i class="fas fa-star" style="font-size: 3rem; color: var(--glass-text-primary);"></i>
+    }
+    
+    @if (!User.IsInRole("Manager"))
+    {
+        <div class="row g-4">
+            <div class="col-md-4">
+                <div class="stat-card text-center">
+                    <div class="mb-3">
+                        <i class="fas fa-calendar-alt" style="font-size: 3rem; color: var(--glass-text-primary);"></i>
+                    </div>
+                    <h5 class="card-title">إدارة الدورات</h5>
+                    <p class="card-text">إنشاء وإدارة دورات الجوائز الشهرية</p>
+                    @if (User.IsInRole("EOM-Admin") || User.IsInRole("EOM-Committee"))
+                    {
+                        <a href="@Url.Action("Index", "AwardCycles")" class="btn btn-primary">عرض الدورات</a>
+                    }
                 </div>
-                <h5 class="card-title">التقييمات</h5>
-                <p class="card-text">تقييم المرشحين من قبل اللجنة</p>
-                <a href="@Url.Action("Index", "Evaluations")" class="btn btn-warning">عرض التقييمات</a>
+            </div>
+            <div class="col-md-4">
+                <div class="stat-card text-center">
+                    <div class="mb-3">
+                        <i class="fas fa-user-plus" style="font-size: 3rem; color: var(--glass-text-primary);"></i>
+                    </div>
+                    <h5 class="card-title">الترشيحات</h5>
+                    <p class="card-text">ترشيح الموظفين وإدخال التقييمات</p>
+                    <a href="@Url.Action("Index", "Nominations")" class="btn btn-success">عرض الترشيحات</a>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="stat-card text-center">
+                    <div class="mb-3">
+                        <i class="fas fa-star" style="font-size: 3rem; color: var(--glass-text-primary);"></i>
+                    </div>
+                    <h5 class="card-title">التقييمات</h5>
+                    <p class="card-text">تقييم المرشحين من قبل اللجنة</p>
+                    @if (User.IsInRole("EOM-Committee"))
+                    {
+                        <a href="@Url.Action("Index", "Evaluations")" class="btn btn-warning">عرض التقييمات</a>
+                    }
+                </div>
             </div>
         </div>
-    </div>
+    }
 
     @if (User.IsInRole("EOM-Admin"))
     {
@@ -82,6 +194,29 @@
         </div>
     }
 </div>
+
+<style>
+.alert-card {
+    border: 2px solid var(--bs-primary);
+    animation: pulse 2s infinite;
+}
+
+@@keyframes pulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(13, 110, 253, 0.4);
+    }
+    70% {
+        box-shadow: 0 0 0 10px rgba(13, 110, 253, 0);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(13, 110, 253, 0);
+    }
+}
+
+.alert-card .card-header {
+    border-radius: 12px 12px 0 0 !important;
+}
+</style>
 
 @section Scripts {
     <script src="https://kit.fontawesome.com/your-fontawesome-kit.js"></script>

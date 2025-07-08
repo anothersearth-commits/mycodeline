@@ -2,7 +2,16 @@
 @if (User.Identity?.IsAuthenticated == true)
 {
     <li class="nav-item">
-        <span class="nav-link">مرحباً @User.Identity?.Name!</span>
+        @{
+            string roleLabel = "مستخدم";
+            if (User.IsInRole("EOM-Admin")) { roleLabel = "مسؤول النظام"; }
+            else if (User.IsInRole("Manager")) { roleLabel = "مدير"; }
+            else if (User.IsInRole("EOM-Committee")) { roleLabel = "عضو لجنة"; }
+        }
+        <span class="nav-link">
+            مرحباً @User.Identity?.Name!
+            <span class="badge bg-info text-dark ms-2">@roleLabel</span>
+        </span>
     </li>
     <li class="nav-item">
         <form class="form-inline" asp-controller="Account" asp-action="Logout" method="post">

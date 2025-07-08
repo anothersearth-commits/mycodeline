@@ -80,7 +80,7 @@ public class NominationsController : Controller
 
     // GET: Nominations/Create
     [Authorize(Roles = "Manager,EOM-Admin")]
-    public async Task<IActionResult> Create()
+    public async Task<IActionResult> Create(int? cycleId)
     {
         var currentEmployeeId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
         var currentEmployee = await _context.Employees.FindAsync(currentEmployeeId);
@@ -102,6 +102,18 @@ public class NominationsController : Controller
             return View();
         }
 
+        // If more than one active cycle, let manager choose; otherwise preselect
+        if (!cycleId.HasValue && activeCycles.Count == 1)
+        {
+            cycleId = activeCycles.First().CycleId;
+        }
+
+        // Validate provided cycleId
+        if (cycleId.HasValue && !activeCycles.Any(c => c.CycleId == cycleId.Value))
+        {
+            return RedirectToAction(nameof(Index));
+        }
+
         // Get department quota for the manager
         var departmentQuota = await _context.DepartmentQuotas
             .Include(dq => dq.AwardType)
@@ -119,7 +131,10 @@ public class NominationsController : Controller
             .Where(n => n.ManagerId == currentEmployeeId && activeCycles.Select(ac => ac.CycleId).Contains(n.CycleId))
             .CountAsync();
 
-        ViewData["CycleId"] = new SelectList(activeCycles, "CycleId", "AwardType.Name");
+        ViewData["CycleId"] = new SelectList(activeCycles, "CycleId", "AwardType.Name", cycleId);
+
+        bool hideCycleSelect = activeCycles.Count == 1 || cycleId.HasValue;
+        ViewBag.HideCycleSelect = hideCycleSelect;
         ViewData["DepartmentEmployees"] = departmentEmployees;
         ViewData["DepartmentQuota"] = departmentQuota;
         ViewData["ExistingNominations"] = existingNominations;

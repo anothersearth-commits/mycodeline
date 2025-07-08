@@ -7,11 +7,18 @@
 <div class="glass-fade-in">
     <div class="glass-card page-header mb-4">
         <h1>إدارة دورات الجوائز</h1>
-        @if (User.IsInRole("EOM-Admin") || User.IsInRole("EOM-Committee"))
+        @{
+            var hasActiveCycle = Model.Any(c => c.Status == CycleStatus.Nomination || c.Status == CycleStatus.Evaluating);
+        }
+        @if ((User.IsInRole("EOM-Admin") || User.IsInRole("EOM-Committee")) && !hasActiveCycle)
         {
             <a href="@Url.Action("Create")" class="btn btn-primary">
                 ➕ دورة جديدة
             </a>
+        }
+        else if (hasActiveCycle)
+        {
+            <span class="text-muted">لا يمكن إنشاء دورة جديدة حتى يتم إغلاق الدورة النشطة</span>
         }
     </div>
 

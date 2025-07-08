@@ -18,14 +18,14 @@
         </div>
         <div class="card-body">
             <form asp-action="Create" method="post">
-                <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+                <div asp-validation-summary="All" class="alert alert-danger"></div>
                 
                 <div class="row">
                     <div class="col-md-6">
                         <div class="mb-3">
                             <label asp-for="AwardTypeId" class="form-label">نوع الجائزة</label>
                             <select asp-for="AwardTypeId" class="form-select" asp-items="ViewBag.AwardTypeId">
-                                <option value="">-- اختر نوع الجائزة --</option>
+                                <option value="0" disabled hidden>-- اختر نوع الجائزة --</option>
                             </select>
                             <span asp-validation-for="AwardTypeId" class="text-danger"></span>
                         </div>
@@ -34,7 +34,7 @@
                         <div class="mb-3">
                             <label asp-for="Month" class="form-label">الشهر</label>
                             <select asp-for="Month" class="form-select">
-                                <option value="">-- اختر الشهر --</option>
+                                <option value="0">-- اختر الشهر --</option>
                                 <option value="1">يناير</option>
                                 <option value="2">فبراير</option>
                                 <option value="3">مارس</option>
@@ -55,10 +55,10 @@
                         <div class="mb-3">
                             <label asp-for="Year" class="form-label">السنة</label>
                             <select asp-for="Year" class="form-select">
-                                <option value="">-- اختر السنة --</option>
+                                <option value="0">-- اختر السنة --</option>
                                 @for (int year = DateTime.Now.Year; year <= DateTime.Now.Year + 2; year++)
                                 {
-                                    <option value="@year" selected="@(year == DateTime.Now.Year)">@year</option>
+                                    <option value="@year">@year</option>
                                 }
                             </select>
                             <span asp-validation-for="Year" class="text-danger"></span>
