@@ -62,6 +62,7 @@
         border-radius:.5rem;
         padding:.75rem 1.25rem;
         width:100%;
+        margin-top:1.5rem;
     }
     .submit-btn:hover {background:#0b5ed7;}
 </style>
@@ -79,12 +80,12 @@
     }
     else
     {
-        @if (ViewData["DepartmentQuota"] != null)
+        var quota = ViewData["DepartmentQuota"] as EOM.Web.Models.DepartmentQuota;
+        var existingNominations = (int)(ViewData["ExistingNominations"] ?? 0);
+        var canNominate = quota == null || existingNominations < quota?.MaxNominations;
+
+        if (quota != null)
         {
-            var quota = ViewData["DepartmentQuota"] as EOM.Web.Models.DepartmentQuota;
-            var existingNominations = (int)(ViewData["ExistingNominations"] ?? 0);
-            var canNominate = (bool)(ViewData["CanNominate"] ?? false);
-            
             <div class="quota-info @(existingNominations >= quota?.MaxNominations ? "danger" : (existingNominations >= quota?.MaxNominations * 0.8 ? "warning" : "success"))">
                 <div class="quota-text">
                     حصة الترشيحات لقسمك: @(quota?.MaxNominations - existingNominations) متبقية من @quota?.MaxNominations
@@ -94,7 +95,7 @@
                 </div>
             </div>
             
-            @if (!canNominate)
+            if (!canNominate)
             {
                 <div class="alert alert-danger">
                     لقد استنفدت حصة الترشيحات المسموحة لقسمك (@quota?.MaxNominations ترشيحات)
@@ -102,11 +103,11 @@
             }
         }
 
-        @if ((bool)(ViewData["CanNominate"] ?? false))
+        if (canNominate)
         {
             <div class="form-container">
                 <form asp-action="Create" method="post">
-                    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+                    <div asp-validation-summary="All" class="text-danger mb-3"></div>
                     
                     <div class="form-group">
                         <label class="form-label">دورة الجائزة</label>
@@ -134,7 +135,9 @@
                             
                             @if (employees != null && employees.Any())
                             {
-                                <div class="employee-grid">
+                                <input type="text" id="employeeSearch" class="form-control mb-3" placeholder="ابحث عن موظف بالاسم أو الرقم..." />
+
+                                <div class="employee-grid" id="employeeGrid">
                                     @foreach (var employee in employees)
                                     {
                                         <label class="employee-card" for="employee_@employee.EmployeeId">
@@ -189,6 +192,18 @@
             }
         });
     });
+
+    // live search filter
+    const empSearch = document.getElementById('employeeSearch');
+    if(empSearch){
+        empSearch.addEventListener('input', function(){
+            const term = this.value.trim().toLowerCase();
+            document.querySelectorAll('#employeeGrid .employee-card').forEach(card=>{
+                const text = card.textContent.toLowerCase();
+                card.style.display = text.includes(term) ? '' : 'none';
+            });
+        });
+    }
 </script>
 
 @section Scripts {

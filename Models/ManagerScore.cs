@@ -8,8 +8,7 @@ public class ManagerScore
     
     public int SubCriteriaId { get; set; }
     
-    [Range(0, 100)]
-    public byte Score { get; set; }
+    public int Score { get; set; }
     
     [MaxLength(500)]
     public string? Note { get; set; }

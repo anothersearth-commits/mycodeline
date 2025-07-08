@@ -126,10 +126,11 @@ public class NominationsController : Controller
                        && e.IsActive)
             .ToListAsync();
 
-        // Check how many nominations this manager has made for current cycles
+        int selectedCycleId = cycleId ?? activeCycles.First().CycleId;
+
+        // Count nominations for that specific cycle only
         var existingNominations = await _context.Nominations
-            .Where(n => n.ManagerId == currentEmployeeId && activeCycles.Select(ac => ac.CycleId).Contains(n.CycleId))
-            .CountAsync();
+            .CountAsync(n => n.ManagerId == currentEmployeeId && n.CycleId == selectedCycleId);
 
         ViewData["CycleId"] = new SelectList(activeCycles, "CycleId", "AwardType.Name", cycleId);
 
@@ -188,10 +189,24 @@ public class NominationsController : Controller
             _context.Add(nomination);
             await _context.SaveChangesAsync();
             
-            // Redirect to scoring page
             return RedirectToAction("Score", new { id = nomination.NominationId });
         }
         
+        // If we reach here, ModelState is invalid. Log the errors.
+        var errors = ModelState
+            .Where(x => x.Value.Errors.Count > 0)
+            .Select(x => new { x.Key, x.Value.Errors });
+
+        System.Diagnostics.Debug.WriteLine("===== ModelState Errors on POST Nominations/Create =====");
+        foreach (var error in errors)
+        {
+            foreach (var subError in error.Errors)
+            {
+                System.Diagnostics.Debug.WriteLine($"Key: {error.Key}, Error: {subError.ErrorMessage}");
+            }
+        }
+        System.Diagnostics.Debug.WriteLine("======================================================");
+
         // Reload view data for error case
         var activeCycles = await _context.AwardCycles
             .Include(ac => ac.AwardType)
@@ -220,6 +235,7 @@ public class NominationsController : Controller
         }
 
         var nomination = await _context.Nominations
+            .Include(n => n.Employee)
             .Include(n => n.AwardCycle)
             .ThenInclude(ac => ac.AwardType)
             .ThenInclude(at => at.Criteria)
@@ -259,12 +275,43 @@ public class NominationsController : Controller
     public async Task<IActionResult> Score(int id, List<ManagerScore> managerScores)
     {
         var nomination = await _context.Nominations
+            .Include(n => n.AwardCycle).ThenInclude(ac => ac.AwardType).ThenInclude(at => at.Criteria).ThenInclude(c => c.SubCriteria)
             .Include(n => n.ManagerScores)
             .FirstOrDefaultAsync(n => n.NominationId == id);
 
         if (nomination == null)
         {
             return NotFound();
+        }
+
+        var subCriterias = nomination.AwardCycle.AwardType.Criteria.SelectMany(c => c.SubCriteria).ToDictionary(sc => sc.SubCriteriaId);
+
+        // Manual validation of scores
+        for (int i = 0; i < managerScores.Count; i++)
+        {
+            var score = managerScores[i];
+            if (subCriterias.TryGetValue(score.SubCriteriaId, out var subCriteria))
+            {
+                if (score.Score < 0 || score.Score > subCriteria.MaxScore)
+                {
+                    ModelState.AddModelError($"managerScores[{i}].Score", $"الدرجة لمعيار '{subCriteria.Name}' يجب أن تكون بين 0 و {subCriteria.MaxScore}.");
+                }
+            }
+        }
+
+        if (!ModelState.IsValid)
+        {
+            // If model is invalid, re-populate the scores from the form submission to show the invalid values back to the user.
+            foreach (var submittedScore in managerScores)
+            {
+                var modelScore = nomination.ManagerScores.FirstOrDefault(ms => ms.SubCriteriaId == submittedScore.SubCriteriaId);
+                if (modelScore != null)
+                {
+                    modelScore.Score = submittedScore.Score;
+                    modelScore.Note = submittedScore.Note;
+                }
+            }
+            return View(nomination);
         }
 
         // Update or add manager scores
