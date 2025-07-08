@@ -1,0 +1,186 @@
+@model IEnumerable<EOM.Web.Models.AwardCycle>
+
+@{
+    ViewData["Title"] = "إدارة دورات الجوائز";
+}
+
+<div class="glass-fade-in">
+    <div class="glass-card page-header mb-4">
+        <h1>إدارة دورات الجوائز</h1>
+        @if (User.IsInRole("EOM-Admin") || User.IsInRole("EOM-Committee"))
+        {
+            <a href="@Url.Action("Create")" class="btn btn-primary">
+                ➕ دورة جديدة
+            </a>
+        }
+    </div>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success mb-4">
+            ✅ @TempData["Success"]
+        </div>
+    }
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger mb-4">
+            ❌ @TempData["Error"]
+        </div>
+    }
+
+    <div class="glass-card">
+        <div class="card-header">
+            <h3>الدورات الحالية</h3>
+        </div>
+        <div class="card-body">
+            @if (Model.Any())
+            {
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>نوع الجائزة</th>
+                                <th>الشهر/السنة</th>
+                                <th>فترة الترشيح</th>
+                                <th>الحالة</th>
+                                <th>الإجراءات</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var cycle in Model)
+                            {
+                                <tr>
+                                    <td>@cycle.AwardType.Name</td>
+                                    <td>@cycle.Month/@cycle.Year</td>
+                                    <td>
+                                        @cycle.NominationStart.ToString("dd/MM/yyyy") - 
+                                        @cycle.NominationEnd.ToString("dd/MM/yyyy")
+                                    </td>
+                                    <td>
+                                        @switch (cycle.Status)
+                                        {
+                                            case CycleStatus.Pending:
+                                                <span class="badge badge-secondary">في الانتظار</span>
+                                                break;
+                                            case CycleStatus.Nomination:
+                                                <span class="badge badge-primary">باب الترشيح مفتوح</span>
+                                                break;
+                                            case CycleStatus.Evaluating:
+                                                <span class="badge badge-warning">باب التقييم مفتوح</span>
+                                                break;
+                                            case CycleStatus.Closed:
+                                                <span class="badge badge-success">مغلقة</span>
+                                                break;
+                                            case CycleStatus.Published:
+                                                <span class="badge badge-info">منشورة</span>
+                                                break;
+                                        }
+                                    </td>
+                                    <td>
+                                        <div class="d-flex flex-wrap gap-2">
+                                            @if (User.IsInRole("EOM-Committee") || User.IsInRole("EOM-Admin"))
+                                            {
+                                                @if (cycle.Status == CycleStatus.Pending)
+                                                {
+                                                    <form method="post" asp-action="OpenNomination" asp-route-id="@cycle.CycleId" style="display: inline;">
+                                                        <button type="submit" class="btn btn-success btn-sm">
+                                                            ▶️ فتح الترشيح
+                                                        </button>
+                                                    </form>
+                                                }
+                                                else if (cycle.Status == CycleStatus.Nomination)
+                                                {
+                                                    <form method="post" asp-action="CloseNomination" asp-route-id="@cycle.CycleId" style="display: inline;">
+                                                        <button type="submit" class="btn btn-warning btn-sm">
+                                                            ⏸️ إغلاق الترشيح
+                                                        </button>
+                                                    </form>
+                                                }
+                                                else if (cycle.Status == CycleStatus.Evaluating)
+                                                {
+                                                    <form method="post" asp-action="CloseCycle" asp-route-id="@cycle.CycleId" style="display: inline;">
+                                                        <button type="submit" class="btn btn-danger btn-sm">
+                                                            ⏹️ إغلاق الدورة
+                                                        </button>
+                                                    </form>
+                                                }
+                                            }
+                                            
+                                            <a href="@Url.Action("Details", new { id = cycle.CycleId })" class="btn btn-info btn-sm">
+                                                👁️ تفاصيل
+                                            </a>
+                                            
+                                            @if (User.IsInRole("EOM-Admin"))
+                                            {
+                                                <a href="@Url.Action("Edit", new { id = cycle.CycleId })" class="btn btn-primary btn-sm">
+                                                    ✏️ تعديل
+                                                </a>
+                                                <a href="@Url.Action("Delete", new { id = cycle.CycleId })" class="btn btn-danger btn-sm">
+                                                    🗑️ حذف
+                                                </a>
+                                            }
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <div class="text-center py-5">
+                    <div style="font-size: 4rem; margin-bottom: 1rem; filter: drop-shadow(0 4px 8px rgba(0,0,0,0.5));">📅</div>
+                    <h5 style="color: var(--glass-text-primary); font-weight: 700; text-shadow: 0 2px 6px rgba(0,0,0,0.8);">لا توجد دورات حالياً</h5>
+                    <p style="color: var(--glass-text-secondary); text-shadow: 0 1px 3px rgba(0,0,0,0.7);">قم بإنشاء دورة جديدة للبدء</p>
+                </div>
+            }
+        </div>
+    </div>
+
+
+</div>
+
+<style>
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+}
+
+.badge {
+    padding: 0.5rem 1rem;
+    border-radius: 12px;
+    font-weight: 500;
+}
+
+.badge-primary {
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.8), rgba(139, 92, 246, 0.8)) !important;
+}
+
+.badge-success {
+    background: linear-gradient(135deg, rgba(34, 197, 94, 0.8), rgba(16, 185, 129, 0.8)) !important;
+}
+
+.badge-warning {
+    background: linear-gradient(135deg, rgba(245, 158, 11, 0.8), rgba(249, 115, 22, 0.8)) !important;
+}
+
+.badge-danger {
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.8), rgba(220, 38, 127, 0.8)) !important;
+}
+
+.badge-info {
+    background: linear-gradient(135deg, rgba(14, 165, 233, 0.8), rgba(59, 130, 246, 0.8)) !important;
+}
+
+.badge-secondary {
+    background: linear-gradient(135deg, rgba(107, 114, 128, 0.8), rgba(75, 85, 99, 0.8)) !important;
+}
+
+.btn-sm {
+    margin: 0 2px;
+}
+</style>

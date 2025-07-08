@@ -1,0 +1,417 @@
+@model IEnumerable<EOM.Web.Models.Nomination>
+
+@{
+    ViewData["Title"] = "الترشيحات";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<style>
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+    }
+    
+    .page-header h1 {
+        margin: 0;
+        font-size: 2.5rem;
+        font-weight: 700;
+        text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+    }
+    
+    .create-btn {
+        background: rgba(255, 255, 255, 0.2);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        color: white;
+        padding: 0.8rem 1.5rem;
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        border-radius: 12px;
+        text-decoration: none;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        box-shadow: 
+            0 8px 32px rgba(0, 0, 0, 0.1),
+            inset 0 1px 0 rgba(255, 255, 255, 0.2);
+        text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+    }
+    
+    .create-btn:hover {
+        background: rgba(255, 255, 255, 0.3);
+        color: white;
+        text-decoration: none;
+        transform: translateY(-3px);
+        box-shadow: 
+            0 12px 40px rgba(0, 0, 0, 0.15),
+            inset 0 1px 0 rgba(255, 255, 255, 0.3);
+        border-color: rgba(255, 255, 255, 0.4);
+    }
+    
+    .quota-card {
+        background: rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border: 1px solid rgba(16, 185, 129, 0.3);
+        padding: 2rem;
+        border-radius: 20px;
+        box-shadow: 
+            0 8px 32px rgba(16, 185, 129, 0.1),
+            inset 0 1px 0 rgba(255, 255, 255, 0.2);
+        margin-bottom: 2rem;
+        position: relative;
+        z-index: 1;
+    }
+    
+    .quota-card.warning {
+        border-color: rgba(245, 158, 11, 0.3);
+        box-shadow: 
+            0 8px 32px rgba(245, 158, 11, 0.1),
+            inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    }
+    
+    .quota-card.danger {
+        border-color: rgba(239, 68, 68, 0.3);
+        box-shadow: 
+            0 8px 32px rgba(239, 68, 68, 0.1),
+            inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    }
+    
+    .quota-info {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .quota-text {
+        font-size: 1.2rem;
+        color: white;
+        font-weight: 600;
+        text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+    }
+    
+    .quota-stats {
+        display: flex;
+        gap: 2rem;
+        align-items: center;
+    }
+    
+    .stat-item {
+        text-align: center;
+    }
+    
+    .stat-number {
+        font-size: 2rem;
+        font-weight: 700;
+        color: white;
+        text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+    }
+    
+    .stat-label {
+        font-size: 0.9rem;
+        color: rgba(255, 255, 255, 0.8);
+    }
+    
+    .nominations-container {
+        background: rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        padding: 2rem;
+        border-radius: 20px;
+        box-shadow: 
+            0 8px 32px rgba(0, 0, 0, 0.1),
+            inset 0 1px 0 rgba(255, 255, 255, 0.2);
+        position: relative;
+        z-index: 1;
+    }
+    
+    .nominations-container h2 {
+        color: white;
+        text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+    }
+    
+    .nominations-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+        gap: 2rem;
+        margin-top: 2rem;
+    }
+    
+    .nomination-card {
+        background: rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(15px);
+        -webkit-backdrop-filter: blur(15px);
+        padding: 2rem;
+        border-radius: 16px;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        transition: all 0.3s ease;
+        position: relative;
+        box-shadow: 
+            0 8px 32px rgba(0, 0, 0, 0.1),
+            inset 0 1px 0 rgba(255, 255, 255, 0.2);
+        color: white;
+    }
+    
+    .nomination-card:hover {
+        border-color: rgba(255, 255, 255, 0.4);
+        transform: translateY(-4px);
+        box-shadow: 
+            0 12px 40px rgba(0, 0, 0, 0.15),
+            inset 0 1px 0 rgba(255, 255, 255, 0.3);
+    }
+    
+    .nomination-status {
+        position: absolute;
+        top: 1rem;
+        left: 1rem;
+        padding: 0.3rem 0.8rem;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+    }
+    
+    .status-pending {
+        background: rgba(245, 158, 11, 0.2);
+        color: white;
+    }
+    
+    .status-evaluation {
+        background: rgba(59, 130, 246, 0.2);
+        color: white;
+    }
+    
+    .status-completed {
+        background: rgba(16, 185, 129, 0.2);
+        color: white;
+    }
+    
+    .nomination-employee {
+        font-size: 1.3rem;
+        font-weight: 700;
+        color: white;
+        margin-bottom: 0.5rem;
+        text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+    }
+    
+    .nomination-award {
+        font-size: 1rem;
+        color: rgba(255, 255, 255, 0.9);
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+    }
+    
+    .nomination-date {
+        font-size: 0.9rem;
+        color: rgba(255, 255, 255, 0.7);
+        margin-bottom: 1rem;
+    }
+    
+    .nomination-actions {
+        display: flex;
+        gap: 1rem;
+        margin-top: 1.5rem;
+    }
+    
+    .btn {
+        padding: 0.5rem 1rem;
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        border-radius: 10px;
+        text-decoration: none;
+        font-weight: 600;
+        font-size: 0.9rem;
+        transition: all 0.3s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        box-shadow: 
+            0 4px 16px rgba(0, 0, 0, 0.1),
+            inset 0 1px 0 rgba(255, 255, 255, 0.2);
+        color: white;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+    }
+    
+    .btn-primary {
+        background: rgba(102, 126, 234, 0.2);
+        border-color: rgba(102, 126, 234, 0.3);
+    }
+    
+    .btn-primary:hover {
+        background: rgba(102, 126, 234, 0.3);
+        color: white;
+        text-decoration: none;
+        transform: translateY(-2px);
+        box-shadow: 
+            0 6px 20px rgba(102, 126, 234, 0.2),
+            inset 0 1px 0 rgba(255, 255, 255, 0.3);
+    }
+    
+    .btn-secondary {
+        background: rgba(107, 114, 128, 0.2);
+        border-color: rgba(107, 114, 128, 0.3);
+    }
+    
+    .btn-secondary:hover {
+        background: rgba(107, 114, 128, 0.3);
+        color: white;
+        text-decoration: none;
+        transform: translateY(-2px);
+        box-shadow: 
+            0 6px 20px rgba(107, 114, 128, 0.2),
+            inset 0 1px 0 rgba(255, 255, 255, 0.3);
+    }
+    
+    .btn-danger {
+        background: rgba(239, 68, 68, 0.2);
+        border-color: rgba(239, 68, 68, 0.3);
+    }
+    
+    .btn-danger:hover {
+        background: rgba(239, 68, 68, 0.3);
+        color: white;
+        text-decoration: none;
+        transform: translateY(-2px);
+        box-shadow: 
+            0 6px 20px rgba(239, 68, 68, 0.2),
+            inset 0 1px 0 rgba(255, 255, 255, 0.3);
+    }
+    
+    .empty-state {
+        text-align: center;
+        padding: 4rem 2rem;
+        color: rgba(255, 255, 255, 0.8);
+        background: rgba(255, 255, 255, 0.05);
+        backdrop-filter: blur(10px);
+        border-radius: 16px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    .empty-state i {
+        font-size: 5rem;
+        margin-bottom: 1rem;
+        display: block;
+        opacity: 0.6;
+    }
+    
+    .empty-state h3 {
+        font-size: 1.5rem;
+        margin-bottom: 1rem;
+        color: white;
+        text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+    }
+    
+    .empty-state p {
+        font-size: 1.1rem;
+        margin-bottom: 2rem;
+        color: rgba(255, 255, 255, 0.8);
+    }
+</style>
+
+<div class="glass-card page-header glass-fade-in">
+    <h1>الترشيحات</h1>
+    @if (User.IsInRole("Manager") || User.IsInRole("EOM-Admin"))
+    {
+        <a href="@Url.Action("Create")" class="btn btn-primary">
+            <span>➕</span>
+            ترشيح جديد
+        </a>
+    }
+</div>
+
+@if (User.IsInRole("Manager") && ViewData["DepartmentQuota"] != null)
+{
+    var quota = ViewData["DepartmentQuota"] as EOM.Web.Models.DepartmentQuota;
+    var currentNominations = Model.Count();
+    var remainingQuota = quota?.MaxNominations - currentNominations;
+    
+    <div class="quota-card glass-card @(remainingQuota <= 0 ? "danger" : (remainingQuota <= 2 ? "warning" : ""))">
+        <div class="quota-info">
+            <div class="quota-text">
+                حصة الترشيحات لقسمك
+            </div>
+            <div class="quota-stats">
+                <div class="stat-item">
+                    <div class="stat-number">@currentNominations</div>
+                    <div class="stat-label">مُستخدمة</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">@remainingQuota</div>
+                    <div class="stat-label">متبقية</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">@quota?.MaxNominations</div>
+                    <div class="stat-label">الإجمالي</div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<div class="nominations-container glass-card">
+    <h2>قائمة الترشيحات</h2>
+    
+    @if (Model.Any())
+    {
+        <div class="nominations-grid">
+            @foreach (var nomination in Model)
+            {
+                <div class="nomination-card glass-card">
+                    <div class="nomination-status status-pending">
+                        معلق
+                    </div>
+                    
+                    <div class="nomination-employee">
+                        @* Employee name will be loaded from navigation property *@
+                        موظف رقم @nomination.EmployeeId
+                    </div>
+                    
+                    <div class="nomination-award">
+                        @nomination.AwardCycle.AwardType.Name
+                    </div>
+                    
+                    <div class="nomination-date">
+                        تاريخ الترشيح: @nomination.CreatedAt.ToString("yyyy/MM/dd")
+                    </div>
+                    
+                    <div class="nomination-actions">
+                        <a href="@Url.Action("Score", new { id = nomination.NominationId })" class="btn btn-primary">
+                            📝 تقييم
+                        </a>
+                        <a href="@Url.Action("Details", new { id = nomination.NominationId })" class="btn btn-secondary">
+                            👁️ تفاصيل
+                        </a>
+                        @if (User.IsInRole("Manager") || User.IsInRole("EOM-Admin"))
+                        {
+                            <a href="@Url.Action("Delete", new { id = nomination.NominationId })" class="btn btn-danger">
+                                🗑️ حذف
+                            </a>
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="empty-state">
+            <i>📋</i>
+            <h3>لا توجد ترشيحات</h3>
+            <p>لم يتم إنشاء أي ترشيحات بعد</p>
+            @if (User.IsInRole("Manager") || User.IsInRole("EOM-Admin"))
+            {
+                <a href="@Url.Action("Create")" class="btn btn-primary">
+                    ➕ إنشاء ترشيح جديد
+                </a>
+            }
+        </div>
+    }
+</div>

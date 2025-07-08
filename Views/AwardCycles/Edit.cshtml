@@ -1,0 +1,139 @@
+@model EOM.Web.Models.AwardCycle
+
+@{
+    ViewData["Title"] = "تعديل الدورة";
+}
+
+<div class="glass-fade-in">
+    <div class="page-header">
+        <h1>تعديل الدورة</h1>
+        <a href="@Url.Action("Index")" class="btn btn-secondary">
+            ← العودة للقائمة
+        </a>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h3>تعديل معلومات الدورة</h3>
+        </div>
+        <div class="card-body">
+            <form asp-action="Edit" method="post">
+                <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+                
+                <input type="hidden" asp-for="CycleId" />
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label asp-for="AwardTypeId" class="form-label">نوع الجائزة</label>
+                            <select asp-for="AwardTypeId" class="form-select" asp-items="ViewBag.AwardTypeId">
+                                <option value="">-- اختر نوع الجائزة --</option>
+                            </select>
+                            <span asp-validation-for="AwardTypeId" class="text-danger"></span>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="mb-3">
+                            <label asp-for="Month" class="form-label">الشهر</label>
+                            <select asp-for="Month" class="form-select">
+                                <option value="">-- اختر الشهر --</option>
+                                <option value="1">يناير</option>
+                                <option value="2">فبراير</option>
+                                <option value="3">مارس</option>
+                                <option value="4">أبريل</option>
+                                <option value="5">مايو</option>
+                                <option value="6">يونيو</option>
+                                <option value="7">يوليو</option>
+                                <option value="8">أغسطس</option>
+                                <option value="9">سبتمبر</option>
+                                <option value="10">أكتوبر</option>
+                                <option value="11">نوفمبر</option>
+                                <option value="12">ديسمبر</option>
+                            </select>
+                            <span asp-validation-for="Month" class="text-danger"></span>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="mb-3">
+                            <label asp-for="Year" class="form-label">السنة</label>
+                            <select asp-for="Year" class="form-select">
+                                <option value="">-- اختر السنة --</option>
+                                @for (int year = DateTime.Now.Year - 1; year <= DateTime.Now.Year + 2; year++)
+                                {
+                                    <option value="@year">@year</option>
+                                }
+                            </select>
+                            <span asp-validation-for="Year" class="text-danger"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label asp-for="NominationStart" class="form-label">تاريخ بداية الترشيح</label>
+                            <input asp-for="NominationStart" type="datetime-local" class="form-control" />
+                            <span asp-validation-for="NominationStart" class="text-danger"></span>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label asp-for="NominationEnd" class="form-label">تاريخ نهاية الترشيح</label>
+                            <input asp-for="NominationEnd" type="datetime-local" class="form-control" />
+                            <span asp-validation-for="NominationEnd" class="text-danger"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-12">
+                        <div class="mb-3">
+                            <label asp-for="Status" class="form-label">الحالة</label>
+                            <select asp-for="Status" class="form-select">
+                                <option value="@CycleStatus.Pending">في الانتظار</option>
+                                <option value="@CycleStatus.Nomination">باب الترشيح مفتوح</option>
+                                <option value="@CycleStatus.Evaluating">باب التقييم مفتوح</option>
+                                <option value="@CycleStatus.Closed">مغلقة</option>
+                                <option value="@CycleStatus.Published">منشورة</option>
+                            </select>
+                            <span asp-validation-for="Status" class="text-danger"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="d-flex justify-content-end gap-2">
+                    <a href="@Url.Action("Index")" class="btn btn-secondary">إلغاء</a>
+                    <button type="submit" class="btn btn-primary">حفظ التعديلات</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="card mt-4">
+        <div class="card-header">
+            <h4>⚠️ تحذيرات مهمة</h4>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="stat-card">
+                        <div style="font-size: 2rem; margin-bottom: 0.5rem;">🔄</div>
+                        <h6>تعديل الدورة النشطة</h6>
+                        <p class="small">كن حذراً عند تعديل دورة نشطة، قد يؤثر على الترشيحات الجارية</p>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="stat-card">
+                        <div style="font-size: 2rem; margin-bottom: 0.5rem;">📊</div>
+                        <h6>تأثير التعديلات</h6>
+                        <p class="small">تعديل التواريخ قد يؤثر على الترشيحات والتقييمات المسجلة</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

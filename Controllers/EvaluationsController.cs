@@ -1,0 +1,282 @@
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using EOM.Web.Data;
+using EOM.Web.Models;
+
+namespace EOM.Web.Controllers;
+
+[Authorize]
+public class EvaluationsController : Controller
+{
+    private readonly ApplicationDbContext _context;
+
+    public EvaluationsController(ApplicationDbContext context)
+    {
+        _context = context;
+    }
+
+    // GET: Evaluations
+    public async Task<IActionResult> Index()
+    {
+        // TODO: Get current employee from authentication
+        var currentEmployeeId = 4; // Temporary - will be from authentication
+        
+        // Get current employee's committee member record
+        var committeeMember = await _context.CommitteeMembers
+            .Where(cm => cm.EmployeeId == currentEmployeeId && cm.IsActive)
+            .FirstOrDefaultAsync();
+            
+        if (committeeMember == null)
+        {
+            return Forbid("غير مخول للتقييم");
+        }
+
+        // Get current user's evaluations
+        var evaluations = await _context.Evaluations
+            .Where(e => e.CommitteeMemberId == committeeMember.Id)
+            .Include(e => e.Nomination)
+            .ThenInclude(n => n.AwardCycle)
+            .ThenInclude(ac => ac.AwardType)
+            .Include(e => e.EvaluationScores)
+            .ToListAsync();
+
+        return View(evaluations);
+    }
+
+    // GET: Evaluations/Pending
+    public async Task<IActionResult> Pending()
+    {
+        // TODO: Get current employee from authentication
+        var currentEmployeeId = 4; // Temporary - will be from authentication
+        
+        // Get current employee's committee member record
+        var committeeMember = await _context.CommitteeMembers
+            .Where(cm => cm.EmployeeId == currentEmployeeId && cm.IsActive)
+            .FirstOrDefaultAsync();
+            
+        if (committeeMember == null)
+        {
+            return Forbid("غير مخول للتقييم");
+        }
+
+        // Get nominations that need evaluation by this committee member
+        var pendingNominations = await _context.Nominations
+            .Include(n => n.AwardCycle)
+            .ThenInclude(ac => ac.AwardType)
+            .Where(n => n.AwardCycle.Status == CycleStatus.Evaluating)
+            .Where(n => !n.Evaluations.Any(e => e.CommitteeMemberId == committeeMember.Id))
+            .ToListAsync();
+
+        return View(pendingNominations);
+    }
+
+    // GET: Evaluations/Create/5 (nomination id)
+    public async Task<IActionResult> Create(int nominationId)
+    {
+        // TODO: Get current employee from authentication
+        var currentEmployeeId = 4; // Temporary - will be from authentication
+        
+        // Get current employee's committee member record
+        var committeeMember = await _context.CommitteeMembers
+            .Where(cm => cm.EmployeeId == currentEmployeeId && cm.IsActive)
+            .FirstOrDefaultAsync();
+            
+        if (committeeMember == null)
+        {
+            return Forbid("غير مخول للتقييم");
+        }
+
+        var nomination = await _context.Nominations
+            .Include(n => n.AwardCycle)
+            .ThenInclude(ac => ac.AwardType)
+            .ThenInclude(at => at.Criteria)
+            .ThenInclude(c => c.SubCriteria)
+            .Include(n => n.ManagerScores)
+            .ThenInclude(ms => ms.SubCriteria)
+            .FirstOrDefaultAsync(n => n.NominationId == nominationId);
+
+        if (nomination == null)
+        {
+            return NotFound();
+        }
+
+        // Check if user already evaluated this nomination
+        var existingEvaluation = await _context.Evaluations
+            .FirstOrDefaultAsync(e => e.NominationId == nominationId && e.CommitteeMemberId == committeeMember.Id);
+
+        if (existingEvaluation != null)
+        {
+            return RedirectToAction("Edit", new { id = existingEvaluation.EvaluationId });
+        }
+
+        var evaluation = new Evaluation
+        {
+            NominationId = nominationId,
+            CommitteeMemberId = committeeMember.Id,
+            Nomination = nomination
+        };
+
+        // Initialize evaluation scores
+        foreach (var criterion in nomination.AwardCycle.AwardType.Criteria)
+        {
+            foreach (var subCriteria in criterion.SubCriteria)
+            {
+                evaluation.EvaluationScores.Add(new EvaluationScore
+                {
+                    SubCriteriaId = subCriteria.SubCriteriaId,
+                    Score = 0,
+                    Note = string.Empty
+                });
+            }
+        }
+
+        return View(evaluation);
+    }
+
+    // POST: Evaluations/Create
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Create(Evaluation evaluation)
+    {
+        // TODO: Get current employee from authentication
+        var currentEmployeeId = 4; // Temporary - will be from authentication
+        
+        // Get current employee's committee member record
+        var committeeMember = await _context.CommitteeMembers
+            .Where(cm => cm.EmployeeId == currentEmployeeId && cm.IsActive)
+            .FirstOrDefaultAsync();
+            
+        if (committeeMember == null)
+        {
+            return Forbid("غير مخول للتقييم");
+        }
+
+        evaluation.CommitteeMemberId = committeeMember.Id;
+        evaluation.CreatedAt = DateTime.UtcNow;
+
+        if (ModelState.IsValid)
+        {
+            _context.Add(evaluation);
+            await _context.SaveChangesAsync();
+            return RedirectToAction(nameof(Index));
+        }
+
+        // Reload nomination data for view
+        evaluation.Nomination = await _context.Nominations
+            .Include(n => n.AwardCycle)
+            .ThenInclude(ac => ac.AwardType)
+            .ThenInclude(at => at.Criteria)
+            .ThenInclude(c => c.SubCriteria)
+            .Include(n => n.ManagerScores)
+            .ThenInclude(ms => ms.SubCriteria)
+            .FirstOrDefaultAsync(n => n.NominationId == evaluation.NominationId) ?? evaluation.Nomination;
+
+        return View(evaluation);
+    }
+
+    // GET: Evaluations/Edit/5
+    public async Task<IActionResult> Edit(int? id)
+    {
+        if (id == null)
+        {
+            return NotFound();
+        }
+
+        // TODO: Get current employee from authentication
+        var currentEmployeeId = 4; // Temporary - will be from authentication
+        
+        // Get current employee's committee member record
+        var committeeMember = await _context.CommitteeMembers
+            .Where(cm => cm.EmployeeId == currentEmployeeId && cm.IsActive)
+            .FirstOrDefaultAsync();
+            
+        if (committeeMember == null)
+        {
+            return Forbid("غير مخول للتقييم");
+        }
+
+        var evaluation = await _context.Evaluations
+            .Include(e => e.Nomination)
+            .ThenInclude(n => n.AwardCycle)
+            .ThenInclude(ac => ac.AwardType)
+            .ThenInclude(at => at.Criteria)
+            .ThenInclude(c => c.SubCriteria)
+            .Include(e => e.Nomination.ManagerScores)
+            .ThenInclude(ms => ms.SubCriteria)
+            .Include(e => e.EvaluationScores)
+            .ThenInclude(es => es.SubCriteria)
+            .FirstOrDefaultAsync(e => e.EvaluationId == id && e.CommitteeMemberId == committeeMember.Id);
+
+        if (evaluation == null)
+        {
+            return NotFound();
+        }
+
+        return View(evaluation);
+    }
+
+    // POST: Evaluations/Edit/5
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Edit(int id, Evaluation evaluation)
+    {
+        if (id != evaluation.EvaluationId)
+        {
+            return NotFound();
+        }
+
+        // TODO: Get current employee from authentication
+        var currentEmployeeId = 4; // Temporary - will be from authentication
+        
+        // Get current employee's committee member record
+        var committeeMember = await _context.CommitteeMembers
+            .Where(cm => cm.EmployeeId == currentEmployeeId && cm.IsActive)
+            .FirstOrDefaultAsync();
+            
+        if (committeeMember == null)
+        {
+            return Forbid("غير مخول للتقييم");
+        }
+
+        evaluation.CommitteeMemberId = committeeMember.Id;
+
+        if (ModelState.IsValid)
+        {
+            try
+            {
+                _context.Update(evaluation);
+                await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                if (!EvaluationExists(evaluation.EvaluationId))
+                {
+                    return NotFound();
+                }
+                else
+                {
+                    throw;
+                }
+            }
+            return RedirectToAction(nameof(Index));
+        }
+
+        // Reload data for view
+        evaluation = await _context.Evaluations
+            .Include(e => e.Nomination)
+            .ThenInclude(n => n.AwardCycle)
+            .ThenInclude(ac => ac.AwardType)
+            .ThenInclude(at => at.Criteria)
+            .ThenInclude(c => c.SubCriteria)
+            .Include(e => e.EvaluationScores)
+            .FirstOrDefaultAsync(e => e.EvaluationId == id) ?? evaluation;
+
+        return View(evaluation);
+    }
+
+    private bool EvaluationExists(int id)
+    {
+        return _context.Evaluations.Any(e => e.EvaluationId == id);
+    }
+}

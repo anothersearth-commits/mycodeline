@@ -1,0 +1,427 @@
+@model EOM.Web.Models.Nomination
+
+@{
+    ViewData["Title"] = "ترشيح موظف";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+<style>
+    body {
+        font-family: 'Cairo', sans-serif;
+        direction: rtl;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+        min-height: 100vh;
+        position: relative;
+    }
+    
+    body::before {
+        content: '';
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><radialGradient id="a" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="%23ffffff" stop-opacity="0.1"/><stop offset="100%" stop-color="%23ffffff" stop-opacity="0"/></radialGradient></defs><circle cx="20" cy="20" r="10" fill="url(%23a)"/><circle cx="80" cy="30" r="8" fill="url(%23a)"/><circle cx="40" cy="70" r="12" fill="url(%23a)"/><circle cx="90" cy="80" r="6" fill="url(%23a)"/></svg>') repeat;
+        pointer-events: none;
+        z-index: 0;
+    }
+    
+    .nomination-header {
+        background: rgba(255, 255, 255, 0.15);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        color: white;
+        padding: 2rem;
+        border-radius: 20px;
+        margin-bottom: 2rem;
+        text-align: center;
+        box-shadow: 
+            0 8px 32px rgba(0, 0, 0, 0.1),
+            inset 0 1px 0 rgba(255, 255, 255, 0.2);
+        position: relative;
+        z-index: 1;
+    }
+    
+    .nomination-header h1 {
+        margin: 0;
+        font-size: 2.5rem;
+        font-weight: 700;
+        text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+    }
+    
+    .quota-info {
+        background: rgba(16, 185, 129, 0.15);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border: 1px solid rgba(16, 185, 129, 0.3);
+        color: white;
+        padding: 1.5rem;
+        border-radius: 16px;
+        margin-bottom: 2rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        box-shadow: 
+            0 8px 32px rgba(16, 185, 129, 0.1),
+            inset 0 1px 0 rgba(255, 255, 255, 0.1);
+        position: relative;
+        z-index: 1;
+    }
+    
+    .quota-info.warning {
+        background: rgba(245, 158, 11, 0.15);
+        border: 1px solid rgba(245, 158, 11, 0.3);
+        box-shadow: 
+            0 8px 32px rgba(245, 158, 11, 0.1),
+            inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    }
+    
+    .quota-info.danger {
+        background: rgba(239, 68, 68, 0.15);
+        border: 1px solid rgba(239, 68, 68, 0.3);
+        box-shadow: 
+            0 8px 32px rgba(239, 68, 68, 0.1),
+            inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    }
+    
+    .quota-text {
+        font-size: 1.2rem;
+        font-weight: 600;
+        text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+    }
+    
+    .quota-number {
+        font-size: 2rem;
+        font-weight: 700;
+        background: rgba(255, 255, 255, 0.2);
+        backdrop-filter: blur(10px);
+        padding: 0.5rem 1rem;
+        border-radius: 12px;
+        border: 1px solid rgba(255, 255, 255, 0.3);
+    }
+    
+    .form-container {
+        background: rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        padding: 2.5rem;
+        border-radius: 20px;
+        box-shadow: 
+            0 8px 32px rgba(0, 0, 0, 0.1),
+            inset 0 1px 0 rgba(255, 255, 255, 0.2);
+        margin-bottom: 2rem;
+        position: relative;
+        z-index: 1;
+    }
+    
+    .form-group {
+        margin-bottom: 2rem;
+    }
+    
+    .form-label {
+        display: block;
+        margin-bottom: 0.8rem;
+        font-weight: 600;
+        color: white;
+        font-size: 1.1rem;
+        text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+    }
+    
+    .form-select {
+        width: 100%;
+        padding: 1rem;
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        border-radius: 12px;
+        font-size: 1rem;
+        background: rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(10px);
+        color: white;
+        transition: all 0.3s ease;
+    }
+    
+    .form-select::placeholder {
+        color: rgba(255, 255, 255, 0.7);
+    }
+    
+    .form-select:focus {
+        outline: none;
+        border-color: rgba(255, 255, 255, 0.5);
+        background: rgba(255, 255, 255, 0.15);
+        box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.1);
+    }
+    
+    .form-select option {
+        background: rgba(102, 126, 234, 0.9);
+        color: white;
+    }
+    
+    .employee-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 1.5rem;
+        margin-top: 1rem;
+    }
+    
+    .employee-card {
+        background: rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(15px);
+        -webkit-backdrop-filter: blur(15px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 16px;
+        padding: 1.5rem;
+        transition: all 0.3s ease;
+        cursor: pointer;
+        position: relative;
+        box-shadow: 
+            0 8px 32px rgba(0, 0, 0, 0.1),
+            inset 0 1px 0 rgba(255, 255, 255, 0.2);
+        color: white;
+    }
+    
+    .employee-card:hover {
+        border-color: rgba(255, 255, 255, 0.4);
+        transform: translateY(-4px);
+        box-shadow: 
+            0 12px 40px rgba(0, 0, 0, 0.15),
+            inset 0 1px 0 rgba(255, 255, 255, 0.3);
+    }
+    
+    .employee-card.selected {
+        border-color: rgba(255, 255, 255, 0.6);
+        background: rgba(255, 255, 255, 0.2);
+        box-shadow: 
+            0 12px 40px rgba(255, 255, 255, 0.1),
+            inset 0 1px 0 rgba(255, 255, 255, 0.4);
+        color: white;
+    }
+    
+    .employee-card input[type="radio"] {
+        position: absolute;
+        opacity: 0;
+        cursor: pointer;
+    }
+    
+    .employee-name {
+        font-size: 1.3rem;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+    }
+    
+    .employee-title {
+        font-size: 1rem;
+        opacity: 0.8;
+        margin-bottom: 0.3rem;
+    }
+    
+    .employee-id {
+        font-size: 0.9rem;
+        opacity: 0.7;
+    }
+    
+    .submit-btn {
+        width: 100%;
+        padding: 1.2rem;
+        background: rgba(255, 255, 255, 0.2);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        color: white;
+        border-radius: 16px;
+        font-size: 1.2rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        margin-top: 2rem;
+        box-shadow: 
+            0 8px 32px rgba(0, 0, 0, 0.1),
+            inset 0 1px 0 rgba(255, 255, 255, 0.2);
+        text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+    }
+    
+    .submit-btn:hover {
+        transform: translateY(-3px);
+        background: rgba(255, 255, 255, 0.25);
+        box-shadow: 
+            0 12px 40px rgba(0, 0, 0, 0.15),
+            inset 0 1px 0 rgba(255, 255, 255, 0.3);
+        border-color: rgba(255, 255, 255, 0.4);
+    }
+    
+    .submit-btn:disabled {
+        background: rgba(156, 163, 175, 0.2);
+        cursor: not-allowed;
+        transform: none;
+        box-shadow: none;
+        opacity: 0.6;
+    }
+    
+    .no-employees {
+        text-align: center;
+        padding: 3rem;
+        color: rgba(255, 255, 255, 0.8);
+        background: rgba(255, 255, 255, 0.05);
+        backdrop-filter: blur(10px);
+        border-radius: 16px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    .no-employees i {
+        font-size: 4rem;
+        margin-bottom: 1rem;
+        display: block;
+        opacity: 0.6;
+    }
+    
+    .alert {
+        padding: 1rem;
+        border-radius: 12px;
+        margin-bottom: 1.5rem;
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+    
+    .alert-warning {
+        background: rgba(245, 158, 11, 0.15);
+        color: white;
+        border-color: rgba(245, 158, 11, 0.3);
+        box-shadow: 
+            0 8px 32px rgba(245, 158, 11, 0.1),
+            inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    }
+    
+    .alert-danger {
+        background: rgba(239, 68, 68, 0.15);
+        color: white;
+        border-color: rgba(239, 68, 68, 0.3);
+        box-shadow: 
+            0 8px 32px rgba(239, 68, 68, 0.1),
+            inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    }
+</style>
+
+<div class="nomination-header">
+    <h1>ترشيح موظف للشهر</h1>
+</div>
+
+@if (ViewBag.Message != null)
+{
+    <div class="alert alert-warning">
+        @ViewBag.Message
+    </div>
+}
+else
+{
+    @if (ViewData["DepartmentQuota"] != null)
+    {
+        var quota = ViewData["DepartmentQuota"] as EOM.Web.Models.DepartmentQuota;
+        var existingNominations = (int)(ViewData["ExistingNominations"] ?? 0);
+        var canNominate = (bool)(ViewData["CanNominate"] ?? false);
+        
+        <div class="quota-info @(existingNominations >= quota?.MaxNominations ? "danger" : (existingNominations >= quota?.MaxNominations * 0.8 ? "warning" : ""))">
+            <div class="quota-text">
+                حصة الترشيحات لقسمك: @(quota?.MaxNominations - existingNominations) متبقية من @quota?.MaxNominations
+            </div>
+            <div class="quota-number">
+                @existingNominations/@quota?.MaxNominations
+            </div>
+        </div>
+        
+        @if (!canNominate)
+        {
+            <div class="alert alert-danger">
+                لقد استنفدت حصة الترشيحات المسموحة لقسمك (@quota?.MaxNominations ترشيحات)
+            </div>
+        }
+    }
+
+    @if ((bool)(ViewData["CanNominate"] ?? false))
+    {
+        <div class="form-container">
+            <form asp-action="Create" method="post">
+                <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+                
+                <div class="form-group">
+                    <label class="form-label">دورة الجائزة</label>
+                    <select asp-for="CycleId" class="form-select" asp-items="@((SelectList?)ViewData["CycleId"])">
+                        <option value="">اختر دورة الجائزة</option>
+                    </select>
+                    <span asp-validation-for="CycleId" class="text-danger"></span>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">اختر الموظف للترشيح</label>
+                    
+                    @if (ViewData["DepartmentEmployees"] != null)
+                    {
+                        var employees = ViewData["DepartmentEmployees"] as List<EOM.Web.Models.Employee>;
+                        
+                        @if (employees != null && employees.Any())
+                        {
+                            <div class="employee-grid">
+                                @foreach (var employee in employees)
+                                {
+                                    <label class="employee-card" for="employee_@employee.EmployeeId">
+                                        <input type="radio" 
+                                               id="employee_@employee.EmployeeId"
+                                               name="EmployeeId" 
+                                               value="@employee.EmployeeId" 
+                                               required />
+                                        <div class="employee-name">@employee.FirstName @employee.LastName</div>
+                                        <div class="employee-title">@employee.JobTitle</div>
+                                        <div class="employee-id">رقم الموظف: @employee.EmployeeId</div>
+                                    </label>
+                                }
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="no-employees">
+                                <i>👥</i>
+                                <p>لا يوجد موظفون في قسمك متاحون للترشيح</p>
+                            </div>
+                        }
+                    }
+                    <span asp-validation-for="EmployeeId" class="text-danger"></span>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">المستندات الداعمة (اختياري)</label>
+                    <input asp-for="SupportingDocPath" class="form-select" placeholder="رابط أو مسار المستندات الداعمة" />
+                    <span asp-validation-for="SupportingDocPath" class="text-danger"></span>
+                </div>
+
+                <button type="submit" class="submit-btn">
+                    ترشيح الموظف والانتقال للتقييم
+                </button>
+            </form>
+        </div>
+    }
+}
+
+<script>
+    // Add interactivity for employee selection
+    document.querySelectorAll('.employee-card').forEach(card => {
+        card.addEventListener('click', function() {
+            // Remove selected class from all cards
+            document.querySelectorAll('.employee-card').forEach(c => c.classList.remove('selected'));
+            
+            // Add selected class to clicked card
+            this.classList.add('selected');
+            
+            // Check the radio button
+            const radio = this.querySelector('input[type="radio"]');
+            if (radio) {
+                radio.checked = true;
+            }
+        });
+    });
+</script>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

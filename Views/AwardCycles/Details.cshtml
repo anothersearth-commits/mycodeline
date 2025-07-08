@@ -1,0 +1,234 @@
+@model EOM.Web.Models.AwardCycle
+
+@{
+    ViewData["Title"] = "تفاصيل الدورة";
+}
+
+<div class="glass-fade-in">
+    <div class="page-header">
+        <h1>تفاصيل الدورة</h1>
+        <div class="d-flex gap-2">
+            <a href="@Url.Action("Index")" class="btn btn-secondary">
+                ← العودة للقائمة
+            </a>
+            @if (User.IsInRole("EOM-Admin"))
+            {
+                <a href="@Url.Action("Edit", new { id = Model.CycleId })" class="btn btn-primary">
+                    ✏️ تعديل
+                </a>
+            }
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h3>معلومات الدورة</h3>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="stat-card">
+                                <div style="font-size: 2rem; margin-bottom: 0.5rem;">🏆</div>
+                                <h6>نوع الجائزة</h6>
+                                <p class="text-primary">@Model.AwardType.Name</p>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="stat-card">
+                                <div style="font-size: 2rem; margin-bottom: 0.5rem;">📅</div>
+                                <h6>الشهر والسنة</h6>
+                                <p class="text-primary">@Model.Month/@Model.Year</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="stat-card">
+                                <div style="font-size: 2rem; margin-bottom: 0.5rem;">🚀</div>
+                                <h6>بداية الترشيح</h6>
+                                <p class="text-primary">@Model.NominationStart.ToString("dd/MM/yyyy - HH:mm")</p>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="stat-card">
+                                <div style="font-size: 2rem; margin-bottom: 0.5rem;">🏁</div>
+                                <h6>نهاية الترشيح</h6>
+                                <p class="text-primary">@Model.NominationEnd.ToString("dd/MM/yyyy - HH:mm")</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="stat-card">
+                                <div style="font-size: 2rem; margin-bottom: 0.5rem;">📊</div>
+                                <h6>حالة الدورة</h6>
+                                <p>
+                                    @switch (Model.Status)
+                                    {
+                                        case CycleStatus.Pending:
+                                            <span class="badge badge-secondary">في الانتظار</span>
+                                            break;
+                                        case CycleStatus.Nomination:
+                                            <span class="badge badge-primary">باب الترشيح مفتوح</span>
+                                            break;
+                                        case CycleStatus.Evaluating:
+                                            <span class="badge badge-warning">باب التقييم مفتوح</span>
+                                            break;
+                                        case CycleStatus.Closed:
+                                            <span class="badge badge-success">مغلقة</span>
+                                            break;
+                                        case CycleStatus.Published:
+                                            <span class="badge badge-info">منشورة</span>
+                                            break;
+                                    }
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h4>إحصائيات الدورة</h4>
+                </div>
+                <div class="card-body">
+                    <div class="stat-card text-center">
+                        <div class="stat-number">@Model.Nominations.Count</div>
+                        <div class="stat-label">إجمالي الترشيحات</div>
+                    </div>
+
+                    <div class="stat-card text-center">
+                        <div class="stat-number">@Model.Nominations.Where(n => n.Evaluations.Any()).Count()</div>
+                        <div class="stat-label">الترشيحات المقيمة</div>
+                    </div>
+
+                    <div class="stat-card text-center">
+                        <div class="stat-number">@Model.Nominations.SelectMany(n => n.Evaluations).Count()</div>
+                        <div class="stat-label">إجمالي التقييمات</div>
+                    </div>
+                </div>
+            </div>
+
+            @if (User.IsInRole("EOM-Committee") || User.IsInRole("EOM-Admin"))
+            {
+                <div class="card mt-4">
+                    <div class="card-header">
+                        <h4>إجراءات الدورة</h4>
+                    </div>
+                    <div class="card-body">
+                        @if (Model.Status == CycleStatus.Pending)
+                        {
+                            <form method="post" asp-action="OpenNomination" asp-route-id="@Model.CycleId">
+                                <button type="submit" class="btn btn-success w-100 mb-2">
+                                    ▶️ فتح الترشيح
+                                </button>
+                            </form>
+                        }
+                        else if (Model.Status == CycleStatus.Nomination)
+                        {
+                            <form method="post" asp-action="CloseNomination" asp-route-id="@Model.CycleId">
+                                <button type="submit" class="btn btn-warning w-100 mb-2">
+                                    ⏸️ إغلاق الترشيح
+                                </button>
+                            </form>
+                        }
+                        else if (Model.Status == CycleStatus.Evaluating)
+                        {
+                            <form method="post" asp-action="CloseCycle" asp-route-id="@Model.CycleId">
+                                <button type="submit" class="btn btn-danger w-100 mb-2">
+                                    ⏹️ إغلاق الدورة
+                                </button>
+                            </form>
+                        }
+                        
+                        <div class="mt-3">
+                            <small class="text-muted">
+                                @if (Model.Status == CycleStatus.Pending)
+                                {
+                                    <span>يمكن فتح الترشيح لبدء الدورة</span>
+                                }
+                                else if (Model.Status == CycleStatus.Nomination)
+                                {
+                                    <span>الترشيح مفتوح حالياً</span>
+                                }
+                                else if (Model.Status == CycleStatus.Evaluating)
+                                {
+                                    <span>التقييم مفتوح حالياً</span>
+                                }
+                                else if (Model.Status == CycleStatus.Closed)
+                                {
+                                    <span>الدورة مغلقة</span>
+                                }
+                                else if (Model.Status == CycleStatus.Published)
+                                {
+                                    <span>تم نشر نتائج الدورة</span>
+                                }
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+
+    @if (Model.Nominations.Any())
+    {
+        <div class="card mt-4">
+            <div class="card-header">
+                <h4>الترشيحات</h4>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>اسم المرشح</th>
+                                <th>المسمى الوظيفي</th>
+                                <th>المرشح من قبل</th>
+                                <th>تاريخ الترشيح</th>
+                                <th>عدد التقييمات</th>
+                                <th>الإجراءات</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var nomination in Model.Nominations)
+                            {
+                                <tr>
+                                    <td>@nomination.Employee.FirstName @nomination.Employee.LastName</td>
+                                    <td>@nomination.Employee.JobTitle</td>
+                                    <td>@nomination.Manager.FirstName @nomination.Manager.LastName</td>
+                                    <td>@nomination.CreatedAt.ToString("dd/MM/yyyy")</td>
+                                    <td>
+                                        <span class="badge badge-info">@nomination.Evaluations.Count</span>
+                                    </td>
+                                    <td>
+                                        <a href="@Url.Action("Details", "Nominations", new { id = nomination.NominationId })" class="btn btn-sm btn-info">
+                                            👁️ تفاصيل
+                                        </a>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="card mt-4">
+            <div class="card-body text-center py-5">
+                <div style="font-size: 4rem; margin-bottom: 1rem;">📋</div>
+                <h5>لا توجد ترشيحات</h5>
+                <p class="text-muted">لم يتم إضافة أي ترشيحات لهذه الدورة حتى الآن</p>
+            </div>
+        </div>
+    }
+</div>

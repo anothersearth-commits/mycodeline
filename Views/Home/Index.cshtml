@@ -1,0 +1,88 @@
+@{
+    ViewData["Title"] = "الصفحة الرئيسية";
+}
+
+<div class="glass-fade-in">
+    <div class="text-center mb-5">
+        <h1 class="display-4 mb-3">مرحباً بكم في نظام موظف الشهر</h1>
+        <p class="lead">نظام إدارة ترشيحات وتقييمات جوائز الموظف المثالي</p>
+    </div>
+    
+    <div class="row g-4">
+        <div class="col-md-4">
+            <div class="stat-card text-center">
+                <div class="mb-3">
+                    <i class="fas fa-calendar-alt" style="font-size: 3rem; color: var(--glass-text-primary);"></i>
+                </div>
+                <h5 class="card-title">إدارة الدورات</h5>
+                <p class="card-text">إنشاء وإدارة دورات الجوائز الشهرية</p>
+                <a href="@Url.Action("Index", "AwardCycles")" class="btn btn-primary">عرض الدورات</a>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="stat-card text-center">
+                <div class="mb-3">
+                    <i class="fas fa-user-plus" style="font-size: 3rem; color: var(--glass-text-primary);"></i>
+                </div>
+                <h5 class="card-title">الترشيحات</h5>
+                <p class="card-text">ترشيح الموظفين وإدخال التقييمات</p>
+                <a href="@Url.Action("Index", "Nominations")" class="btn btn-success">عرض الترشيحات</a>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="stat-card text-center">
+                <div class="mb-3">
+                    <i class="fas fa-star" style="font-size: 3rem; color: var(--glass-text-primary);"></i>
+                </div>
+                <h5 class="card-title">التقييمات</h5>
+                <p class="card-text">تقييم المرشحين من قبل اللجنة</p>
+                <a href="@Url.Action("Index", "Evaluations")" class="btn btn-warning">عرض التقييمات</a>
+            </div>
+        </div>
+    </div>
+
+    @if (User.IsInRole("EOM-Admin"))
+    {
+        <div class="row mt-5">
+            <div class="col-12">
+                <div class="glass-card">
+                    <div class="card-header">
+                        <h4 class="mb-0">إحصائيات النظام</h4>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-md-3">
+                                <div class="stat-card">
+                                    <div class="stat-number">25</div>
+                                    <div class="stat-label">الترشيحات النشطة</div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="stat-card">
+                                    <div class="stat-number">8</div>
+                                    <div class="stat-label">التقييمات المكتملة</div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="stat-card">
+                                    <div class="stat-number">12</div>
+                                    <div class="stat-label">الأقسام المشاركة</div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="stat-card">
+                                    <div class="stat-number">3</div>
+                                    <div class="stat-label">الدورات النشطة</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@section Scripts {
+    <script src="https://kit.fontawesome.com/your-fontawesome-kit.js"></script>
+}

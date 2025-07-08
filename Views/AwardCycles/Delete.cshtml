@@ -1,0 +1,112 @@
+@model EOM.Web.Models.AwardCycle
+
+@{
+    ViewData["Title"] = "حذف الدورة";
+}
+
+<div class="glass-fade-in">
+    <div class="page-header">
+        <h1>حذف الدورة</h1>
+        <a href="@Url.Action("Index")" class="btn btn-secondary">
+            ← العودة للقائمة
+        </a>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h3>⚠️ تأكيد حذف الدورة</h3>
+        </div>
+        <div class="card-body">
+            <div class="alert alert-danger">
+                <h5 class="alert-heading">تحذير!</h5>
+                <p>أنت على وشك حذف دورة الجائزة. هذا الإجراء لا يمكن التراجع عنه.</p>
+                <hr>
+                <p class="mb-0">تأكد من أن هذا ما تريد فعله قبل المتابعة.</p>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="stat-card">
+                        <h6>تفاصيل الدورة</h6>
+                        <table class="table table-borderless">
+                            <tr>
+                                <td><strong>نوع الجائزة:</strong></td>
+                                <td>@Model.AwardType.Name</td>
+                            </tr>
+                            <tr>
+                                <td><strong>الشهر/السنة:</strong></td>
+                                <td>@Model.Month/@Model.Year</td>
+                            </tr>
+                            <tr>
+                                <td><strong>فترة الترشيح:</strong></td>
+                                <td>@Model.NominationStart.ToString("dd/MM/yyyy") - @Model.NominationEnd.ToString("dd/MM/yyyy")</td>
+                            </tr>
+                            <tr>
+                                <td><strong>الحالة:</strong></td>
+                                <td>
+                                    @switch (Model.Status)
+                                    {
+                                        case CycleStatus.Pending:
+                                            <span class="badge badge-secondary">في الانتظار</span>
+                                            break;
+                                        case CycleStatus.Nomination:
+                                            <span class="badge badge-primary">باب الترشيح مفتوح</span>
+                                            break;
+                                        case CycleStatus.Evaluating:
+                                            <span class="badge badge-warning">باب التقييم مفتوح</span>
+                                            break;
+                                        case CycleStatus.Closed:
+                                            <span class="badge badge-success">مغلقة</span>
+                                            break;
+                                        case CycleStatus.Published:
+                                            <span class="badge badge-info">منشورة</span>
+                                            break;
+                                    }
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="stat-card">
+                        <h6>تأثير الحذف</h6>
+                        <div class="d-flex align-items-center mb-3">
+                            <div style="font-size: 1.5rem; margin-left: 1rem;">📝</div>
+                            <div>
+                                <strong>الترشيحات</strong>
+                                <br>
+                                <small class="text-muted">سيتم حذف جميع الترشيحات المرتبطة بهذه الدورة</small>
+                            </div>
+                        </div>
+                        <div class="d-flex align-items-center mb-3">
+                            <div style="font-size: 1.5rem; margin-left: 1rem;">📊</div>
+                            <div>
+                                <strong>التقييمات</strong>
+                                <br>
+                                <small class="text-muted">سيتم حذف جميع التقييمات والدرجات</small>
+                            </div>
+                        </div>
+                        <div class="d-flex align-items-center">
+                            <div style="font-size: 1.5rem; margin-left: 1rem;">📈</div>
+                            <div>
+                                <strong>التقارير</strong>
+                                <br>
+                                <small class="text-muted">لن تظهر هذه الدورة في التقارير</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <form asp-action="Delete" method="post" class="mt-4">
+                <input type="hidden" asp-for="CycleId" />
+                <div class="d-flex justify-content-end gap-2">
+                    <a href="@Url.Action("Index")" class="btn btn-secondary">إلغاء</a>
+                    <button type="submit" class="btn btn-danger" onclick="return confirm('هل أنت متأكد من حذف هذه الدورة؟')">
+                        🗑️ حذف الدورة
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
