@@ -196,4 +196,5 @@
 /Users/majid/Documents/EOM/obj/Debug/net9.0/EOM.Web.pdb
 /Users/majid/Documents/EOM/obj/Debug/net9.0/EOM.Web.genruntimeconfig.cache
 /Users/majid/Documents/EOM/obj/Debug/net9.0/ref/EOM.Web.dll
-/Users/majid/Documents/EOM/obj/Debug/net9.0/compressed/m5v2l7k76g-taek42kiqf.gz
+/Users/majid/Documents/EOM/obj/Debug/net9.0/compressed/m5v2l7k76g-6ejoq3ilkj.gz
+/Users/majid/Documents/EOM/obj/Debug/net9.0/compressed/km5ah49z3k-rf866z8cr0.gz

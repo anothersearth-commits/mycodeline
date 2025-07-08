@@ -88,7 +88,7 @@
         {
             <div class="quota-info @(existingNominations >= quota?.MaxNominations ? "danger" : (existingNominations >= quota?.MaxNominations * 0.8 ? "warning" : "success"))">
                 <div class="quota-text">
-                    حصة الترشيحات لقسمك: @(quota?.MaxNominations - existingNominations) متبقية من @quota?.MaxNominations
+                    حصة الترشيحات للدائرة: @(quota?.MaxNominations - existingNominations) متبقية من @quota?.MaxNominations
                 </div>
                 <div class="quota-number">
                     @existingNominations/@quota?.MaxNominations
@@ -128,6 +128,7 @@
 
                     <div class="form-group">
                         <label class="form-label">اختر الموظف للترشيح</label>
+                        <div class="form-text text-muted mb-2">ملاحظة: الموظفون المرشحون بالفعل في هذه الدورة غير مدرجين في القائمة</div>
                         
                         @if (ViewData["DepartmentEmployees"] != null)
                         {

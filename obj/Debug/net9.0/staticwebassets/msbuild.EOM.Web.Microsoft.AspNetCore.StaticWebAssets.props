@@ -30,8 +30,8 @@
       <RelatedAsset></RelatedAsset>
       <AssetTraitName></AssetTraitName>
       <AssetTraitValue></AssetTraitValue>
-      <Fingerprint>taek42kiqf</Fingerprint>
-      <Integrity>m+5hcIYL9rzYm+lx9T0YKyhxJoP3h0QwSyMLzVSAEzA=</Integrity>
+      <Fingerprint>6ejoq3ilkj</Fingerprint>
+      <Integrity>0uGZ4ojITcLFhHbv1CZzAY5RE2vpmtGQATD/4mp7vCU=</Integrity>
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
       <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
       <OriginalItemSpec>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..\staticwebassets\css\clean-design.css'))</OriginalItemSpec>
@@ -1223,6 +1223,24 @@
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
       <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
       <OriginalItemSpec>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..\staticwebassets\lib\jquery\LICENSE.txt'))</OriginalItemSpec>
+    </StaticWebAsset>
+    <StaticWebAsset Include="$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..\staticwebassets\uploads\nominations\README.md'))">
+      <SourceType>Package</SourceType>
+      <SourceId>EOM.Web</SourceId>
+      <ContentRoot>$(MSBuildThisFileDirectory)..\staticwebassets\</ContentRoot>
+      <BasePath>_content/EOM.Web</BasePath>
+      <RelativePath>uploads/nominations/README.md</RelativePath>
+      <AssetKind>All</AssetKind>
+      <AssetMode>All</AssetMode>
+      <AssetRole>Primary</AssetRole>
+      <RelatedAsset></RelatedAsset>
+      <AssetTraitName></AssetTraitName>
+      <AssetTraitValue></AssetTraitValue>
+      <Fingerprint>rf866z8cr0</Fingerprint>
+      <Integrity>yd0eSkBv7CqKpEYaH0D7X28kUKIRom8qTYq6k9b1e+Q=</Integrity>
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+      <OriginalItemSpec>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..\staticwebassets\uploads\nominations\README.md'))</OriginalItemSpec>
     </StaticWebAsset>
   </ItemGroup>
 </Project>

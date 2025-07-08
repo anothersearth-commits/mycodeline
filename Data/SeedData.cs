@@ -486,7 +486,7 @@ public static class SeedData
                     Year = currentDate.Year,
                     NominationStart = new DateTime(currentDate.Year, currentDate.Month, 1),
                     NominationEnd = new DateTime(currentDate.Year, currentDate.Month, 15),
-                    Status = CycleStatus.Nomination
+                    Status = CycleStatus.Pending  // Changed from Nomination to Pending
                 };
 
                 context.AwardCycles.Add(awardCycle);

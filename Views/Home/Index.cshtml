@@ -3,6 +3,8 @@
     var openCycles = ViewBag.OpenCycles as List<EOM.Web.Models.AwardCycle> ?? new List<EOM.Web.Models.AwardCycle>();
     var hasNominations = ViewBag.HasNominations as bool? ?? false;
     var pastCycles = ViewBag.PastCycles as List<EOM.Web.Models.AwardCycle> ?? new List<EOM.Web.Models.AwardCycle>();
+    var currentNominations = ViewBag.CurrentNominations as List<EOM.Web.Models.Nomination> ?? new List<EOM.Web.Models.Nomination>();
+    var recentCycles = ViewBag.RecentCycles as List<EOM.Web.Models.AwardCycle> ?? new List<EOM.Web.Models.AwardCycle>();
 }
 
 <div class="glass-fade-in">
@@ -60,50 +62,134 @@
         </div>
     }
 
-    @if (User.IsInRole("Manager") && pastCycles.Any())
+    @if (User.IsInRole("Manager") && currentNominations.Any())
     {
-        <div class="row mb-4">
+        <div class="row mb-5">
             <div class="col-12">
                 <div class="glass-card">
-                    <div class="card-header bg-primary text-white">
-                        <h5 class="mb-0"><i class="fas fa-history me-2"></i>الدورات السابقة</h5>
+                    <div class="card-header bg-success text-white">
+                        <h4 class="mb-0">
+                            <i class="fas fa-user-check me-2"></i>
+                            ترشيحاتي الحالية
+                        </h4>
                     </div>
                     <div class="card-body">
                         <div class="table-responsive">
-                            <table class="table table-sm table-hover align-middle">
+                            <table class="table table-hover align-middle">
                                 <thead>
                                     <tr>
-                                        <th>الشهر/السنة</th>
+                                        <th>اسم الموظف</th>
                                         <th>نوع الجائزة</th>
-                                        <th>الحالة</th>
+                                        <th>الشهر/السنة</th>
+                                        <th>تاريخ الترشيح</th>
                                         <th>الإجراءات</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    @foreach (var cycle in pastCycles)
+                                    @foreach (var nomination in currentNominations)
                                     {
                                         <tr>
-                                            <td>@cycle.Month/@cycle.Year</td>
-                                            <td>@cycle.AwardType?.Name</td>
                                             <td>
-                                                @if (cycle.Status == CycleStatus.Closed)
-                                                {
-                                                    <span class="badge bg-dark">مغلقة</span>
-                                                }
-                                                else if (cycle.Status == CycleStatus.Published)
-                                                {
-                                                    <span class="badge bg-success">منشورة</span>
-                                                }
+                                                <strong>@nomination.Employee?.FirstName @nomination.Employee?.LastName</strong>
+                                                <br>
+                                                <small class="text-muted">@nomination.Employee?.JobTitle</small>
                                             </td>
                                             <td>
-                                                <a href="@Url.Action("Details", "AwardCycles", new { id = cycle.CycleId })" class="btn btn-outline-info btn-sm">
-                                                    تفاصيل
+                                                <span class="badge bg-info text-dark">
+                                                    @nomination.AwardCycle?.AwardType?.Name
+                                                </span>
+                                            </td>
+                                            <td>@nomination.AwardCycle?.Month/@nomination.AwardCycle?.Year</td>
+                                            <td>@nomination.CreatedAt.ToString("dd/MM/yyyy HH:mm")</td>
+                                            <td class="d-flex gap-1">
+                                                <a href="@Url.Action("Score", "Nominations", new { id = nomination.NominationId })" 
+                                                   class="btn btn-outline-primary btn-sm">
+                                                    <i class="fas fa-star me-1"></i>
+                                                    تقييم
                                                 </a>
+                                                @if (User.IsInRole("Manager") || User.IsInRole("EOM-Admin"))
+                                                {
+                                                    <a href="@Url.Action("Delete", "Nominations", new { id = nomination.NominationId })" 
+                                                       class="btn btn-outline-danger btn-sm" 
+                                                       onclick="return confirm('هل أنت متأكد من حذف هذا الترشيح؟');">
+                                                        <i class="fas fa-trash-alt me-1"></i>
+                                                        حذف
+                                                    </a>
+                                                }
                                             </td>
                                         </tr>
                                     }
                                 </tbody>
                             </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    @if (User.IsInRole("Manager") && recentCycles.Any())
+    {
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="glass-card">
+                    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0"><i class="fas fa-calendar-alt me-2"></i>دورات الجوائز الأخيرة</h5>
+                        <a href="@Url.Action("Cycles", "Nominations")" class="btn btn-light btn-sm">
+                            <i class="fas fa-th-large me-1"></i>
+                            عرض جميع الدورات
+                        </a>
+                    </div>
+                    <div class="card-body">
+                        <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-3">
+                            @foreach (var cycle in recentCycles)
+                            {
+                                <div class="col">
+                                    <div class="cycle-card h-100" onclick="location.href='@Url.Action("CycleDetails", "Nominations", new { id = cycle.CycleId })'">
+                                        <div class="cycle-header">
+                                            <h6 class="cycle-title">@cycle.AwardType?.Name</h6>
+                                            <div class="cycle-date">@cycle.Month/@cycle.Year</div>
+                                        </div>
+                                        
+                                        <div class="cycle-status @(cycle.Status.ToString().ToLower() switch {
+                                            "nomination" => "status-nomination",
+                                            "evaluation" => "status-evaluation", 
+                                            "completed" => "status-completed",
+                                            _ => "status-closed"
+                                        })">
+                                            @(cycle.Status.ToString() switch {
+                                                "Nomination" => "مرحلة الترشيح",
+                                                "Evaluation" => "مرحلة التقييم",
+                                                "Completed" => "مكتملة",
+                                                _ => "مغلقة"
+                                            })
+                                        </div>
+                                        
+                                        <div class="nominations-info">
+                                            <div class="nominations-count">
+                                                <div>
+                                                    <div class="count-number">@cycle.Nominations.Count()</div>
+                                                    <div class="count-label">ترشيحاتك</div>
+                                                </div>
+                                                @if (cycle.Nominations.Any())
+                                                {
+                                                    <div class="text-end">
+                                                        <small class="text-muted">
+                                                            @cycle.Nominations.Count(n => n.Evaluations != null && n.Evaluations.Any()) مُقيّمة من اللجنة
+                                                        </small>
+                                                    </div>
+                                                }
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="cycle-actions">
+                                            <button class="view-details-btn" onclick="event.stopPropagation(); location.href='@Url.Action("CycleDetails", "Nominations", new { id = cycle.CycleId })'">
+                                                عرض التفاصيل
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
                         </div>
                     </div>
                 </div>
@@ -215,6 +301,112 @@
 
 .alert-card .card-header {
     border-radius: 12px 12px 0 0 !important;
+}
+
+/* Cycle Cards Styles */
+.cycle-card {
+    background: #ffffff;
+    border: 1px solid #dee2e6;
+    border-radius: 12px;
+    padding: 1.25rem;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.cycle-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+    border-color: #0d6efd;
+}
+
+.cycle-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 0.75rem;
+}
+
+.cycle-title {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #2563eb;
+    margin: 0;
+    line-height: 1.2;
+}
+
+.cycle-date {
+    font-size: 0.8rem;
+    color: #6c757d;
+    background: #f8f9fa;
+    padding: 0.2rem 0.6rem;
+    border-radius: 15px;
+    white-space: nowrap;
+}
+
+.cycle-status {
+    display: inline-block;
+    padding: 0.4rem 0.8rem;
+    border-radius: 15px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    margin-bottom: 0.75rem;
+}
+
+.status-nomination { background: #e3f2fd; color: #1565c0; }
+.status-evaluation { background: #fff3e0; color: #ef6c00; }
+.status-completed { background: #e8f5e8; color: #2e7d32; }
+.status-closed { background: #f5f5f5; color: #616161; }
+
+.nominations-info {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 0.75rem;
+    margin-bottom: 0.75rem;
+    flex: 1;
+}
+
+.nominations-count {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.count-number {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #0d6efd;
+    line-height: 1;
+}
+
+.count-label {
+    color: #6c757d;
+    font-size: 0.8rem;
+    margin-top: 0.2rem;
+}
+
+.cycle-actions {
+    margin-top: auto;
+}
+
+.view-details-btn {
+    width: 100%;
+    background: linear-gradient(135deg, #0d6efd, #0b5ed7);
+    border: none;
+    color: white;
+    padding: 0.6rem 1rem;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 0.85rem;
+    transition: all 0.3s ease;
+}
+
+.view-details-btn:hover {
+    background: linear-gradient(135deg, #0b5ed7, #0a58ca);
+    transform: translateY(-1px);
 }
 </style>
 

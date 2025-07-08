@@ -35,7 +35,28 @@ public class HomeController : Controller
             
         ViewBag.OpenCycles = openCycles;
 
-        // Get past cycles (closed or published) for reference
+        // Get recent cycles for managers to show as cards
+        if (User.IsInRole("Manager"))
+        {
+            var employeeId = int.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "0");
+            
+            // Get last 6 cycles with manager's nominations
+            var recentCycles = await _context.AwardCycles
+                .Include(ac => ac.AwardType)
+                .Include(ac => ac.Nominations.Where(n => n.ManagerId == employeeId))
+                .ThenInclude(n => n.Employee)
+                .Include(ac => ac.Nominations.Where(n => n.ManagerId == employeeId))
+                .ThenInclude(n => n.ManagerScores)
+                .Include(ac => ac.Nominations.Where(n => n.ManagerId == employeeId))
+                .ThenInclude(n => n.Evaluations)
+                .OrderByDescending(ac => ac.Year)
+                .ThenByDescending(ac => ac.Month)
+                .Take(6)
+                .ToListAsync();
+            ViewBag.RecentCycles = recentCycles;
+        }
+        
+        // Get past cycles (closed or published) for reference - for non-managers
         var pastCycles = await _context.AwardCycles
             .Include(a => a.AwardType)
             .Where(a => a.Status == CycleStatus.Closed || a.Status == CycleStatus.Published)
@@ -45,13 +66,22 @@ public class HomeController : Controller
             .ToListAsync();
         ViewBag.PastCycles = pastCycles;
         
-        // Get user's employee ID if they are a manager
+        // Get additional manager data if they are a manager
         if (User.IsInRole("Manager"))
         {
-            var employeeId = int.Parse(User.FindFirst("EmployeeId")?.Value ?? "0");
+            var employeeId = int.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "0");
             var hasNominations = await _context.Nominations
                 .AnyAsync(n => n.ManagerId == employeeId && openCycles.Select(c => c.CycleId).Contains(n.CycleId));
             ViewBag.HasNominations = hasNominations;
+
+            // Get current nominations for the current cycles
+            var currentNominations = await _context.Nominations
+                .Include(n => n.Employee)
+                .Include(n => n.AwardCycle)
+                .ThenInclude(c => c.AwardType)
+                .Where(n => n.ManagerId == employeeId && openCycles.Select(c => c.CycleId).Contains(n.CycleId))
+                .ToListAsync();
+            ViewBag.CurrentNominations = currentNominations;
         }
         
         return View();

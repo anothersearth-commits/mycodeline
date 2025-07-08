@@ -15,6 +15,7 @@ public class ApplicationDbContext : DbContext
     public DbSet<EmployeeManager> EmployeeManagers { get; set; }
     
     // EOM Tables
+    public DbSet<Department> Departments { get; set; }
     public DbSet<AwardType> AwardTypes { get; set; }
     public DbSet<AwardCycle> AwardCycles { get; set; }
     public DbSet<Criterion> Criteria { get; set; }
@@ -42,6 +43,12 @@ public class ApplicationDbContext : DbContext
             .WithMany(e => e.ManagedEmployees)
             .HasForeignKey(em => em.ManagerId)
             .OnDelete(DeleteBehavior.Restrict);
+
+        // Configure Department relationship
+        builder.Entity<Employee>()
+            .HasOne(e => e.Department)
+            .WithMany(d => d.Employees)
+            .HasForeignKey(e => e.DepartmentId);
 
         builder.Entity<CommitteeMember>()
             .HasOne(cm => cm.Employee)

@@ -1,6 +1,7 @@
 @model EOM.Web.Models.Nomination
 @using EOM.Web.Models
 @using System.Text.Json
+@using System.IO
 
 @{
     ViewData["Title"] = "تقييم المرشح";
@@ -42,6 +43,16 @@
     .grading-scale strong {
         color: #212529;
     }
+    .accordion-button {
+        text-align: right;
+        position: relative;
+    }
+    .accordion-button .badge {
+        position: absolute;
+        left: 1rem;
+        top: 50%;
+        transform: translateY(-50%);
+    }
 </style>
 
 <div class="container py-4">
@@ -62,8 +73,11 @@
         </div>
     </div>
 
-    <form asp-action="Score" method="post">
-        <div asp-validation-summary="All" class="text-danger alert alert-danger"></div>
+    <form asp-action="Score" method="post" enctype="multipart/form-data">
+        @if (!ViewData.ModelState.IsValid)
+        {
+            <div asp-validation-summary="All" class="alert alert-danger"></div>
+        }
         <input type="hidden" name="id" value="@Model.NominationId" />
 
         <div class="accordion" id="criteriaAccordion">
@@ -73,12 +87,12 @@
                      data-criterion-id="@criterion.CriterionId" 
                      data-criterion-weight="@criterion.WeightPercent">
                     <h2 class="accordion-header" id="heading-@criterion.CriterionId">
-                        <button class="accordion-button @(idx == 0 ? "" : "collapsed")" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-@criterion.CriterionId" aria-expanded="@(idx == 0 ? "true" : "false")" aria-controls="collapse-@criterion.CriterionId">
+                        <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-@criterion.CriterionId" aria-expanded="true" aria-controls="collapse-@criterion.CriterionId">
                             @criterion.Name
-                            <span class="ms-auto badge bg-info text-dark fw-normal">الوزن: @criterion.WeightPercent%</span>
+                            <span class="badge bg-info text-dark fw-normal me-auto">الوزن: @criterion.WeightPercent%</span>
                         </button>
                     </h2>
-                    <div id="collapse-@criterion.CriterionId" class="accordion-collapse collapse @(idx == 0 ? "show" : "")" aria-labelledby="heading-@criterion.CriterionId">
+                    <div id="collapse-@criterion.CriterionId" class="accordion-collapse collapse show" aria-labelledby="heading-@criterion.CriterionId">
                         <div class="accordion-body p-0">
                             <ul class="list-group list-group-flush">
                                 @foreach (var sub in criterion.SubCriteria.OrderBy(sc => sc.SubCriteriaCode))
@@ -108,6 +122,27 @@
                     </div>
                 </div>
             }
+        </div>
+
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5 class="mb-0">المستندات الداعمة</h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label for="supportingDoc" class="form-label">إرفاق ملف PDF داعم (اختياري)</label>
+                    <input class="form-control" type="file" id="supportingDoc" name="supportingDoc" accept="application/pdf,.pdf">
+                </div>
+                @if (!string.IsNullOrEmpty(Model.SupportingDocPath))
+                {
+                    <div class="mt-2">
+                        <span>المستند الحالي: </span>
+                        <a href="@Url.Content("~" + Model.SupportingDocPath)" target="_blank">
+                            <i class="fas fa-file-pdf"></i> @System.IO.Path.GetFileName(Model.SupportingDocPath)
+                        </a>
+                    </div>
+                }
+            </div>
         </div>
 
         <div class="d-grid mt-4">
@@ -155,6 +190,27 @@
             const scoreInputs = document.querySelectorAll('.score-input');
             const totalScoreEl = document.getElementById('totalScore');
 
+            function validateAndRecalculate(input) {
+                const value = parseInt(input.value, 10);
+                const max = parseInt(input.getAttribute('max'), 10);
+
+                if (value > max) {
+                    input.value = max;
+                    // Optional: show a temporary warning
+                    const parent = input.closest('.col-lg-2');
+                    let warning = parent.querySelector('.text-danger');
+                    if (!warning) {
+                        warning = document.createElement('div');
+                        warning.className = 'text-danger small mt-1';
+                        parent.appendChild(warning);
+                    }
+                    warning.textContent = `القيمة القصوى هي ${max}`;
+                    setTimeout(() => warning.remove(), 2000);
+                }
+                
+                calculateTotalScore();
+            }
+
             function calculateTotalScore() {
                 let totalWeightedScore = 0;
                 const criteriaElements = document.querySelectorAll('.accordion-item');
@@ -181,7 +237,7 @@
             }
 
             scoreInputs.forEach(input => {
-                input.addEventListener('input', calculateTotalScore);
+                input.addEventListener('input', () => validateAndRecalculate(input));
             });
 
             calculateTotalScore();

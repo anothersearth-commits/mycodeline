@@ -12,44 +12,18 @@ namespace EOM.Web.Controllers;
 public class NominationsController : Controller
 {
     private readonly ApplicationDbContext _context;
+    private readonly IWebHostEnvironment _webHostEnvironment;
 
-    public NominationsController(ApplicationDbContext context)
+    public NominationsController(ApplicationDbContext context, IWebHostEnvironment webHostEnvironment)
     {
         _context = context;
+        _webHostEnvironment = webHostEnvironment;
     }
 
-    // GET: Nominations
-    public async Task<IActionResult> Index()
+    // GET: Nominations - Redirect to Home page since it has better cycle-based view
+    public IActionResult Index()
     {
-        var currentEmployeeId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
-        var currentEmployee = await _context.Employees.FindAsync(currentEmployeeId);
-        
-        IQueryable<Nomination> nominationsQuery = _context.Nominations
-            .Include(n => n.AwardCycle)
-            .ThenInclude(ac => ac.AwardType)
-            .Include(n => n.ManagerScores)
-            .ThenInclude(ms => ms.SubCriteria);
-
-        // If user is a manager, show only their nominations
-        if (User.IsInRole("Manager"))
-        {
-            nominationsQuery = nominationsQuery.Where(n => n.ManagerId == currentEmployeeId);
-        }
-        // If admin, show all nominations
-        
-        var nominations = await nominationsQuery.ToListAsync();
-        
-        // Get manager's department quota if they're a manager
-        if (User.IsInRole("Manager") && currentEmployee != null)
-        {
-            var departmentQuota = await _context.DepartmentQuotas
-                .Include(dq => dq.AwardType)
-                .FirstOrDefaultAsync(dq => dq.DepartmentId == currentEmployee.DepartmentId);
-            
-            ViewData["DepartmentQuota"] = departmentQuota;
-        }
-        
-        return View(nominations);
+        return RedirectToAction("Index", "Home");
     }
 
     // GET: Nominations/Details/5
@@ -114,19 +88,26 @@ public class NominationsController : Controller
             return RedirectToAction(nameof(Index));
         }
 
+        int selectedCycleId = cycleId ?? activeCycles.First().CycleId;
+
         // Get department quota for the manager
         var departmentQuota = await _context.DepartmentQuotas
             .Include(dq => dq.AwardType)
             .FirstOrDefaultAsync(dq => dq.DepartmentId == currentEmployee.DepartmentId);
 
-        // Get employees in the same department (managed by this manager)
+        // Get already nominated employees in this cycle
+        var nominatedEmployeeIds = await _context.Nominations
+            .Where(n => n.CycleId == selectedCycleId)
+            .Select(n => n.EmployeeId)
+            .ToListAsync();
+
+        // Get employees in the same department (managed by this manager) excluding already nominated ones
         var departmentEmployees = await _context.Employees
             .Where(e => e.DepartmentId == currentEmployee.DepartmentId 
                        && e.EmployeeId != currentEmployeeId 
-                       && e.IsActive)
+                       && e.IsActive
+                       && !nominatedEmployeeIds.Contains(e.EmployeeId))
             .ToListAsync();
-
-        int selectedCycleId = cycleId ?? activeCycles.First().CycleId;
 
         // Count nominations for that specific cycle only
         var existingNominations = await _context.Nominations
@@ -165,7 +146,15 @@ public class NominationsController : Controller
         var selectedEmployee = await _context.Employees.FindAsync(nomination.EmployeeId);
         if (selectedEmployee == null || selectedEmployee.DepartmentId != currentEmployee.DepartmentId)
         {
-            ModelState.AddModelError("EmployeeId", "يمكنك فقط ترشيح الموظفين في قسمك");
+            ModelState.AddModelError("EmployeeId", "يمكنك فقط ترشيح الموظفين في دائرتك");
+        }
+
+        // Check if employee is already nominated in this cycle
+        var existingNomination = await _context.Nominations
+            .FirstOrDefaultAsync(n => n.EmployeeId == nomination.EmployeeId && n.CycleId == nomination.CycleId);
+        if (existingNomination != null)
+        {
+            ModelState.AddModelError("EmployeeId", "هذا الموظف مرشح بالفعل في هذه الدورة");
         }
 
         // Check department quota
@@ -189,6 +178,7 @@ public class NominationsController : Controller
             _context.Add(nomination);
             await _context.SaveChangesAsync();
             
+            TempData["SuccessMessage"] = $"تم ترشيح {selectedEmployee?.FirstName} {selectedEmployee?.LastName} بنجاح";
             return RedirectToAction("Score", new { id = nomination.NominationId });
         }
         
@@ -259,7 +249,7 @@ public class NominationsController : Controller
                     {
                         NominationId = nomination.NominationId,
                         SubCriteriaId = subCriteria.SubCriteriaId,
-                        Score = 0,
+                        Score = null,
                         Note = string.Empty
                     });
                 }
@@ -272,9 +262,10 @@ public class NominationsController : Controller
     // POST: Nominations/Score/5
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Score(int id, List<ManagerScore> managerScores)
+    public async Task<IActionResult> Score(int id, List<ManagerScore> managerScores, IFormFile? supportingDoc)
     {
         var nomination = await _context.Nominations
+            .Include(n => n.Employee)
             .Include(n => n.AwardCycle).ThenInclude(ac => ac.AwardType).ThenInclude(at => at.Criteria).ThenInclude(c => c.SubCriteria)
             .Include(n => n.ManagerScores)
             .FirstOrDefaultAsync(n => n.NominationId == id);
@@ -284,15 +275,66 @@ public class NominationsController : Controller
             return NotFound();
         }
 
+        // Handle file upload (optional)
+        if (supportingDoc != null && supportingDoc.Length > 0)
+        {
+            // Validate file type
+            if (Path.GetExtension(supportingDoc.FileName).ToLower() != ".pdf")
+            {
+                ModelState.AddModelError("supportingDoc", "الرجاء رفع ملف بصيغة PDF فقط.");
+            }
+            else
+            {
+                try
+                {
+                    // Clean up old file if it exists
+                    if (!string.IsNullOrEmpty(nomination.SupportingDocPath))
+                    {
+                        var oldFilePath = Path.Combine(_webHostEnvironment.WebRootPath, nomination.SupportingDocPath.TrimStart('/'));
+                        if (System.IO.File.Exists(oldFilePath))
+                        {
+                            System.IO.File.Delete(oldFilePath);
+                        }
+                    }
+
+                    // Generate unique filename and create directory
+                    var fileName = $"{Guid.NewGuid()}{Path.GetExtension(supportingDoc.FileName)}";
+                    var uploadsFolder = Path.Combine(_webHostEnvironment.WebRootPath, "uploads", "nominations");
+                    Directory.CreateDirectory(uploadsFolder);
+                    var filePath = Path.Combine(uploadsFolder, fileName);
+
+                    // Save the file
+                    using (var fileStream = new FileStream(filePath, FileMode.Create))
+                    {
+                        await supportingDoc.CopyToAsync(fileStream);
+                    }
+                    
+                    // Update nomination with new file path
+                    nomination.SupportingDocPath = $"/uploads/nominations/{fileName}";
+                }
+                catch (Exception ex)
+                {
+                    ModelState.AddModelError("supportingDoc", $"خطأ في رفع الملف: {ex.Message}");
+                }
+            }
+        }
+        // Note: If no file is uploaded, SupportingDocPath remains unchanged
+
         var subCriterias = nomination.AwardCycle.AwardType.Criteria.SelectMany(c => c.SubCriteria).ToDictionary(sc => sc.SubCriteriaId);
 
         // Manual validation of scores
         for (int i = 0; i < managerScores.Count; i++)
         {
             var score = managerScores[i];
+            if (!score.Score.HasValue)
+            {
+                ModelState.AddModelError($"managerScores[{i}].Score", "يجب إدخال درجة لكل المعايير.");
+                continue;
+            }
+
             if (subCriterias.TryGetValue(score.SubCriteriaId, out var subCriteria))
             {
-                if (score.Score < 0 || score.Score > subCriteria.MaxScore)
+                if (score.Score.Value < 0 || score.Score.Value > subCriteria.MaxScore)
                 {
                     ModelState.AddModelError($"managerScores[{i}].Score", $"الدرجة لمعيار '{subCriteria.Name}' يجب أن تكون بين 0 و {subCriteria.MaxScore}.");
                 }
@@ -333,7 +375,11 @@ public class NominationsController : Controller
         }
 
         await _context.SaveChangesAsync();
-        return RedirectToAction(nameof(Index));
+        
+        // Redirect to cycle details page
+        var cycleId = nomination.CycleId;
+        TempData["SuccessMessage"] = $"تم حفظ تقييم {nomination.Employee?.FirstName} {nomination.Employee?.LastName} بنجاح";
+        return RedirectToAction("CycleDetails", new { id = cycleId });
     }
 
     // GET: Nominations/Delete/5
@@ -362,14 +408,149 @@ public class NominationsController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> DeleteConfirmed(int id)
     {
-        var nomination = await _context.Nominations.FindAsync(id);
+        var nomination = await _context.Nominations
+            .Include(n => n.AwardCycle)
+            .Include(n => n.Employee)
+            .FirstOrDefaultAsync(n => n.NominationId == id);
+            
         if (nomination != null)
         {
+            var cycleId = nomination.CycleId;
+            var employeeName = $"{nomination.Employee?.FirstName} {nomination.Employee?.LastName}";
+            
+            // Clean up supporting document file if it exists
+            if (!string.IsNullOrEmpty(nomination.SupportingDocPath))
+            {
+                try
+                {
+                    var filePath = Path.Combine(_webHostEnvironment.WebRootPath, nomination.SupportingDocPath.TrimStart('/'));
+                    if (System.IO.File.Exists(filePath))
+                    {
+                        System.IO.File.Delete(filePath);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    // Log error but continue with deletion
+                    System.Diagnostics.Debug.WriteLine($"Error deleting supporting document: {ex.Message}");
+                }
+            }
+            
             _context.Nominations.Remove(nomination);
+            await _context.SaveChangesAsync();
+            
+            TempData["SuccessMessage"] = $"تم حذف ترشيح {employeeName} بنجاح";
+            return RedirectToAction("CycleDetails", new { id = cycleId });
         }
 
+        TempData["ErrorMessage"] = "حدث خطأ أثناء حذف الترشيح";
+        return RedirectToAction("Index", "Home");
+    }
+
+    // POST: Nominations/SelectWinner/5
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    [Authorize(Roles = "EOM-Committee")]
+    public async Task<IActionResult> SelectWinner(int id)
+    {
+        var nomination = await _context.Nominations
+            .Include(n => n.Employee)
+            .Include(n => n.AwardCycle)
+            .FirstOrDefaultAsync(n => n.NominationId == id);
+
+        if (nomination == null)
+        {
+            TempData["ErrorMessage"] = "الترشيح غير موجود";
+            return RedirectToAction("Index", "Home");
+        }
+
+        var currentEmployeeId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
+        
+        nomination.IsWinner = true;
+        nomination.WonAt = DateTime.UtcNow;
+        nomination.SelectedByCommitteeMemberId = currentEmployeeId;
+
         await _context.SaveChangesAsync();
-        return RedirectToAction(nameof(Index));
+
+        TempData["SuccessMessage"] = $"تم اختيار {nomination.Employee?.FirstName} {nomination.Employee?.LastName} كفائز بنجاح";
+        return RedirectToAction("CycleDetails", new { id = nomination.CycleId });
+    }
+
+    // POST: Nominations/RemoveWinner/5
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    [Authorize(Roles = "EOM-Committee")]
+    public async Task<IActionResult> RemoveWinner(int id)
+    {
+        var nomination = await _context.Nominations
+            .Include(n => n.Employee)
+            .Include(n => n.AwardCycle)
+            .FirstOrDefaultAsync(n => n.NominationId == id);
+
+        if (nomination == null)
+        {
+            TempData["ErrorMessage"] = "الترشيح غير موجود";
+            return RedirectToAction("Index", "Home");
+        }
+
+        nomination.IsWinner = false;
+        nomination.WonAt = null;
+        nomination.SelectedByCommitteeMemberId = null;
+
+        await _context.SaveChangesAsync();
+
+        TempData["SuccessMessage"] = $"تم إلغاء فوز {nomination.Employee?.FirstName} {nomination.Employee?.LastName} بنجاح";
+        return RedirectToAction("CycleDetails", new { id = nomination.CycleId });
+    }
+
+    // GET: Nominations/Cycles
+    [Authorize(Roles = "Manager")]
+    public async Task<IActionResult> Cycles()
+    {
+        var currentEmployeeId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
+        
+        // Get all cycles with manager's nomination counts
+        var cycles = await _context.AwardCycles
+            .Include(ac => ac.AwardType)
+            .Include(ac => ac.Nominations.Where(n => n.ManagerId == currentEmployeeId))
+            .ThenInclude(n => n.Employee)
+            .Include(ac => ac.Nominations.Where(n => n.ManagerId == currentEmployeeId))
+            .ThenInclude(n => n.Evaluations)
+            .OrderByDescending(ac => ac.Year)
+            .ThenByDescending(ac => ac.Month)
+            .ToListAsync();
+        
+        return View(cycles);
+    }
+    
+    // GET: Nominations/CycleDetails/5
+    [Authorize(Roles = "Manager")]
+    public async Task<IActionResult> CycleDetails(int? id)
+    {
+        if (id == null)
+        {
+            return NotFound();
+        }
+        
+        var currentEmployeeId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
+        
+        var cycle = await _context.AwardCycles
+            .Include(ac => ac.AwardType)
+            .Include(ac => ac.Nominations.Where(n => n.ManagerId == currentEmployeeId))
+            .ThenInclude(n => n.Employee)
+            .Include(ac => ac.Nominations.Where(n => n.ManagerId == currentEmployeeId))
+            .ThenInclude(n => n.ManagerScores)
+            .ThenInclude(ms => ms.SubCriteria)
+            .Include(ac => ac.Nominations.Where(n => n.ManagerId == currentEmployeeId))
+            .ThenInclude(n => n.Evaluations)
+            .FirstOrDefaultAsync(ac => ac.CycleId == id);
+        
+        if (cycle == null)
+        {
+            return NotFound();
+        }
+        
+        return View(cycle);
     }
 
     private bool NominationExists(int id)

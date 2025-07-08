@@ -4,6 +4,7 @@ using EOM.Web.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace EOM.Web.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250708191204_ClearExistingCyclesAndNominations")]
+    partial class ClearExistingCyclesAndNominations
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -52,7 +55,7 @@ namespace EOM.Web.Migrations
 
                     b.HasIndex("AwardTypeId");
 
-                    b.ToTable("AwardCycles", (string)null);
+                    b.ToTable("AwardCycles");
                 });
 
             modelBuilder.Entity("EOM.Web.Models.AwardType", b =>
@@ -77,7 +80,7 @@ namespace EOM.Web.Migrations
 
                     b.HasKey("AwardTypeId");
 
-                    b.ToTable("AwardTypes", (string)null);
+                    b.ToTable("AwardTypes");
                 });
 
             modelBuilder.Entity("EOM.Web.Models.CommitteeMember", b =>
@@ -104,7 +107,7 @@ namespace EOM.Web.Migrations
 
                     b.HasIndex("EmployeeId");
 
-                    b.ToTable("CommitteeMembers", (string)null);
+                    b.ToTable("CommitteeMembers");
                 });
 
             modelBuilder.Entity("EOM.Web.Models.Criterion", b =>
@@ -131,7 +134,7 @@ namespace EOM.Web.Migrations
 
                     b.HasIndex("AwardTypeId");
 
-                    b.ToTable("Criteria", (string)null);
+                    b.ToTable("Criteria");
                 });
 
             modelBuilder.Entity("EOM.Web.Models.DepartmentQuota", b =>
@@ -152,7 +155,7 @@ namespace EOM.Web.Migrations
 
                     b.HasIndex("AwardTypeId");
 
-                    b.ToTable("DepartmentQuotas", (string)null);
+                    b.ToTable("DepartmentQuotas");
                 });
 
             modelBuilder.Entity("EOM.Web.Models.Employee", b =>
@@ -205,7 +208,7 @@ namespace EOM.Web.Migrations
 
                     b.HasKey("EmployeeId");
 
-                    b.ToTable("Employees", (string)null);
+                    b.ToTable("Employees");
                 });
 
             modelBuilder.Entity("EOM.Web.Models.EmployeeManager", b =>
@@ -237,7 +240,7 @@ namespace EOM.Web.Migrations
 
                     b.HasIndex("ManagerId");
 
-                    b.ToTable("EmployeeManagers", (string)null);
+                    b.ToTable("EmployeeManagers");
                 });
 
             modelBuilder.Entity("EOM.Web.Models.Evaluation", b =>
@@ -263,7 +266,7 @@ namespace EOM.Web.Migrations
 
                     b.HasIndex("NominationId");
 
-                    b.ToTable("Evaluations", (string)null);
+                    b.ToTable("Evaluations");
                 });
 
             modelBuilder.Entity("EOM.Web.Models.EvaluationScore", b =>
@@ -285,7 +288,7 @@ namespace EOM.Web.Migrations
 
                     b.HasIndex("SubCriteriaId");
 
-                    b.ToTable("EvaluationScores", (string)null);
+                    b.ToTable("EvaluationScores");
                 });
 
             modelBuilder.Entity("EOM.Web.Models.ManagerScore", b =>
@@ -307,7 +310,7 @@ namespace EOM.Web.Migrations
 
                     b.HasIndex("SubCriteriaId");
 
-                    b.ToTable("ManagerScores", (string)null);
+                    b.ToTable("ManagerScores");
                 });
 
             modelBuilder.Entity("EOM.Web.Models.Nomination", b =>
@@ -327,21 +330,12 @@ namespace EOM.Web.Migrations
                     b.Property<int>("EmployeeId")
                         .HasColumnType("int");
 
-                    b.Property<bool>("IsWinner")
-                        .HasColumnType("tinyint(1)");
-
                     b.Property<int>("ManagerId")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("SelectedByCommitteeMemberId")
                         .HasColumnType("int");
 
                     b.Property<string>("SupportingDocPath")
                         .HasMaxLength(500)
                         .HasColumnType("varchar(500)");
-
-                    b.Property<DateTime?>("WonAt")
-                        .HasColumnType("datetime(6)");
 
                     b.HasKey("NominationId");
 
@@ -351,9 +345,7 @@ namespace EOM.Web.Migrations
 
                     b.HasIndex("ManagerId");
 
-                    b.HasIndex("SelectedByCommitteeMemberId");
-
-                    b.ToTable("Nominations", (string)null);
+                    b.ToTable("Nominations");
                 });
 
             modelBuilder.Entity("EOM.Web.Models.SubCriteria", b =>
@@ -388,7 +380,7 @@ namespace EOM.Web.Migrations
 
                     b.HasIndex("CriterionId");
 
-                    b.ToTable("SubCriteria", (string)null);
+                    b.ToTable("SubCriteria");
                 });
 
             modelBuilder.Entity("EOM.Web.Models.AwardCycle", b =>
@@ -531,17 +523,11 @@ namespace EOM.Web.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("EOM.Web.Models.Employee", "SelectedByCommitteeMember")
-                        .WithMany()
-                        .HasForeignKey("SelectedByCommitteeMemberId");
-
                     b.Navigation("AwardCycle");
 
                     b.Navigation("Employee");
 
                     b.Navigation("Manager");
-
-                    b.Navigation("SelectedByCommitteeMember");
                 });
 
             modelBuilder.Entity("EOM.Web.Models.SubCriteria", b =>

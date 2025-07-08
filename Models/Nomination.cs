@@ -17,10 +17,16 @@ public class Nomination
     
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     
+    // Winner tracking
+    public bool IsWinner { get; set; } = false;
+    public DateTime? WonAt { get; set; }
+    public int? SelectedByCommitteeMemberId { get; set; }
+    
     // Navigation properties
     public virtual AwardCycle? AwardCycle { get; set; }
     public virtual Employee? Employee { get; set; }
     public virtual Employee? Manager { get; set; }
+    public virtual Employee? SelectedByCommitteeMember { get; set; }
     public virtual ICollection<ManagerScore> ManagerScores { get; set; } = new List<ManagerScore>();
     public virtual ICollection<Evaluation> Evaluations { get; set; } = new List<Evaluation>();
 }

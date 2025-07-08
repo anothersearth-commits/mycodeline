@@ -23,6 +23,7 @@ public class Employee
     public string? PhoneNumber { get; set; }
     
     public int DepartmentId { get; set; }
+    public virtual Department? Department { get; set; }
     
     [MaxLength(100)]
     public string? JobTitle { get; set; }
@@ -38,6 +39,7 @@ public class Employee
     // Temporary password field for development (will be removed when AD is integrated)
     [MaxLength(100)]
     public string? Password { get; set; }
+    
     
     // Navigation properties
     public virtual ICollection<EmployeeManager> ManagedEmployees { get; set; } = new List<EmployeeManager>();

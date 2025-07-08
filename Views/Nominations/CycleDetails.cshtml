@@ -1,0 +1,607 @@
+@model EOM.Web.Models.AwardCycle
+
+@{
+    ViewData["Title"] = $"تفاصيل دورة {Model.AwardType.Name}";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<style>
+    .cycle-details-container {
+        padding: 2rem 0;
+    }
+    
+    .cycle-header-card {
+        background: linear-gradient(135deg, #0d6efd, #0b5ed7);
+        color: white;
+        border-radius: 16px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .cycle-header-card::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        right: -50%;
+        width: 100%;
+        height: 100%;
+        background: rgba(255,255,255,0.1);
+        border-radius: 50%;
+    }
+    
+    .cycle-info {
+        position: relative;
+        z-index: 1;
+    }
+    
+    .cycle-title {
+        font-size: 2rem;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+    }
+    
+    .cycle-subtitle {
+        opacity: 0.9;
+        font-size: 1.1rem;
+    }
+    
+    .cycle-meta {
+        display: flex;
+        gap: 2rem;
+        margin-top: 1.5rem;
+        flex-wrap: wrap;
+    }
+    
+    .meta-item {
+        background: rgba(255,255,255,0.2);
+        padding: 0.75rem 1.25rem;
+        border-radius: 10px;
+        backdrop-filter: blur(10px);
+    }
+    
+    .meta-label {
+        font-size: 0.85rem;
+        opacity: 0.8;
+        display: block;
+    }
+    
+    .meta-value {
+        font-size: 1.1rem;
+        font-weight: 600;
+    }
+    
+    .nominations-section {
+        background: white;
+        border-radius: 16px;
+        padding: 2rem;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    }
+    
+    .section-title {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #2563eb;
+        margin-bottom: 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .nominations-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 1.5rem;
+    }
+    
+    .nomination-card {
+        background: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-radius: 12px;
+        padding: 1.5rem;
+        transition: all 0.3s ease;
+        position: relative;
+    }
+    
+    .nomination-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(0,0,0,0.1);
+        border-color: #0d6efd;
+    }
+    
+    .employee-info {
+        margin-bottom: 1rem;
+    }
+    
+    .employee-name {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: #2563eb;
+        margin-bottom: 0.25rem;
+    }
+    
+    .employee-title {
+        color: #6c757d;
+        font-size: 0.9rem;
+    }
+    
+    .scoring-status {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-bottom: 1rem;
+        padding: 0.5rem;
+        border-radius: 8px;
+        font-size: 0.9rem;
+        font-weight: 600;
+    }
+    
+    .status-completed {
+        background: #e8f5e8;
+        color: #2e7d32;
+    }
+    
+    .status-pending {
+        background: #fff3e0;
+        color: #ef6c00;
+    }
+    
+    .status-evaluation {
+        background: #e3f2fd;
+        color: #1565c0;
+    }
+    
+    .file-info {
+        background: white;
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        padding: 0.75rem;
+        margin-bottom: 1rem;
+        font-size: 0.9rem;
+    }
+    
+    .file-available {
+        color: #198754;
+    }
+    
+    .file-missing {
+        color: #dc3545;
+    }
+    
+    .action-buttons {
+        display: flex;
+        gap: 0.75rem;
+        flex-wrap: wrap;
+    }
+    
+    .btn-scoring {
+        background: #0d6efd;
+        border: none;
+        color: white;
+        padding: 0.5rem 1rem;
+        border-radius: 8px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .btn-scoring:hover {
+        background: #0b5ed7;
+        color: white;
+        transform: translateY(-1px);
+    }
+    
+    .btn-file {
+        background: #198754;
+        border: none;
+        color: white;
+        padding: 0.5rem 1rem;
+        border-radius: 8px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .btn-file:hover {
+        background: #157347;
+        color: white;
+        transform: translateY(-1px);
+    }
+    
+    .btn-delete {
+        background: #dc3545;
+        border: none;
+        color: white;
+        padding: 0.5rem 1rem;
+        border-radius: 8px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        cursor: pointer;
+    }
+    
+    .btn-delete:hover {
+        background: #c82333;
+        color: white;
+        transform: translateY(-1px);
+    }
+    
+    .winner-card {
+        border: 2px solid #ffd700 !important;
+        background: linear-gradient(135deg, #fff9e6, #ffffff) !important;
+        box-shadow: 0 8px 25px rgba(255, 215, 0, 0.3) !important;
+    }
+    
+    .winner-badge {
+        position: absolute;
+        top: -8px;
+        right: -8px;
+        background: linear-gradient(135deg, #ffd700, #ffed4e);
+        color: #8b6914;
+        padding: 0.5rem 0.75rem;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 700;
+        box-shadow: 0 4px 12px rgba(255, 215, 0, 0.4);
+        z-index: 10;
+    }
+    
+    .btn-select-winner {
+        background: #ffd700;
+        border: none;
+        color: #8b6914;
+        padding: 0.5rem 1rem;
+        border-radius: 8px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        cursor: pointer;
+    }
+    
+    .btn-select-winner:hover {
+        background: #ffed4e;
+        color: #8b6914;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(255, 215, 0, 0.4);
+    }
+    
+    .btn-remove-winner {
+        background: #f8f9fa;
+        border: 1px solid #dee2e6;
+        color: #6c757d;
+        padding: 0.5rem 1rem;
+        border-radius: 8px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        cursor: pointer;
+    }
+    
+    .btn-remove-winner:hover {
+        background: #e9ecef;
+        color: #495057;
+        transform: translateY(-1px);
+    }
+    
+    .empty-nominations {
+        text-align: center;
+        padding: 3rem;
+        color: #6c757d;
+    }
+    
+    .empty-nominations i {
+        font-size: 4rem;
+        margin-bottom: 1rem;
+        opacity: 0.5;
+    }
+</style>
+
+<div class="cycle-details-container">
+    <!-- Cycle Header -->
+    <div class="cycle-header-card">
+        <div class="cycle-info">
+            <h1 class="cycle-title">@Model.AwardType.Name</h1>
+            <p class="cycle-subtitle">دورة @Model.Month/@Model.Year</p>
+            
+            <div class="cycle-meta">
+                <div class="meta-item">
+                    <span class="meta-label">حالة الدورة</span>
+                    <span class="meta-value">
+                        @(Model.Status.ToString() switch {
+                            "Nomination" => "مرحلة الترشيح",
+                            "Evaluation" => "مرحلة التقييم",
+                            "Completed" => "مكتملة",
+                            _ => "مغلقة"
+                        })
+                    </span>
+                </div>
+                
+                <div class="meta-item">
+                    <span class="meta-label">عدد ترشيحاتك</span>
+                    <span class="meta-value">@Model.Nominations.Count()</span>
+                </div>
+                
+                <div class="meta-item">
+                    <span class="meta-label">المُقيّمة من اللجنة</span>
+                    <span class="meta-value">@Model.Nominations.Count(n => n.Evaluations != null && n.Evaluations.Any())</span>
+                </div>
+                
+                <div class="meta-item">
+                    <span class="meta-label">الفائزون</span>
+                    <span class="meta-value">@Model.Nominations.Count(n => n.IsWinner)</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Success/Error Messages -->
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="fas fa-check-circle me-2"></i>
+            @TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="fas fa-exclamation-circle me-2"></i>
+            @TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <!-- Navigation -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <a href="@Url.Action("Cycles")" class="btn btn-outline-primary">
+            <i class="fas fa-arrow-right"></i> العودة لدورات الجوائز
+        </a>
+        
+        @if (Model.Status == EOM.Web.Models.CycleStatus.Nomination)
+        {
+            <a href="@Url.Action("Create", new { cycleId = Model.CycleId })" class="btn btn-success">
+                <i class="fas fa-plus"></i> ترشيح جديد
+            </a>
+        }
+    </div>
+    
+    <!-- Nominations Section -->
+    <div class="nominations-section">
+        <h2 class="section-title">
+            <i class="fas fa-users"></i>
+            الموظفون المرشحون (@Model.Nominations.Count())
+        </h2>
+        
+        @if (Model.Nominations.Any())
+        {
+            <div class="nominations-grid">
+                @foreach (var nomination in Model.Nominations)
+                {
+                    var hasManagerScores = nomination.ManagerScores.Any();
+                    var hasCommitteeEvaluations = nomination.Evaluations != null && nomination.Evaluations.Any();
+                    var hasFile = !string.IsNullOrEmpty(nomination.SupportingDocPath);
+                    var isWinner = nomination.IsWinner;
+                    
+                    <div class="nomination-card @(isWinner ? "winner-card" : "")">
+                        @if (isWinner)
+                        {
+                            <div class="winner-badge">
+                                <i class="fas fa-trophy"></i>
+                                فائز
+                            </div>
+                        }
+                        
+                        <div class="employee-info">
+                            <div class="employee-name">
+                                @nomination.Employee.FirstName @nomination.Employee.LastName
+                            </div>
+                            <div class="employee-title">@nomination.Employee.JobTitle</div>
+                        </div>
+                        
+                        <div class="scoring-status @(hasCommitteeEvaluations ? "status-completed" : (hasManagerScores ? "status-evaluation" : "status-pending"))">
+                            <i class="fas @(hasCommitteeEvaluations ? "fa-check-circle" : (hasManagerScores ? "fa-star" : "fa-clock"))"></i>
+                            @(hasCommitteeEvaluations ? "تم التقييم من اللجنة" : (hasManagerScores ? "تم التقييم من المدير" : "في انتظار التقييم"))
+                        </div>
+                        
+                        <div class="file-info">
+                            <i class="fas @(hasFile ? "fa-file-pdf file-available" : "fa-file-times file-missing")"></i>
+                            @(hasFile ? "يوجد ملف داعم مرفق" : "لا يوجد ملف داعم")
+                        </div>
+                        
+                        <div class="action-buttons">
+                            <a href="@Url.Action("Score", new { id = nomination.NominationId })" class="btn-scoring">
+                                <i class="fas fa-edit"></i>
+                                @(hasManagerScores ? "تعديل تقييم المدير" : "إضافة تقييم المدير")
+                            </a>
+                            
+                            @if (hasFile)
+                            {
+                                <a href="@nomination.SupportingDocPath" target="_blank" class="btn-file">
+                                    <i class="fas fa-download"></i>
+                                    عرض الملف
+                                </a>
+                            }
+                            
+                            @if (User.IsInRole("Manager") || User.IsInRole("EOM-Admin"))
+                            {
+                                <form style="display: inline;" method="post" action="@Url.Action("Delete", new { id = nomination.NominationId })" id="deleteForm-@nomination.NominationId">
+                                    @Html.AntiForgeryToken()
+                                    <button type="button" onclick="confirmDelete(@nomination.NominationId, '@nomination.Employee.FirstName @nomination.Employee.LastName')" class="btn-delete">
+                                        <i class="fas fa-trash"></i>
+                                        حذف
+                                    </button>
+                                </form>
+                            }
+                            
+                            @if (User.IsInRole("EOM-Committee"))
+                            {
+                                @if (isWinner)
+                                {
+                                    <form style="display: inline;" method="post" action="@Url.Action("RemoveWinner", new { id = nomination.NominationId })" id="removeWinnerForm-@nomination.NominationId">
+                                        @Html.AntiForgeryToken()
+                                        <button type="button" onclick="confirmRemoveWinner(@nomination.NominationId, '@nomination.Employee.FirstName @nomination.Employee.LastName')" class="btn-remove-winner">
+                                            <i class="fas fa-trophy-alt"></i>
+                                            إلغاء الفوز
+                                        </button>
+                                    </form>
+                                }
+                                else
+                                {
+                                    <form style="display: inline;" method="post" action="@Url.Action("SelectWinner", new { id = nomination.NominationId })" id="selectWinnerForm-@nomination.NominationId">
+                                        @Html.AntiForgeryToken()
+                                        <button type="button" onclick="confirmSelectWinner(@nomination.NominationId, '@nomination.Employee.FirstName @nomination.Employee.LastName')" class="btn-select-winner">
+                                            <i class="fas fa-trophy"></i>
+                                            اختيار كفائز
+                                        </button>
+                                    </form>
+                                }
+                            }
+                        </div>
+                        
+                        @if (hasManagerScores)
+                        {
+                            <div class="mt-2">
+                                <small class="text-muted">
+                                    <i class="fas fa-star"></i>
+                                    مجموع تقييم المدير: @nomination.ManagerScores.Sum(ms => ms.Score ?? 0) من @nomination.ManagerScores.Sum(ms => ms.SubCriteria.MaxScore)
+                                </small>
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+        }
+        else
+        {
+            <div class="empty-nominations">
+                <i class="fas fa-user-plus"></i>
+                <h3>لا توجد ترشيحات</h3>
+                <p>لم تقم بترشيح أي موظفين في هذه الدورة بعد</p>
+                
+                @if (Model.Status == EOM.Web.Models.CycleStatus.Nomination)
+                {
+                    <a href="@Url.Action("Create", new { cycleId = Model.CycleId })" class="btn btn-primary mt-3">
+                        <i class="fas fa-plus"></i> ترشيح موظف الآن
+                    </a>
+                }
+            </div>
+        }
+    </div>
+</div>
+
+<!-- SweetAlert2 -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<script>
+function confirmDelete(nominationId, employeeName) {
+    Swal.fire({
+        title: 'تأكيد الحذف',
+        text: `هل أنت متأكد من حذف ترشيح "${employeeName}"؟`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#dc3545',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'نعم، احذف',
+        cancelButtonText: 'إلغاء',
+        reverseButtons: true
+    }).then((result) => {
+        if (result.isConfirmed) {
+            // Show loading
+            Swal.fire({
+                title: 'جاري الحذف...',
+                allowOutsideClick: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+            
+            // Submit the existing form for this nomination
+            const form = document.getElementById(`deleteForm-${nominationId}`);
+            if (form) {
+                form.submit();
+            }
+        }
+    });
+}
+
+function confirmSelectWinner(nominationId, employeeName) {
+    Swal.fire({
+        title: 'تأكيد اختيار الفائز',
+        text: `هل أنت متأكد من اختيار "${employeeName}" كفائز في هذه الدورة؟`,
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#ffd700',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'نعم، اختر كفائز',
+        cancelButtonText: 'إلغاء',
+        reverseButtons: true
+    }).then((result) => {
+        if (result.isConfirmed) {
+            // Show loading
+            Swal.fire({
+                title: 'جاري الاختيار...',
+                allowOutsideClick: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+            
+            // Submit the form
+            const form = document.getElementById(`selectWinnerForm-${nominationId}`);
+            if (form) {
+                form.submit();
+            }
+        }
+    });
+}
+
+function confirmRemoveWinner(nominationId, employeeName) {
+    Swal.fire({
+        title: 'تأكيد إلغاء الفوز',
+        text: `هل أنت متأكد من إلغاء فوز "${employeeName}"؟`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#dc3545',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'نعم، ألغ الفوز',
+        cancelButtonText: 'إلغاء',
+        reverseButtons: true
+    }).then((result) => {
+        if (result.isConfirmed) {
+            // Show loading
+            Swal.fire({
+                title: 'جاري الإلغاء...',
+                allowOutsideClick: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+            
+            // Submit the form
+            const form = document.getElementById(`removeWinnerForm-${nominationId}`);
+            if (form) {
+                form.submit();
+            }
+        }
+    });
+}
+</script>

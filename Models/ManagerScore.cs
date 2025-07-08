@@ -8,12 +8,12 @@ public class ManagerScore
     
     public int SubCriteriaId { get; set; }
     
-    public int Score { get; set; }
+    public int? Score { get; set; }
     
     [MaxLength(500)]
     public string? Note { get; set; }
     
     // Navigation properties
-    public virtual Nomination Nomination { get; set; } = null!;
-    public virtual SubCriteria SubCriteria { get; set; } = null!;
+    public virtual Nomination? Nomination { get; set; }
+    public virtual SubCriteria? SubCriteria { get; set; }
 }

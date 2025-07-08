@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("EOM.Web")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+5bf76e3728b07df50719f59369f6bf2921464328")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+f9b67b3b5b0aea2f64f5fa32dc3f6aea84b07a0f")]
 [assembly: System.Reflection.AssemblyProductAttribute("EOM.Web")]
 [assembly: System.Reflection.AssemblyTitleAttribute("EOM.Web")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

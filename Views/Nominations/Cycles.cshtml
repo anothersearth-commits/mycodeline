@@ -1,0 +1,201 @@
+@model IEnumerable<EOM.Web.Models.AwardCycle>
+
+@{
+    ViewData["Title"] = "دورات الجوائز";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<style>
+    .cycles-container {
+        padding: 2rem 0;
+    }
+    
+    .cycles-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+        gap: 1.5rem;
+        margin-top: 1.5rem;
+    }
+    
+    .cycle-card {
+        background: #ffffff;
+        border: 1px solid #dee2e6;
+        border-radius: 12px;
+        padding: 1.5rem;
+        transition: all 0.3s ease;
+        cursor: pointer;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .cycle-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+        border-color: #0d6efd;
+    }
+    
+    .cycle-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 1rem;
+    }
+    
+    .cycle-title {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: #2563eb;
+        margin: 0;
+    }
+    
+    .cycle-date {
+        font-size: 0.9rem;
+        color: #6c757d;
+        background: #f8f9fa;
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+    }
+    
+    .cycle-status {
+        display: inline-block;
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        margin-bottom: 1rem;
+    }
+    
+    .status-nomination { background: #e3f2fd; color: #1565c0; }
+    .status-evaluation { background: #fff3e0; color: #ef6c00; }
+    .status-completed { background: #e8f5e8; color: #2e7d32; }
+    .status-closed { background: #f5f5f5; color: #616161; }
+    
+    .nominations-info {
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+    }
+    
+    .nominations-count {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .count-number {
+        font-size: 2rem;
+        font-weight: 700;
+        color: #0d6efd;
+    }
+    
+    .count-label {
+        color: #6c757d;
+        font-size: 0.9rem;
+    }
+    
+    .view-details-btn {
+        width: 100%;
+        background: linear-gradient(135deg, #0d6efd, #0b5ed7);
+        border: none;
+        color: white;
+        padding: 0.75rem 1.5rem;
+        border-radius: 8px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+    
+    .view-details-btn:hover {
+        background: linear-gradient(135deg, #0b5ed7, #0a58ca);
+        transform: translateY(-1px);
+    }
+    
+    .empty-state {
+        text-align: center;
+        padding: 3rem;
+        color: #6c757d;
+    }
+    
+    .empty-state i {
+        font-size: 4rem;
+        margin-bottom: 1rem;
+        opacity: 0.5;
+    }
+</style>
+
+<div class="cycles-container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="text-primary">دورات الجوائز</h1>
+        <a href="@Url.Action("Index")" class="btn btn-outline-primary">
+            <i class="fas fa-arrow-right"></i> العودة للترشيحات
+        </a>
+    </div>
+    
+    @if (Model.Any())
+    {
+        <div class="cycles-grid">
+            @foreach (var cycle in Model)
+            {
+                <div class="cycle-card" onclick="location.href='@Url.Action("CycleDetails", new { id = cycle.CycleId })'">
+                    <div class="cycle-header">
+                        <h3 class="cycle-title">@cycle.AwardType.Name</h3>
+                        <div class="cycle-date">@cycle.Month/@cycle.Year</div>
+                    </div>
+                    
+                    <div class="cycle-status @(cycle.Status.ToString().ToLower() switch {
+                        "nomination" => "status-nomination",
+                        "evaluation" => "status-evaluation", 
+                        "completed" => "status-completed",
+                        _ => "status-closed"
+                    })">
+                        @(cycle.Status.ToString() switch {
+                            "Nomination" => "مرحلة الترشيح",
+                            "Evaluation" => "مرحلة التقييم",
+                            "Completed" => "مكتملة",
+                            _ => "مغلقة"
+                        })
+                    </div>
+                    
+                    <div class="nominations-info">
+                        <div class="nominations-count">
+                            <div>
+                                <div class="count-number">@cycle.Nominations.Count()</div>
+                                <div class="count-label">ترشيحاتك</div>
+                            </div>
+                            @if (cycle.Nominations.Any())
+                            {
+                                <div class="text-end">
+                                    <small class="text-muted">
+                                        @cycle.Nominations.Count(n => n.Evaluations != null && n.Evaluations.Any()) مُقيّمة من اللجنة
+                                    </small>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                    
+                    <button class="view-details-btn">
+                        عرض التفاصيل والترشيحات
+                        <i class="fas fa-arrow-left ms-2"></i>
+                    </button>
+                </div>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="empty-state">
+            <i class="fas fa-calendar-alt"></i>
+            <h3>لا توجد دورات جوائز</h3>
+            <p>لم يتم إنشاء أي دورات جوائز بعد</p>
+        </div>
+    }
+</div>
+
+<script>
+// Prevent button click from triggering card click
+document.querySelectorAll('.view-details-btn').forEach(btn => {
+    btn.addEventListener('click', function(e) {
+        e.stopPropagation();
+    });
+});
+</script>

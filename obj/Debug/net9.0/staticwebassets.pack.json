@@ -273,6 +273,10 @@
       "PackagePath": "staticwebassets/lib/jquery/dist/jquery.slim.min.map"
     },
     {
+      "Id": "/Users/majid/Documents/EOM/wwwroot/uploads/nominations/README.md",
+      "PackagePath": "staticwebassets/uploads/nominations/README.md"
+    },
+    {
       "Id": "obj/Debug/net9.0/staticwebassets/msbuild.EOM.Web.Microsoft.AspNetCore.StaticWebAssetEndpoints.props",
       "PackagePath": "build\\Microsoft.AspNetCore.StaticWebAssetEndpoints.props"
     },
