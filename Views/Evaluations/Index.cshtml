@@ -1,0 +1,88 @@
+@model IEnumerable<EOM.Web.Models.Evaluation>
+
+@{
+    ViewData["Title"] = "تقييماتي المكتملة";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+
+    // Helper function to calculate total weighted score
+    double CalculateTotalScore(EOM.Web.Models.Evaluation evaluation)
+    {
+        if (evaluation.Nomination?.AwardCycle?.AwardType?.Criteria == null || !evaluation.EvaluationScores.Any())
+        {
+            return 0;
+        }
+
+        double totalWeightedScore = 0;
+
+        foreach (var criterion in evaluation.Nomination.AwardCycle.AwardType.Criteria)
+        {
+            double criterionTotal = 0;
+            double criterionMax = 0;
+
+            foreach (var sub in criterion.SubCriteria)
+            {
+                var score = evaluation.EvaluationScores.FirstOrDefault(s => s.SubCriteriaId == sub.SubCriteriaId);
+                criterionTotal += score?.Score ?? 0;
+                criterionMax += sub.MaxScore;
+            }
+
+            if (criterionMax > 0)
+            {
+                var normalized = criterionTotal / criterionMax;
+                totalWeightedScore += normalized * (double)criterion.WeightPercent;
+            }
+        }
+        return totalWeightedScore;
+    }
+}
+
+<h2 class="mb-4">تقييماتي المكتملة</h2>
+
+<div class="mb-3">
+    <a asp-action="Pending" class="btn btn-outline-primary">
+        <i class="fas fa-list-check me-2"></i>
+        عرض الترشيحات قيد الانتظار
+    </a>
+</div>
+
+
+@if (!Model.Any())
+{
+    <div class="alert alert-info">لم تقم بإكمال أي تقييم بعد.</div>
+}
+else
+{
+    <div class="table-responsive">
+        <table class="table table-bordered table-hover align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th>المرشح</th>
+                    <th>نوع الجائزة</th>
+                    <th>الدورة</th>
+                    <th>الدرجة النهائية</th>
+                    <th style="width: 120px;">الإجراءات</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model.OrderByDescending(e => e.CreatedAt))
+                {
+                    <tr>
+                        <td>@item.Nomination?.Employee?.FirstName @item.Nomination?.Employee?.LastName</td>
+                        <td>@item.Nomination?.AwardCycle?.AwardType?.Name</td>
+                        <td>@item.Nomination?.AwardCycle?.Month/@item.Nomination?.AwardCycle?.Year</td>
+                        <td>
+                            <span class="badge bg-primary" style="font-size: 1rem;">
+                                @CalculateTotalScore(item).ToString("F2") / 100
+                            </span>
+                        </td>
+                        <td>
+                            <a asp-action="Edit" asp-route-id="@item.EvaluationId" class="btn btn-sm btn-outline-secondary">
+                                <i class="fas fa-edit me-1"></i> تعديل
+                            </a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+} 

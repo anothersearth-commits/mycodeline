@@ -232,7 +232,7 @@
                     <p class="card-text">تقييم المرشحين من قبل اللجنة</p>
                     @if (User.IsInRole("EOM-Committee"))
                     {
-                        <a href="@Url.Action("Index", "Evaluations")" class="btn btn-warning">عرض التقييمات</a>
+                        <a href="@Url.Action("Pending", "Evaluations")" class="btn btn-warning">بدء التقييم</a>
                     }
                 </div>
             </div>

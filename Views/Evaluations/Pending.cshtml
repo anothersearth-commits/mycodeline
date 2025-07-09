@@ -1,0 +1,52 @@
+@model IEnumerable<EOM.Web.Models.Nomination>
+@{
+    ViewData["Title"] = "الترشيحات للتقييم";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<h2 class="mb-4">الترشيحات التي تحتاج إلى تقييم</h2>
+
+@if (!Model.Any())
+{
+    <div class="alert alert-success">لا توجد ترشيحات بانتظار تقييمك حالياً.</div>
+}
+else
+{
+    var grouped = Model
+        .GroupBy(n => n.Employee?.Department?.Name ?? "قسم غير معروف")
+        .OrderBy(g => g.Key);
+
+    foreach (var dept in grouped)
+    {
+        <h4 class="mt-4 text-primary">@dept.Key</h4>
+        <div class="table-responsive mb-4">
+            <table class="table table-bordered align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>الموظف</th>
+                        <th>نوع الجائزة</th>
+                        <th>الدورة</th>
+                        <th>تاريخ الترشيح</th>
+                        <th>الإجراءات</th>
+                    </tr>
+                </thead>
+                <tbody>
+                @foreach (var nomination in dept)
+                {
+                    <tr>
+                        <td>@nomination.Employee?.FirstName @nomination.Employee?.LastName<br /><small class="text-muted">@nomination.Employee?.JobTitle</small></td>
+                        <td><span class="badge bg-info text-dark">@nomination.AwardCycle?.AwardType?.Name</span></td>
+                        <td>@nomination.AwardCycle?.Month/@nomination.AwardCycle?.Year</td>
+                        <td>@nomination.CreatedAt.ToString("dd/MM/yyyy")</td>
+                        <td>
+                            <a class="btn btn-sm btn-primary" href="@Url.Action("Create", "Evaluations", new { nominationId = nomination.NominationId })">
+                                تقييم
+                            </a>
+                        </td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        </div>
+    }
+} 

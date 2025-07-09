@@ -1,0 +1,104 @@
+@model EOM.Web.Models.Evaluation
+@using System.Text.Json
+@{
+    ViewData["Title"] = "تقييم المرشح";
+    var idx = 0;
+}
+
+<h2 class="mb-4 text-center">تقييم المرشح</h2>
+
+<style>
+    .total-score-card{position:sticky;top:1rem;z-index:1020;background-color:#fff;box-shadow:0 0.5rem 1rem rgba(0,0,0,.1);} 
+</style>
+
+<!-- Info + total card -->
+<div class="card mb-4">
+    <div class="card-body row align-items-center">
+        <div class="col-md-8">
+            <h4 class="mb-1">@Model.Nomination?.Employee?.FirstName @Model.Nomination?.Employee?.LastName</h4>
+            <p class="mb-1 text-muted">@Model.Nomination?.Employee?.JobTitle</p>
+            <small class="text-muted">نوع الجائزة: @Model.Nomination?.AwardCycle?.AwardType?.Name | دورة @Model.Nomination?.AwardCycle?.Month/@Model.Nomination?.AwardCycle?.Year</small>
+        </div>
+        <div class="col-md-4 text-md-end mt-3 mt-md-0">
+            <span class="text-muted">إجمالي الدرجة</span>
+            <div id="totalScore" style="font-size:2rem;font-weight:700;color:#2563eb">0 / 100</div>
+        </div>
+    </div>
+</div>
+
+<form asp-action="Create" method="post">
+    <input type="hidden" asp-for="NominationId" />
+    <div asp-validation-summary="All" class="alert alert-danger"></div>
+
+    @foreach (var criterion in Model.Nomination.AwardCycle.AwardType.Criteria.OrderBy(c=>c.CriterionId))
+    {
+        <div class="card mb-4" data-criterion-weight="@criterion.WeightPercent">
+            <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                <strong>@criterion.Name</strong>
+                <span class="badge bg-info text-dark">الوزن: @criterion.WeightPercent%</span>
+            </div>
+            <div class="card-body p-0">
+                <table class="table mb-0">
+                    <thead class="table-light"><tr><th>المعيار الفرعي</th><th style="width:120px">الدرجة</th></tr></thead>
+                    <tbody>
+                    @foreach (var sub in criterion.SubCriteria.OrderBy(sc=>sc.SubCriteriaCode))
+                    {
+                        var es = Model.EvaluationScores.FirstOrDefault(s=>s.SubCriteriaId==sub.SubCriteriaId) ?? new EOM.Web.Models.EvaluationScore{SubCriteriaId=sub.SubCriteriaId};
+                        <tr>
+                            <td>@sub.SubCriteriaCode - @sub.Name</td>
+                            <td>
+                                <input type="hidden" name="EvaluationScores[@idx].SubCriteriaId" value="@sub.SubCriteriaId" />
+                                <input type="number" class="form-control text-center score-input" name="EvaluationScores[@idx].Score" min="0" max="@sub.MaxScore" value="@es.Score" required />
+                            </td>
+                        </tr>
+                        idx++;
+                    }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
+
+    <div class="d-grid mt-4">
+        <button type="submit" class="btn btn-success btn-lg">حفظ التقييم</button>
+    </div>
+</form>
+
+@section Scripts{
+    <script>
+        document.addEventListener('DOMContentLoaded', function(){
+            const inputs = document.querySelectorAll('.score-input');
+            const totalEl = document.getElementById('totalScore');
+
+            function recalc(){
+                let totalWeighted=0;
+                const criterionCards=document.querySelectorAll('[data-criterion-weight]');
+                criterionCards.forEach(card=>{
+                    const weight=parseFloat(card.dataset.criterionWeight)||0;
+                    let criterionTotal=0, criterionMax=0;
+                    card.querySelectorAll('.score-input').forEach(inp=>{
+                        const v=parseFloat(inp.value)||0;
+                        const mx=parseFloat(inp.max)||1;
+                        criterionTotal+=v;
+                        criterionMax+=mx;
+                    });
+                    if(criterionMax>0){
+                        const normalized=criterionTotal/criterionMax;
+                        totalWeighted+=normalized*weight;
+                    }
+                });
+                totalEl.textContent=`${totalWeighted.toFixed(2)} / 100`;
+            }
+            inputs.forEach(i=>i.addEventListener('input',()=>{
+                const val = parseInt(i.value, 10);
+                const max = parseInt(i.max, 10);
+                if (!isNaN(val) && !isNaN(max) && val > max) {
+                    i.value = max;
+                }
+                recalc()
+            }));
+            recalc();
+        });
+    </script>
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+} 

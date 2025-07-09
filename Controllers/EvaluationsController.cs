@@ -20,7 +20,7 @@ public class EvaluationsController : Controller
     public async Task<IActionResult> Index()
     {
         // TODO: Get current employee from authentication
-        var currentEmployeeId = 4; // Temporary - will be from authentication
+        var currentEmployeeId = int.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "0");
         
         // Get current employee's committee member record
         var committeeMember = await _context.CommitteeMembers
@@ -36,8 +36,12 @@ public class EvaluationsController : Controller
         var evaluations = await _context.Evaluations
             .Where(e => e.CommitteeMemberId == committeeMember.Id)
             .Include(e => e.Nomination)
-            .ThenInclude(n => n.AwardCycle)
-            .ThenInclude(ac => ac.AwardType)
+                .ThenInclude(n => n.Employee)
+            .Include(e => e.Nomination)
+                .ThenInclude(n => n.AwardCycle)
+                .ThenInclude(ac => ac.AwardType)
+                .ThenInclude(at => at.Criteria)
+                .ThenInclude(c => c.SubCriteria)
             .Include(e => e.EvaluationScores)
             .ToListAsync();
 
@@ -48,7 +52,7 @@ public class EvaluationsController : Controller
     public async Task<IActionResult> Pending()
     {
         // TODO: Get current employee from authentication
-        var currentEmployeeId = 4; // Temporary - will be from authentication
+        var currentEmployeeId = int.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "0");
         
         // Get current employee's committee member record
         var committeeMember = await _context.CommitteeMembers
@@ -62,10 +66,14 @@ public class EvaluationsController : Controller
 
         // Get nominations that need evaluation by this committee member
         var pendingNominations = await _context.Nominations
+            .Include(n => n.Employee)
+                .ThenInclude(e => e.Department)
             .Include(n => n.AwardCycle)
-            .ThenInclude(ac => ac.AwardType)
+                .ThenInclude(ac => ac.AwardType)
             .Where(n => n.AwardCycle.Status == CycleStatus.Evaluating)
             .Where(n => !n.Evaluations.Any(e => e.CommitteeMemberId == committeeMember.Id))
+            .OrderBy(n => n.Employee.DepartmentId)
+            .ThenBy(n => n.Employee.LastName)
             .ToListAsync();
 
         return View(pendingNominations);
@@ -75,7 +83,7 @@ public class EvaluationsController : Controller
     public async Task<IActionResult> Create(int nominationId)
     {
         // TODO: Get current employee from authentication
-        var currentEmployeeId = 4; // Temporary - will be from authentication
+        var currentEmployeeId = int.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "0");
         
         // Get current employee's committee member record
         var committeeMember = await _context.CommitteeMembers
@@ -88,6 +96,7 @@ public class EvaluationsController : Controller
         }
 
         var nomination = await _context.Nominations
+            .Include(n => n.Employee)
             .Include(n => n.AwardCycle)
             .ThenInclude(ac => ac.AwardType)
             .ThenInclude(at => at.Criteria)
@@ -125,7 +134,6 @@ public class EvaluationsController : Controller
                 evaluation.EvaluationScores.Add(new EvaluationScore
                 {
                     SubCriteriaId = subCriteria.SubCriteriaId,
-                    Score = 0,
                     Note = string.Empty
                 });
             }
@@ -140,7 +148,7 @@ public class EvaluationsController : Controller
     public async Task<IActionResult> Create(Evaluation evaluation)
     {
         // TODO: Get current employee from authentication
-        var currentEmployeeId = 4; // Temporary - will be from authentication
+        var currentEmployeeId = int.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "0");
         
         // Get current employee's committee member record
         var committeeMember = await _context.CommitteeMembers
@@ -157,6 +165,40 @@ public class EvaluationsController : Controller
 
         if (ModelState.IsValid)
         {
+            // Server-side validation for score ranges
+            var subCriteriaDict = await _context.SubCriteria
+                .Where(sc => evaluation.EvaluationScores.Select(es => es.SubCriteriaId).Contains(sc.SubCriteriaId))
+                .ToDictionaryAsync(sc => sc.SubCriteriaId, sc => sc.MaxScore);
+
+            foreach (var score in evaluation.EvaluationScores)
+            {
+                if (score.Score.HasValue)
+                {
+                    if (subCriteriaDict.TryGetValue(score.SubCriteriaId, out var maxScore))
+                    {
+                        if (score.Score.Value < 0 || score.Score.Value > maxScore)
+                        {
+                            ModelState.AddModelError("", $"Score for SubCriteria {score.SubCriteriaId} must be between 0 and {maxScore}.");
+                        }
+                    }
+                }
+            }
+            
+            if (!ModelState.IsValid)
+            {
+                // Reload data if validation fails
+                evaluation.Nomination = await _context.Nominations
+                    .Include(n => n.Employee)
+                    .Include(n => n.AwardCycle)
+                    .ThenInclude(ac => ac.AwardType)
+                    .ThenInclude(at => at.Criteria)
+                    .ThenInclude(c => c.SubCriteria)
+                    .Include(n => n.ManagerScores)
+                    .ThenInclude(ms => ms.SubCriteria)
+                    .FirstOrDefaultAsync(n => n.NominationId == evaluation.NominationId) ?? evaluation.Nomination;
+                return View(evaluation);
+            }
+
             _context.Add(evaluation);
             await _context.SaveChangesAsync();
             return RedirectToAction(nameof(Index));
@@ -164,6 +206,7 @@ public class EvaluationsController : Controller
 
         // Reload nomination data for view
         evaluation.Nomination = await _context.Nominations
+            .Include(n => n.Employee)
             .Include(n => n.AwardCycle)
             .ThenInclude(ac => ac.AwardType)
             .ThenInclude(at => at.Criteria)
@@ -184,7 +227,7 @@ public class EvaluationsController : Controller
         }
 
         // TODO: Get current employee from authentication
-        var currentEmployeeId = 4; // Temporary - will be from authentication
+        var currentEmployeeId = int.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "0");
         
         // Get current employee's committee member record
         var committeeMember = await _context.CommitteeMembers
@@ -198,8 +241,10 @@ public class EvaluationsController : Controller
 
         var evaluation = await _context.Evaluations
             .Include(e => e.Nomination)
-            .ThenInclude(n => n.AwardCycle)
-            .ThenInclude(ac => ac.AwardType)
+                .ThenInclude(n => n.Employee)
+            .Include(e => e.Nomination)
+                .ThenInclude(n => n.AwardCycle)
+                .ThenInclude(ac => ac.AwardType)
             .ThenInclude(at => at.Criteria)
             .ThenInclude(c => c.SubCriteria)
             .Include(e => e.Nomination.ManagerScores)
@@ -227,7 +272,7 @@ public class EvaluationsController : Controller
         }
 
         // TODO: Get current employee from authentication
-        var currentEmployeeId = 4; // Temporary - will be from authentication
+        var currentEmployeeId = int.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "0");
         
         // Get current employee's committee member record
         var committeeMember = await _context.CommitteeMembers
@@ -265,8 +310,10 @@ public class EvaluationsController : Controller
         // Reload data for view
         evaluation = await _context.Evaluations
             .Include(e => e.Nomination)
-            .ThenInclude(n => n.AwardCycle)
-            .ThenInclude(ac => ac.AwardType)
+                .ThenInclude(n => n.Employee)
+            .Include(e => e.Nomination)
+                .ThenInclude(n => n.AwardCycle)
+                .ThenInclude(ac => ac.AwardType)
             .ThenInclude(at => at.Criteria)
             .ThenInclude(c => c.SubCriteria)
             .Include(e => e.EvaluationScores)
