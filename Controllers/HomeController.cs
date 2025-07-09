@@ -83,6 +83,71 @@ public class HomeController : Controller
                 .ToListAsync();
             ViewBag.CurrentNominations = currentNominations;
         }
+
+        // Get committee member data if they are a committee member
+        if (User.IsInRole("EOM-Committee"))
+        {
+            var employeeId = int.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "0");
+            
+            // Check if user is active committee member
+            var committeeMember = await _context.CommitteeMembers
+                .FirstOrDefaultAsync(cm => cm.EmployeeId == employeeId && cm.IsActive);
+                
+            if (committeeMember != null)
+            {
+                // Get evaluation cycles (cycles in evaluation status)
+                var evaluationCycles = await _context.AwardCycles
+                    .Include(ac => ac.AwardType)
+                    .Where(ac => ac.Status == CycleStatus.Evaluating)
+                    .ToListAsync();
+                
+                ViewBag.EvaluationCycles = evaluationCycles;
+
+                // Get all nominations that need evaluation from this committee member
+                var pendingNominations = await _context.Nominations
+                    .Include(n => n.Employee)
+                    .Include(n => n.AwardCycle)
+                    .ThenInclude(ac => ac.AwardType)
+                    .Where(n => evaluationCycles.Select(ec => ec.CycleId).Contains(n.CycleId) &&
+                               !n.Evaluations.Any(e => e.CommitteeMemberId == committeeMember.Id))
+                    .ToListAsync();
+                
+                ViewBag.PendingEvaluations = pendingNominations;
+                ViewBag.PendingCount = pendingNominations.Count();
+
+                // Get completed evaluations by this committee member
+                var completedEvaluations = await _context.Evaluations
+                    .Include(e => e.Nomination)
+                    .ThenInclude(n => n.Employee)
+                    .Include(e => e.Nomination)
+                    .ThenInclude(n => n.AwardCycle)
+                    .ThenInclude(ac => ac.AwardType)
+                    .Include(e => e.EvaluationScores)
+                    .Where(e => e.CommitteeMemberId == committeeMember.Id &&
+                               evaluationCycles.Select(ec => ec.CycleId).Contains(e.Nomination.CycleId))
+                    .OrderByDescending(e => e.CreatedAt)
+                    .Take(10)
+                    .ToListAsync();
+                
+                ViewBag.CompletedEvaluations = completedEvaluations;
+                ViewBag.CompletedCount = completedEvaluations.Count();
+
+                // Calculate progress
+                var totalEvaluations = pendingNominations.Count() + completedEvaluations.Count();
+                var progressPercentage = totalEvaluations > 0 ? (completedEvaluations.Count() * 100) / totalEvaluations : 0;
+                ViewBag.ProgressPercentage = progressPercentage;
+
+                // Calculate days remaining (assuming evaluation period ends at month end)
+                var currentDate = DateTime.Now;
+                var endOfMonth = new DateTime(currentDate.Year, currentDate.Month, DateTime.DaysInMonth(currentDate.Year, currentDate.Month));
+                var daysRemaining = Math.Max(0, (endOfMonth - currentDate).Days);
+                ViewBag.DaysRemaining = daysRemaining;
+
+                // Recent activity - last 5 completed evaluations
+                var recentActivity = completedEvaluations.Take(5).ToList();
+                ViewBag.RecentActivity = recentActivity;
+            }
+        }
         
         return View();
     }

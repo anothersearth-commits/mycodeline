@@ -1,10 +1,18 @@
 @model IEnumerable<EOM.Web.Models.Nomination>
-@{
-    ViewData["Title"] = "الترشيحات للتقييم";
-    Layout = "~/Views/Shared/_Layout.cshtml";
-}
-
-<h2 class="mb-4">الترشيحات التي تحتاج إلى تقييم</h2>
+@using System.Linq
+ 
+ @{ 
+     ViewData["Title"] = "الترشيحات للتقييم";
+     Layout = "~/Views/Shared/_Layout.cshtml";
+ }
+<!-- Page header with action button -->
+<div class="page-header glass-fade-in mb-4">
+    <h1 class="m-0">الترشيحات التي تحتاج إلى تقييم</h1>
+    <a asp-action="Index" class="btn btn-primary d-flex align-items-center">
+        <i class="fas fa-check-double me-2"></i>
+        عرض التقييمات المكتملة
+    </a>
+</div>
 
 @if (!Model.Any())
 {
@@ -12,41 +20,73 @@
 }
 else
 {
+    // Quick stats
+    var total = Model.Count();
+    var departmentsCount = Model.Select(n => n.Employee?.Department?.Name ?? "قسم غير معروف").Distinct().Count();
+
+    <div class="row mb-4">
+        <div class="col-6 col-md-3">
+            <div class="stat-card text-center glass-fade-in">
+                <div class="stat-number">@total</div>
+                <div class="stat-label">إجمالي الترشيحات</div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="stat-card text-center glass-fade-in">
+                <div class="stat-number">@departmentsCount</div>
+                <div class="stat-label">الأقسام المشمولة</div>
+            </div>
+        </div>
+    </div>
+
     var grouped = Model
         .GroupBy(n => n.Employee?.Department?.Name ?? "قسم غير معروف")
         .OrderBy(g => g.Key);
 
     foreach (var dept in grouped)
     {
-        <h4 class="mt-4 text-primary">@dept.Key</h4>
-        <div class="table-responsive mb-4">
-            <table class="table table-bordered align-middle">
-                <thead class="table-light">
-                    <tr>
-                        <th>الموظف</th>
-                        <th>نوع الجائزة</th>
-                        <th>الدورة</th>
-                        <th>تاريخ الترشيح</th>
-                        <th>الإجراءات</th>
-                    </tr>
-                </thead>
-                <tbody>
-                @foreach (var nomination in dept)
-                {
-                    <tr>
-                        <td>@nomination.Employee?.FirstName @nomination.Employee?.LastName<br /><small class="text-muted">@nomination.Employee?.JobTitle</small></td>
-                        <td><span class="badge bg-info text-dark">@nomination.AwardCycle?.AwardType?.Name</span></td>
-                        <td>@nomination.AwardCycle?.Month/@nomination.AwardCycle?.Year</td>
-                        <td>@nomination.CreatedAt.ToString("dd/MM/yyyy")</td>
-                        <td>
-                            <a class="btn btn-sm btn-primary" href="@Url.Action("Create", "Evaluations", new { nominationId = nomination.NominationId })">
-                                تقييم
-                            </a>
-                        </td>
-                    </tr>
-                }
-                </tbody>
-            </table>
+        <div class="card glass-fade-in mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="m-0">@dept.Key</h5>
+                <span class="badge bg-secondary">@dept.Count()</span>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle m-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>الموظف</th>
+                                <th>نوع الجائزة</th>
+                                <th>الدورة</th>
+                                <th>تاريخ الترشيح</th>
+                                <th style="width: 120px;">الإجراءات</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        @foreach (var nomination in dept)
+                        {
+                            <tr>
+                                <td>
+                                    @nomination.Employee?.FirstName @nomination.Employee?.LastName<br />
+                                    <small class="text-muted">@nomination.Employee?.JobTitle</small>
+                                </td>
+                                <td>
+                                    <span class="badge bg-info text-dark">@nomination.AwardCycle?.AwardType?.Name</span>
+                                </td>
+                                <td>@nomination.AwardCycle?.Month/@nomination.AwardCycle?.Year</td>
+                                <td>@nomination.CreatedAt.ToString("dd/MM/yyyy")</td>
+                                <td>
+                                    <a class="btn btn-sm btn-success d-flex align-items-center" href="@Url.Action("Create", "Evaluations", new { nominationId = nomination.NominationId })">
+                                        <i class="fas fa-pen me-1"></i>
+                                        تقييم
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </div>
     }
 } 

@@ -5,13 +5,18 @@
     var pastCycles = ViewBag.PastCycles as List<EOM.Web.Models.AwardCycle> ?? new List<EOM.Web.Models.AwardCycle>();
     var currentNominations = ViewBag.CurrentNominations as List<EOM.Web.Models.Nomination> ?? new List<EOM.Web.Models.Nomination>();
     var recentCycles = ViewBag.RecentCycles as List<EOM.Web.Models.AwardCycle> ?? new List<EOM.Web.Models.AwardCycle>();
+    
+    // Committee member data
+    var pendingEvaluations = ViewBag.PendingEvaluations as List<EOM.Web.Models.Nomination> ?? new List<EOM.Web.Models.Nomination>();
+    var completedEvaluations = ViewBag.CompletedEvaluations as List<EOM.Web.Models.Evaluation> ?? new List<EOM.Web.Models.Evaluation>();
+    var pendingCount = ViewBag.PendingCount as int? ?? 0;
+    var completedCount = ViewBag.CompletedCount as int? ?? 0;
+    var progressPercentage = ViewBag.ProgressPercentage as int? ?? 0;
+    var daysRemaining = ViewBag.DaysRemaining as int? ?? 0;
+    var recentActivity = ViewBag.RecentActivity as List<EOM.Web.Models.Evaluation> ?? new List<EOM.Web.Models.Evaluation>();
 }
 
 <div class="glass-fade-in">
-    <div class="text-center mb-5">
-        <h1 class="display-4 mb-3">مرحباً بكم في نظام موظف الشهر</h1>
-        <p class="lead">نظام إدارة ترشيحات وتقييمات جوائز الموظف المثالي</p>
-    </div>
     
     @if (User.IsInRole("Manager") && openCycles.Any())
     {
@@ -197,7 +202,145 @@
         </div>
     }
     
-    @if (!User.IsInRole("Manager"))
+    @if (User.IsInRole("EOM-Committee"))
+    {
+        <!-- Committee Member Dashboard -->
+        <div class="committee-dashboard">
+            <!-- Quick Actions Grid -->
+            <div class="row g-4 mb-4">
+                <div class="col-md-4">
+                    <div class="quick-action-card pending">
+                        <div class="card-icon">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                        <div class="card-content">
+                            <h3>التقييمات المعلقة</h3>
+                            <p>عرض جميع الترشيحات التي تحتاج إلى تقييم</p>
+                            <div class="badge-count">@pendingCount مطلوب</div>
+                        </div>
+                        <div class="card-action">
+                            <a href="@Url.Action("Pending", "Evaluations")" class="btn-quick">
+                                عرض الكل
+                                <i class="fas fa-arrow-left"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-4">
+                    <div class="quick-action-card completed">
+                        <div class="card-icon">
+                            <i class="fas fa-check-circle"></i>
+                        </div>
+                        <div class="card-content">
+                            <h3>التقييمات المكتملة</h3>
+                            <p>مراجعة وتعديل التقييمات المنجزة</p>
+                            <div class="badge-count">@completedCount مكتملة</div>
+                        </div>
+                        <div class="card-action">
+                            <a href="@Url.Action("Index", "Evaluations")" class="btn-quick">
+                                عرض الكل
+                                <i class="fas fa-arrow-left"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Manage Cycles Action -->
+                <div class="col-md-4">
+                    <div class="quick-action-card manage">
+                        <div class="card-icon">
+                            <i class="fas fa-cogs"></i>
+                        </div>
+                        <div class="card-content">
+                            <h3>إدارة الدورات</h3>
+                            <p>فتح، إغلاق، أو تغيير حالة الدورات الحالية</p>
+                            <div class="badge-count">@((ViewBag.EvaluationCycles?.Count ?? 0)) قيد التقييم</div>
+                        </div>
+                        <div class="card-action">
+                            <a href="@Url.Action("Index", "AwardCycles")" class="btn-quick">
+                                إدارة
+                                <i class="fas fa-arrow-left"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Progress Section -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="progress-card">
+                        <div class="progress-header">
+                            <h3>تقدم التقييم</h3>
+                            <div class="progress-percentage">@progressPercentage%</div>
+                        </div>
+                        <div class="progress-bar-container">
+                            <div class="progress-bar" style="width: @progressPercentage%"></div>
+                        </div>
+                        <div class="progress-details">
+                            <div class="detail-item">
+                                <span>مكتملة</span>
+                                <span>@completedCount من @(pendingCount + completedCount)</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Activity -->
+            <div class="row">
+                <div class="col-12">
+                    <div class="activity-card">
+                        <div class="activity-header">
+                            <h3>النشاط الأخير</h3>
+                            <a href="@Url.Action("Index", "Evaluations")" class="view-all-link">
+                                عرض جميع التقييمات
+                            </a>
+                        </div>
+                        <div class="activity-list">
+                            @foreach (var activity in recentActivity)
+                            {
+                                <div class="activity-item">
+                                    <div class="activity-icon completed">
+                                        <i class="fas fa-check"></i>
+                                    </div>
+                                    <div class="activity-content">
+                                        <div class="activity-title">تم تقييم @activity.Nomination?.Employee?.FirstName @activity.Nomination?.Employee?.LastName</div>
+                                        <div class="activity-meta">@activity.Nomination?.AwardCycle?.AwardType?.Name - @activity.Nomination?.AwardCycle?.Month/@activity.Nomination?.AwardCycle?.Year • منذ @((DateTime.Now - activity.CreatedAt).TotalMinutes < 60 ? (int)(DateTime.Now - activity.CreatedAt).TotalMinutes + " دقيقة" : (int)(DateTime.Now - activity.CreatedAt).TotalHours + " ساعة")</div>
+                                    </div>
+                                    <div class="activity-score">
+                                        @{
+                                            var totalScore = activity.EvaluationScores?.Sum(es => es.Score ?? 0) ?? 0;
+                                        }
+                                        @totalScore/100
+                                    </div>
+                                </div>
+                            }
+                            
+                            @if (pendingEvaluations.Any())
+                            {
+                                var firstPending = pendingEvaluations.First();
+                                <div class="activity-item">
+                                    <div class="activity-icon pending">
+                                        <i class="fas fa-clock"></i>
+                                    </div>
+                                    <div class="activity-content">
+                                        <div class="activity-title">في انتظار تقييم @firstPending.Employee?.FirstName @firstPending.Employee?.LastName</div>
+                                        <div class="activity-meta">@firstPending.AwardCycle?.AwardType?.Name - @firstPending.AwardCycle?.Month/@firstPending.AwardCycle?.Year • مرشح منذ @((DateTime.Now - firstPending.CreatedAt).TotalHours < 24 ? (int)(DateTime.Now - firstPending.CreatedAt).TotalHours + " ساعة" : (int)(DateTime.Now - firstPending.CreatedAt).TotalDays + " يوم")</div>
+                                    </div>
+                                    <div class="activity-action">
+                                        <a href="@Url.Action("Create", "Evaluations", new { nominationId = firstPending.NominationId })" class="btn-evaluate">تقييم</a>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+    else if (!User.IsInRole("Manager"))
     {
         <div class="row g-4">
             <div class="col-md-4">
@@ -207,7 +350,7 @@
                     </div>
                     <h5 class="card-title">إدارة الدورات</h5>
                     <p class="card-text">إنشاء وإدارة دورات الجوائز الشهرية</p>
-                    @if (User.IsInRole("EOM-Admin") || User.IsInRole("EOM-Committee"))
+                    @if (User.IsInRole("EOM-Admin"))
                     {
                         <a href="@Url.Action("Index", "AwardCycles")" class="btn btn-primary">عرض الدورات</a>
                     }
@@ -230,10 +373,6 @@
                     </div>
                     <h5 class="card-title">التقييمات</h5>
                     <p class="card-text">تقييم المرشحين من قبل اللجنة</p>
-                    @if (User.IsInRole("EOM-Committee"))
-                    {
-                        <a href="@Url.Action("Pending", "Evaluations")" class="btn btn-warning">بدء التقييم</a>
-                    }
                 </div>
             </div>
         </div>
@@ -407,6 +546,431 @@
 .view-details-btn:hover {
     background: linear-gradient(135deg, #0b5ed7, #0a58ca);
     transform: translateY(-1px);
+}
+
+/* Committee Dashboard Styles */
+.committee-dashboard {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+/* Urgent Card Styles */
+.urgent-card {
+    background: linear-gradient(135deg, #ff6b6b, #ff8787);
+    color: white;
+    border-radius: 20px;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 10px 30px rgba(255, 107, 107, 0.3);
+    animation: urgentPulse 3s infinite;
+}
+
+@@keyframes urgentPulse {
+    0%, 100% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.01);
+    }
+}
+
+.urgent-header {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.urgent-icon {
+    font-size: 3rem;
+    color: #fff;
+    opacity: 0.9;
+}
+
+.urgent-text h2 {
+    font-size: 2rem;
+    font-weight: 700;
+    margin: 0;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.urgent-text p {
+    font-size: 1.1rem;
+    margin: 0.5rem 0 0;
+    opacity: 0.9;
+}
+
+.urgent-timer {
+    margin-left: auto;
+    text-align: center;
+}
+
+.timer-display {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 15px;
+    padding: 1rem;
+    backdrop-filter: blur(10px);
+}
+
+.timer-number {
+    font-size: 3rem;
+    font-weight: 900;
+    line-height: 1;
+}
+
+.timer-label {
+    font-size: 0.9rem;
+    opacity: 0.9;
+}
+
+.urgent-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 2rem;
+}
+
+.action-stats {
+    display: flex;
+    gap: 2rem;
+}
+
+.stat-item {
+    text-align: center;
+}
+
+.stat-item .stat-number {
+    font-size: 2rem;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.stat-item .stat-label {
+    font-size: 0.9rem;
+    opacity: 0.9;
+}
+
+.btn-urgent {
+    background: rgba(255, 255, 255, 0.2);
+    border: 2px solid rgba(255, 255, 255, 0.4);
+    color: white;
+    padding: 1rem 2rem;
+    font-size: 1.1rem;
+    font-weight: 600;
+    border-radius: 15px;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(10px);
+}
+
+.btn-urgent:hover {
+    background: rgba(255, 255, 255, 0.3);
+    border-color: rgba(255, 255, 255, 0.6);
+    color: white;
+    transform: translateY(-2px);
+}
+
+/* Quick Action Cards */
+.quick-action-card {
+    background: white;
+    border-radius: 16px;
+    padding: 2rem;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.quick-action-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 12px 35px rgba(0, 0, 0, 0.15);
+}
+
+.quick-action-card.pending {
+    border-left: 5px solid #ff6b6b;
+}
+
+.quick-action-card.completed {
+    border-left: 5px solid #28a745;
+}
+
+.quick-action-card.manage {
+    border-left: 5px solid #2563eb;
+}
+
+.quick-action-card .card-icon {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+}
+
+.quick-action-card.pending .card-icon {
+    color: #ff6b6b;
+}
+
+.quick-action-card.completed .card-icon {
+    color: #28a745;
+}
+
+.quick-action-card.manage .card-icon {
+    color: #2563eb;
+}
+
+.quick-action-card .card-content {
+    flex: 1;
+}
+
+.quick-action-card h3 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+    color: #333;
+}
+
+.quick-action-card p {
+    color: #666;
+    margin-bottom: 1rem;
+}
+
+.badge-count {
+    display: inline-block;
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-weight: 600;
+    font-size: 0.9rem;
+    margin-bottom: 1rem;
+}
+
+.pending .badge-count {
+    background: #ffebee;
+    color: #c62828;
+}
+
+.completed .badge-count {
+    background: #e8f5e8;
+    color: #2e7d32;
+}
+
+.btn-quick {
+    background: linear-gradient(135deg, #007bff, #0056b3);
+    color: white;
+    padding: 0.75rem 1.5rem;
+    border-radius: 10px;
+    text-decoration: none;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: all 0.3s ease;
+    margin-top: auto;
+}
+
+.btn-quick:hover {
+    background: linear-gradient(135deg, #0056b3, #004085);
+    color: white;
+    transform: translateY(-1px);
+}
+
+/* Progress Card */
+.progress-card {
+    background: white;
+    border-radius: 16px;
+    padding: 2rem;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+}
+
+.progress-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+.progress-header h3 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #333;
+    margin: 0;
+}
+
+.progress-percentage {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #007bff;
+}
+
+.progress-bar-container {
+    height: 12px;
+    background: #e9ecef;
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 1.5rem;
+}
+
+.progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, #007bff, #0056b3);
+    transition: width 0.3s ease;
+}
+
+.progress-details {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.detail-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.detail-item span:first-child {
+    font-weight: 600;
+    color: #666;
+    font-size: 0.9rem;
+}
+
+.detail-item span:last-child {
+    font-weight: 700;
+    color: #333;
+    font-size: 1.1rem;
+}
+
+/* Activity Card */
+.activity-card {
+    background: white;
+    border-radius: 16px;
+    padding: 2rem;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+}
+
+.activity-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+.activity-header h3 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #333;
+    margin: 0;
+}
+
+.view-all-link {
+    color: #007bff;
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.view-all-link:hover {
+    color: #0056b3;
+}
+
+.activity-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.activity-item {
+    display: flex;
+    align-items: center;
+    padding: 1rem;
+    border-radius: 12px;
+    background: #f8f9fa;
+    transition: all 0.3s ease;
+}
+
+.activity-item:hover {
+    background: #e9ecef;
+}
+
+.activity-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    margin-left: 1rem;
+}
+
+.activity-icon.completed {
+    background: #28a745;
+    color: white;
+}
+
+.activity-icon.pending {
+    background: #ffc107;
+    color: #212529;
+}
+
+.activity-content {
+    flex: 1;
+}
+
+.activity-title {
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 0.25rem;
+}
+
+.activity-meta {
+    color: #666;
+    font-size: 0.9rem;
+}
+
+.activity-score {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #007bff;
+    margin-right: 1rem;
+}
+
+.btn-evaluate {
+    background: #007bff;
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 0.9rem;
+    transition: all 0.3s ease;
+}
+
+.btn-evaluate:hover {
+    background: #0056b3;
+    color: white;
+    transform: translateY(-1px);
+}
+
+/* Responsive Design */
+@@media (max-width: 768px) {
+    .urgent-header {
+        flex-direction: column;
+        gap: 1rem;
+    }
+    
+    .urgent-actions {
+        flex-direction: column;
+        gap: 1rem;
+    }
+    
+    .action-stats {
+        justify-content: center;
+    }
+    
+    .progress-details {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
 }
 </style>
 

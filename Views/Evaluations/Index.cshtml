@@ -1,4 +1,5 @@
 @model IEnumerable<EOM.Web.Models.Evaluation>
+@using System.Linq
 
 @{
     ViewData["Title"] = "تقييماتي المكتملة";
@@ -36,10 +37,10 @@
     }
 }
 
-<h2 class="mb-4">تقييماتي المكتملة</h2>
-
-<div class="mb-3">
-    <a asp-action="Pending" class="btn btn-outline-primary">
+<!-- Page header with action button -->
+<div class="page-header glass-fade-in mb-4">
+    <h1 class="m-0">تقييماتي المكتملة</h1>
+    <a asp-action="Pending" class="btn btn-primary d-flex align-items-center">
         <i class="fas fa-list-check me-2"></i>
         عرض الترشيحات قيد الانتظار
     </a>
@@ -52,37 +53,64 @@
 }
 else
 {
-    <div class="table-responsive">
-        <table class="table table-bordered table-hover align-middle">
-            <thead class="table-light">
-                <tr>
-                    <th>المرشح</th>
-                    <th>نوع الجائزة</th>
-                    <th>الدورة</th>
-                    <th>الدرجة النهائية</th>
-                    <th style="width: 120px;">الإجراءات</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var item in Model.OrderByDescending(e => e.CreatedAt))
-                {
-                    <tr>
-                        <td>@item.Nomination?.Employee?.FirstName @item.Nomination?.Employee?.LastName</td>
-                        <td>@item.Nomination?.AwardCycle?.AwardType?.Name</td>
-                        <td>@item.Nomination?.AwardCycle?.Month/@item.Nomination?.AwardCycle?.Year</td>
-                        <td>
-                            <span class="badge bg-primary" style="font-size: 1rem;">
-                                @CalculateTotalScore(item).ToString("F2") / 100
-                            </span>
-                        </td>
-                        <td>
-                            <a asp-action="Edit" asp-route-id="@item.EvaluationId" class="btn btn-sm btn-outline-secondary">
-                                <i class="fas fa-edit me-1"></i> تعديل
-                            </a>
-                        </td>
-                    </tr>
-                }
-            </tbody>
-        </table>
+    <!-- Quick stats -->
+    <div class="row mb-4">
+        <div class="col-6 col-md-3">
+            <div class="stat-card text-center glass-fade-in">
+                <div class="stat-number">@Model.Count()</div>
+                <div class="stat-label">إجمالي التقييمات</div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="stat-card text-center glass-fade-in">
+                <div class="stat-number">
+                    @Model.Average(e => CalculateTotalScore(e)).ToString("F1")
+                </div>
+                <div class="stat-label">متوسط الدرجة</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card glass-fade-in">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle m-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>المرشح</th>
+                            <th>نوع الجائزة</th>
+                            <th>الدورة</th>
+                            <th>الدرجة النهائية</th>
+                            <th style="width: 120px;">الإجراءات</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model.OrderByDescending(e => e.CreatedAt))
+                        {
+                            var score = CalculateTotalScore(item);
+                            string badgeClass = score >= 90 ? "badge-success" :
+                                                score >= 70 ? "badge-info" :
+                                                score >= 50 ? "badge-warning" : "badge-danger";
+                            <tr>
+                                <td>@item.Nomination?.Employee?.FirstName @item.Nomination?.Employee?.LastName</td>
+                                <td>@item.Nomination?.AwardCycle?.AwardType?.Name</td>
+                                <td>@item.Nomination?.AwardCycle?.Month/@item.Nomination?.AwardCycle?.Year</td>
+                                <td>
+                                    <span class="badge @badgeClass" style="font-size: 1rem;">
+                                        @score.ToString("F1")
+                                    </span>
+                                </td>
+                                <td>
+                                    <a asp-action="Edit" asp-route-id="@item.EvaluationId" class="btn btn-sm btn-secondary d-flex align-items-center">
+                                        <i class="fas fa-edit me-1"></i>
+                                        تعديل
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
     </div>
 } 
