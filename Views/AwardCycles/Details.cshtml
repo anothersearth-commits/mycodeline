@@ -199,10 +199,16 @@
                             </tr>
                         </thead>
                         <tbody>
-                            @foreach (var nomination in Model.Nominations)
+                            @foreach (var nomination in Model.Nominations.OrderByDescending(n => n.IsWinner).ThenBy(n => n.NominationId))
                             {
                                 <tr>
-                                    <td>@nomination.Employee.FirstName @nomination.Employee.LastName</td>
+                                    <td>
+                                        @nomination.Employee.FirstName @nomination.Employee.LastName
+                                        @if (nomination.IsWinner)
+                                        {
+                                            <span class="badge bg-success ms-2">🏆 وسام الفائز</span>
+                                        }
+                                    </td>
                                     <td>@nomination.Employee.JobTitle</td>
                                     <td>@(nomination.Employee.Department?.Name ?? $"قسم {nomination.Employee.DepartmentId}")</td>
                                     <td>@nomination.Manager.FirstName @nomination.Manager.LastName</td>

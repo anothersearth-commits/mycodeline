@@ -32,9 +32,9 @@ public class EvaluationsController : Controller
             return Forbid("غير مخول للتقييم");
         }
 
-        // Get current user's evaluations
+        // Get evaluations from the current active cycle (status = Evaluating)
         var evaluations = await _context.Evaluations
-            .Where(e => e.CommitteeMemberId == committeeMember.Id)
+            .Where(e => e.CommitteeMemberId == committeeMember.Id && e.Nomination.AwardCycle.Status == CycleStatus.Evaluating)
             .Include(e => e.Nomination)
                 .ThenInclude(n => n.Employee)
             .Include(e => e.Nomination)

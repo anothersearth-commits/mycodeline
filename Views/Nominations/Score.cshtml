@@ -107,11 +107,25 @@
                                             <div class="col-lg-2 col-md-4 mb-2 mb-md-0">
                                                 <label class="form-label d-lg-none">الدرجة</label>
                                                 <input type="hidden" name="managerScores[@idx].SubCriteriaId" value="@sub.SubCriteriaId" />
-                                                <input type="number" class="form-control text-center score-input" name="managerScores[@idx].Score" min="0" max="@sub.MaxScore" value="@scoreEntry.Score" required placeholder="0-@sub.MaxScore" />
+                                                <select class="form-select text-center score-input" name="managerScores[@idx].Score" required>
+                                                    <option value="">اختر الدرجة</option>
+                                                    @for (int i = 0; i <= sub.MaxScore; i++)
+                                                    {
+                                                        if (scoreEntry.Score == i)
+                                                        {
+                                                            <option value="@i" selected>@i</option>
+                                                        }
+                                                        else
+                                                        {
+                                                            <option value="@i">@i</option>
+                                                        }
+                                                    }
+                                                </select>
                                             </div>
                                             <div class="col-lg-5 col-md-8">
                                                 <label class="form-label d-lg-none">ملاحظات</label>
-                                                <textarea class="form-control" name="managerScores[@idx].Note" rows="1" placeholder="ملاحظات (اختياري)">@scoreEntry.Note</textarea>
+                                                <textarea class="form-control" name="managerScores[@idx].Note" rows="1" placeholder="ملاحظات (مطلوبة)" required>@scoreEntry.Note</textarea>
+                                                <span class="text-danger field-validation-valid" data-valmsg-for="managerScores[@idx].Note" data-valmsg-replace="true"></span>
                                             </div>
                                         </div>
                                     </li>
@@ -222,11 +236,17 @@
 
                     item.querySelectorAll('.score-input').forEach(input => {
                         const score = parseFloat(input.value) || 0;
-                        const maxScore = parseFloat(input.getAttribute('max')) || 1;
+                        // Get max score from select options, not from attribute
+                        let maxValue = 0;
+                        input.querySelectorAll('option').forEach(opt => {
+                            if (opt.value !== '') {
+                                maxValue = Math.max(maxValue, parseFloat(opt.value));
+                            }
+                        });
                         criterionTotalScore += score;
-                        criterionTotalMaxScore += maxScore;
+                        criterionTotalMaxScore += maxValue;
                     });
-                    
+
                     if (criterionTotalMaxScore > 0) {
                         const normalizedScore = (criterionTotalScore / criterionTotalMaxScore);
                         totalWeightedScore += normalizedScore * weight;

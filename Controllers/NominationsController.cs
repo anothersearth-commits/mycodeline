@@ -37,11 +37,18 @@ public class NominationsController : Controller
         var nomination = await _context.Nominations
             .Include(n => n.AwardCycle)
             .ThenInclude(ac => ac.AwardType)
+            .ThenInclude(at => at.Criteria)
+            .ThenInclude(c => c.SubCriteria)
             .Include(n => n.ManagerScores)
             .ThenInclude(ms => ms.SubCriteria)
             .Include(n => n.Evaluations)
-            .ThenInclude(e => e.EvaluationScores)
-            .ThenInclude(es => es.SubCriteria)
+                .ThenInclude(e => e.EvaluationScores)
+                    .ThenInclude(es => es.SubCriteria)
+            .Include(n => n.Evaluations)
+                .ThenInclude(e => e.CommitteeMember)
+                    .ThenInclude(cm => cm.Employee)
+            .Include(n => n.Employee)
+            .Include(n => n.Manager)
             .FirstOrDefaultAsync(m => m.NominationId == id);
         
         if (nomination == null)
@@ -90,10 +97,12 @@ public class NominationsController : Controller
 
         int selectedCycleId = cycleId ?? activeCycles.First().CycleId;
 
-        // Get department quota for the manager
+        // Fetch quota for the specific award type of the selected cycle (avoid picking quota rows with MaxNominations = 0)
+        var selectedCycle = activeCycles.First(c => c.CycleId == selectedCycleId);
+
         var departmentQuota = await _context.DepartmentQuotas
             .Include(dq => dq.AwardType)
-            .FirstOrDefaultAsync(dq => dq.DepartmentId == currentEmployee.DepartmentId);
+            .FirstOrDefaultAsync(dq => dq.DepartmentId == currentEmployee.DepartmentId && dq.AwardTypeId == selectedCycle.AwardTypeId);
 
         // Get already nominated employees in this cycle
         var nominatedEmployeeIds = await _context.Nominations
@@ -118,6 +127,11 @@ public class NominationsController : Controller
         bool hideCycleSelect = activeCycles.Count == 1 || cycleId.HasValue;
         ViewBag.HideCycleSelect = hideCycleSelect;
         ViewData["DepartmentEmployees"] = departmentEmployees;
+        if (departmentQuota != null && departmentQuota.MaxNominations <= 0)
+        {
+            departmentQuota.MaxNominations = departmentQuota.Quota > 0 ? departmentQuota.Quota : 2;
+        }
+
         ViewData["DepartmentQuota"] = departmentQuota;
         ViewData["ExistingNominations"] = existingNominations;
         ViewData["CanNominate"] = departmentQuota == null || existingNominations < departmentQuota.MaxNominations;
@@ -159,9 +173,9 @@ public class NominationsController : Controller
 
         // Check department quota
         var departmentQuota = await _context.DepartmentQuotas
-            .FirstOrDefaultAsync(dq => dq.DepartmentId == currentEmployee.DepartmentId);
+            .FirstOrDefaultAsync(dq => dq.DepartmentId == currentEmployee.DepartmentId && dq.AwardTypeId == (_context.AwardCycles.Where(c=>c.CycleId==nomination.CycleId).Select(c=>c.AwardTypeId).FirstOrDefault()));
         
-        if (departmentQuota != null)
+        if (departmentQuota != null && departmentQuota.MaxNominations > 0)
         {
             var existingNominations = await _context.Nominations
                 .CountAsync(n => n.ManagerId == currentEmployeeId && n.CycleId == nomination.CycleId);
@@ -217,6 +231,7 @@ public class NominationsController : Controller
     }
 
     // GET: Nominations/Score/5
+    [Authorize(Roles = "Manager,EOM-Admin")]
     public async Task<IActionResult> Score(int? id)
     {
         if (id == null)
@@ -236,6 +251,13 @@ public class NominationsController : Controller
         if (nomination == null)
         {
             return NotFound();
+        }
+
+        // Disallow editing if cycle is closed or published
+        if (nomination.AwardCycle.Status == CycleStatus.Closed || nomination.AwardCycle.Status == CycleStatus.Published)
+        {
+            TempData["Error"] = "Cannot edit manager score after the cycle is closed.";
+            return RedirectToAction("CycleDetails", new { id = nomination.CycleId });
         }
 
         // Initialize manager scores if they don't exist
@@ -262,6 +284,7 @@ public class NominationsController : Controller
     // POST: Nominations/Score/5
     [HttpPost]
     [ValidateAntiForgeryToken]
+    [Authorize(Roles = "Manager,EOM-Admin")]
     public async Task<IActionResult> Score(int id, List<ManagerScore> managerScores, IFormFile? supportingDoc)
     {
         var nomination = await _context.Nominations
@@ -273,6 +296,12 @@ public class NominationsController : Controller
         if (nomination == null)
         {
             return NotFound();
+        }
+
+        if (nomination.AwardCycle.Status == CycleStatus.Closed || nomination.AwardCycle.Status == CycleStatus.Published)
+        {
+            TempData["Error"] = "Cannot edit manager score after the cycle is closed.";
+            return RedirectToAction("CycleDetails", new { id = nomination.CycleId });
         }
 
         // Handle file upload (optional)

@@ -12,10 +12,12 @@ namespace EOM.Web.Controllers;
 public class AwardCyclesController : Controller
 {
     private readonly ApplicationDbContext _context;
+    private readonly Services.CycleRankingService _rankingService;
 
     public AwardCyclesController(ApplicationDbContext context)
     {
         _context = context;
+        _rankingService = new Services.CycleRankingService(context);
     }
 
     // GET: AwardCycles
@@ -279,6 +281,62 @@ public class AwardCyclesController : Controller
 
         TempData["Success"] = "تم إغلاق الدورة بنجاح.";
         return RedirectToAction(nameof(Index));
+    }
+
+    // GET: AwardCycles/SelectWinner/5
+    [HttpGet]
+    public async Task<IActionResult> SelectWinner(int id)
+    {
+        var cycle = await _context.AwardCycles.Include(c => c.AwardType).FirstOrDefaultAsync(c => c.CycleId == id);
+        if (cycle == null)
+        {
+            return NotFound();
+        }
+
+        var ranked = await _rankingService.GetRankedNominationsAsync(id);
+
+        var vm = new NominationRankingViewModel
+        {
+            CycleId = id,
+            RankedNominations = ranked
+        };
+
+        return View(vm); // Views/AwardCycles/SelectWinner.cshtml (to be created)
+    }
+
+    // POST: AwardCycles/SelectWinner/5
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> SelectWinner(int id, int nominationId)
+    {
+        var nomination = await _context.Nominations.FirstOrDefaultAsync(n => n.NominationId == nominationId && n.CycleId == id);
+        if (nomination == null)
+        {
+            return NotFound();
+        }
+
+        nomination.IsWinner = true;
+        nomination.WonAt = DateTime.UtcNow;
+
+        // Optionally store committee member who selected winner
+        var committeeMemberId = int.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "0");
+        nomination.SelectedByCommitteeMemberId = committeeMemberId;
+
+        // Set other nominations IsWinner false (ensure single winner)
+        var others = _context.Nominations.Where(n => n.CycleId == id && n.NominationId != nominationId);
+        await others.ForEachAsync(n => n.IsWinner = false);
+
+        // Mark cycle completed
+        var cycle = await _context.AwardCycles.FindAsync(id);
+        if (cycle != null)
+        {
+            cycle.Status = CycleStatus.Published;
+        }
+
+        await _context.SaveChangesAsync();
+
+        TempData["Success"] = "Winner selected and cycle completed.";
+        return RedirectToAction("Details", new { id });
     }
 
     private bool AwardCycleExists(int id)

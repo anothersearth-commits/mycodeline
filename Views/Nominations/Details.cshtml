@@ -1,0 +1,387 @@
+@model EOM.Web.Models.Nomination
+@{
+    ViewData["Title"] = "تفاصيل الترشيح";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container py-4">
+    <div class="page-header glass-fade-in mb-4">
+        <div class="d-flex justify-content-between align-items-center">
+            <h1 class="m-0">تفاصيل الترشيح</h1>
+            <a href="@Url.Action("CycleDetails", "Nominations", new { id = Model.CycleId })" class="btn btn-secondary">
+                <i class="fas fa-arrow-right me-2"></i>العودة للدورة
+            </a>
+        </div>
+    </div>
+
+    <div class="card mb-4">
+        <div class="card-body">
+            <h4>@Model.Employee?.FirstName @Model.Employee?.LastName <small class="text-muted">@Model.Employee?.JobTitle</small></h4>
+            <div>الدائرة: <b>@Model.Employee?.Department?.Name</b></div>
+            <div>مدير المرشح: <b>@Model.Manager?.FirstName @Model.Manager?.LastName</b></div>
+            <div>تاريخ الترشيح: <b>@Model.CreatedAt.ToString("dd/MM/yyyy")</b></div>
+            @if (Model.IsWinner)
+            {
+                <div class="mt-2"><span class="badge bg-success">🏆 وسام الفائز</span></div>
+            }
+        </div>
+    </div>
+
+    <!-- Professional Header Section -->
+    <div class="bg-gradient-primary text-white rounded-4 p-4 mb-5 shadow-lg position-relative overflow-hidden" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+        <div class="position-absolute top-0 end-0 opacity-10">
+            <i class="fas fa-trophy" style="font-size: 8rem;"></i>
+        </div>
+        <div class="row align-items-center position-relative">
+            <div class="col-md-8">
+                <div class="d-flex align-items-center mb-2">
+                    <div class="bg-white bg-opacity-20 rounded-circle p-3 me-3">
+                        <i class="fas fa-award text-white" style="font-size: 1.5rem;"></i>
+                    </div>
+                    <div>
+                        <h1 class="h3 mb-1 fw-bold">ترشيح @Model.Employee?.FirstName @Model.Employee?.LastName</h1>
+                        <p class="mb-0 opacity-90">
+                            <i class="fas fa-medal me-2"></i>
+                            @Model.AwardCycle?.AwardType?.Name - @Model.AwardCycle?.Month/@Model.AwardCycle?.Year
+                        </p>
+                    </div>
+                </div>
+            </div>
+            @if (Model.IsWinner)
+            {
+                <div class="col-md-4 text-end">
+                    <div class="bg-success bg-opacity-20 rounded-pill px-4 py-2 d-inline-block">
+                        <i class="fas fa-crown text-warning me-2"></i>
+                        <span class="fw-bold">الفائز</span>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- Modern Score Dashboard -->
+    <div class="row g-4 mb-5">
+        <div class="col-lg-4">
+            <div class="card h-100 border-0 shadow-sm position-relative overflow-hidden">
+                <div class="position-absolute top-0 start-0 w-100 h-2" style="background: linear-gradient(90deg, #4e73df, #224abe);"></div>
+                <div class="card-body text-center p-4">
+                    <div class="mb-3">
+                        <div class="d-inline-flex align-items-center justify-content-center rounded-circle mb-3" 
+                             style="width: 60px; height: 60px; background: linear-gradient(135deg, #4e73df, #224abe);">
+                            <i class="fas fa-user-tie text-white" style="font-size: 1.5rem;"></i>
+                        </div>
+                        <h6 class="text-muted text-uppercase fw-bold mb-0" style="font-size: 0.75rem; letter-spacing: 1px;">درجة المدير</h6>
+                    </div>
+                    <div class="mb-3">
+                        <span class="display-4 fw-bold" style="color: #4e73df;">@GetManagerScore(Model).ToString("F1")</span>
+                        <span class="h6 text-muted ms-1">/ 100</span>
+                    </div>
+                    <div class="progress" style="height: 8px;">
+                        <div class="progress-bar" style="width: @(GetManagerScore(Model))%; background: linear-gradient(90deg, #4e73df, #224abe);"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-4">
+            <div class="card h-100 border-0 shadow-sm position-relative overflow-hidden">
+                <div class="position-absolute top-0 start-0 w-100 h-2" style="background: linear-gradient(90deg, #1cc88a, #13855c);"></div>
+                <div class="card-body text-center p-4">
+                    <div class="mb-3">
+                        <div class="d-inline-flex align-items-center justify-content-center rounded-circle mb-3" 
+                             style="width: 60px; height: 60px; background: linear-gradient(135deg, #1cc88a, #13855c);">
+                            <i class="fas fa-users text-white" style="font-size: 1.5rem;"></i>
+                        </div>
+                        <h6 class="text-muted text-uppercase fw-bold mb-0" style="font-size: 0.75rem; letter-spacing: 1px;">درجة اللجنة</h6>
+                    </div>
+                    <div class="mb-3">
+                        <span class="display-4 fw-bold" style="color: #1cc88a;">@GetCommitteeAverage(Model).ToString("F1")</span>
+                        <span class="h6 text-muted ms-1">/ 100</span>
+                    </div>
+                    <div class="progress" style="height: 8px;">
+                        <div class="progress-bar" style="width: @(GetCommitteeAverage(Model))%; background: linear-gradient(90deg, #1cc88a, #13855c);"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-4">
+            <div class="card h-100 border-0 shadow-sm position-relative overflow-hidden">
+                <div class="position-absolute top-0 start-0 w-100 h-2" style="background: linear-gradient(90deg, #f6c23e, #dda20a);"></div>
+                <div class="card-body text-center p-4">
+                    <div class="mb-3">
+                        <div class="d-inline-flex align-items-center justify-content-center rounded-circle mb-3" 
+                             style="width: 60px; height: 60px; background: linear-gradient(135deg, #f6c23e, #dda20a);">
+                            <i class="fas fa-trophy text-white" style="font-size: 1.5rem;"></i>
+                        </div>
+                        <h6 class="text-muted text-uppercase fw-bold mb-0" style="font-size: 0.75rem; letter-spacing: 1px;">المتوسط النهائي</h6>
+                    </div>
+                    <div class="mb-3">
+                        <span class="display-4 fw-bold" style="color: #f6c23e;">@GetFinalAverage(Model).ToString("F1")</span>
+                        <span class="h6 text-muted ms-1">/ 100</span>
+                    </div>
+                    <div class="progress" style="height: 8px;">
+                        <div class="progress-bar" style="width: @(GetFinalAverage(Model))%; background: linear-gradient(90deg, #f6c23e, #dda20a);"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-12 mb-4">
+            <div class="card">
+                <div class="card-header bg-info text-white">مرفقات المدير</div>
+                <div class="card-body">
+                    @if (!string.IsNullOrEmpty(Model.SupportingDocPath))
+                    {
+                        <a href="@Url.Content("~" + Model.SupportingDocPath)" target="_blank" class="btn btn-outline-primary">
+                            <i class="fas fa-file-pdf"></i> عرض الملف المرفق
+                        </a>
+                    }
+                    else
+                    {
+                        <span class="text-muted">لا يوجد ملف مرفق من المدير.</span>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Manager Evaluation Section (Full Width, Collapsible) -->
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center" 
+                     data-bs-toggle="collapse" 
+                     data-bs-target="#managerEvalCollapse" 
+                     aria-expanded="false" 
+                     aria-controls="managerEvalCollapse"
+                     style="cursor: pointer; background-color: #007bff; color: white;">
+                    <span>
+                        <i class="fas fa-chevron-down me-2"></i>
+                        تقييم المدير
+                        @if (Model.ManagerScores.Any())
+                        {
+                            <span class="badge bg-dark ms-2">@Model.ManagerScores.Count معيار</span>
+                        }
+                    </span>
+                    @if (Model.ManagerScores.Any())
+                    {
+                        <span class="badge bg-dark">الدرجة: @GetManagerScore(Model).ToString("F1") / 100</span>
+                    }
+                </div>
+                <div class="collapse" id="managerEvalCollapse">
+                    <div class="card-body">
+                        @if (Model.ManagerScores.Any())
+                        {
+                            <div class="mb-3 p-3 border rounded bg-light">
+                                <div class="row mb-2">
+                                    <div class="col-md-6">
+                                        <strong>المدير:</strong> @Model.Manager?.FirstName @Model.Manager?.LastName
+                                    </div>
+                                    <div class="col-md-6">
+                                        <strong>تاريخ الترشيح:</strong> @Model.CreatedAt.ToString("dd/MM/yyyy")
+                                    </div>
+                                </div>
+                                <table class="table table-sm table-bordered mt-2">
+                                    <thead class="table-primary">
+                                        <tr>
+                                            <th>المعيار الفرعي</th>
+                                            <th>الدرجة</th>
+                                            <th>ملاحظة</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var ms in Model.ManagerScores)
+                                        {
+                                            <tr>
+                                                <td>@ms.SubCriteria?.Name</td>
+                                                <td><span class="badge bg-primary">@ms.Score</span></td>
+                                                <td>@ms.Note</td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="alert alert-warning">لا يوجد تقييم مدير بعد.</div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Committee Evaluations Section (Full Width, Collapsible) -->
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card mb-4">
+                <div class="card-header bg-info text-white d-flex justify-content-between align-items-center" 
+                     data-bs-toggle="collapse" 
+                     data-bs-target="#evaluationsCollapse" 
+                     aria-expanded="false" 
+                     aria-controls="evaluationsCollapse"
+                     style="cursor: pointer;">
+                    <span>
+                        <i class="fas fa-chevron-down me-2"></i>
+                        تقييمات اللجنة
+                        @if (Model.Evaluations.Any())
+                        {
+                            <span class="badge bg-dark ms-2">@Model.Evaluations.Count تقييم</span>
+                        }
+                    </span>
+                    @if (Model.Evaluations.Any())
+                    {
+                        <span class="badge bg-dark">متوسط الدرجة: @GetCommitteeAverage(Model).ToString("F1") / 100</span>
+                    }
+                </div>
+                <div class="collapse" id="evaluationsCollapse">
+                    <div class="card-body">
+                        @if (Model.Evaluations.Any())
+                        {
+                            @foreach (var eval in Model.Evaluations)
+                            {
+                                <div class="mb-4 p-3 border rounded bg-light">
+                                    <div class="row mb-2">
+                                        <div class="col-md-6">
+                                            <strong>عضو اللجنة:</strong> @eval.CommitteeMember?.Employee?.FirstName @eval.CommitteeMember?.Employee?.LastName
+                                        </div>
+                                        <div class="col-md-6">
+                                            <strong>تاريخ التقييم:</strong> @eval.CreatedAt.ToString("dd/MM/yyyy")
+                                        </div>
+                                    </div>
+                                    <table class="table table-sm table-bordered mt-2">
+                                        <thead class="table-secondary">
+                                            <tr>
+                                                <th>المعيار الفرعي</th>
+                                                <th>الدرجة</th>
+                                                <th>ملاحظة</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach (var es in eval.EvaluationScores)
+                                            {
+                                                <tr>
+                                                    <td>@es.SubCriteria?.Name</td>
+                                                    <td><span class="badge bg-primary">@es.Score</span></td>
+                                                    <td>@es.Note</td>
+                                                </tr>
+                                            }
+                                        </tbody>
+                                    </table>
+                                </div>
+                            }
+                        }
+                        else
+                        {
+                            <div class="alert alert-warning">لا توجد تقييمات لجنة بعد.</div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@functions {
+    // Calculate the manager score for this nomination (0-100)
+    double GetManagerScore(EOM.Web.Models.Nomination nomination)
+    {
+        if (nomination.ManagerScores == null || !nomination.ManagerScores.Any())
+            return 0;
+        
+        if (nomination.AwardCycle?.AwardType?.Criteria == null)
+            return 0;
+
+        double totalWeightedScore = 0;
+        
+        foreach (var criterion in nomination.AwardCycle.AwardType.Criteria)
+        {
+            if (criterion.SubCriteria == null || !criterion.SubCriteria.Any())
+                continue;
+                
+            double criterionTotal = 0;
+            double criterionMax = 0;
+            
+            foreach (var sub in criterion.SubCriteria)
+            {
+                var score = nomination.ManagerScores.FirstOrDefault(s => s.SubCriteriaId == sub.SubCriteriaId);
+                criterionTotal += score?.Score ?? 0;
+                criterionMax += sub.MaxScore;
+            }
+            
+            if (criterionMax > 0)
+            {
+                var normalized = criterionTotal / criterionMax;
+                totalWeightedScore += normalized * (double)criterion.WeightPercent;
+            }
+        }
+        return Math.Round(totalWeightedScore, 2);
+    }
+
+    // Calculate the average committee score for this nomination (0-100)
+    double GetCommitteeAverage(EOM.Web.Models.Nomination nomination)
+    {
+        if (nomination.Evaluations == null || !nomination.Evaluations.Any())
+            return 0;
+            
+        if (nomination.AwardCycle?.AwardType?.Criteria == null)
+            return 0;
+
+        double total = 0;
+        int count = 0;
+        
+        foreach (var eval in nomination.Evaluations)
+        {
+            if (eval.EvaluationScores == null || !eval.EvaluationScores.Any())
+                continue;
+
+            double totalWeightedScore = 0;
+            
+            foreach (var criterion in nomination.AwardCycle.AwardType.Criteria)
+            {
+                if (criterion.SubCriteria == null || !criterion.SubCriteria.Any())
+                    continue;
+                    
+                double criterionTotal = 0;
+                double criterionMax = 0;
+                
+                foreach (var sub in criterion.SubCriteria)
+                {
+                    var score = eval.EvaluationScores.FirstOrDefault(s => s.SubCriteriaId == sub.SubCriteriaId);
+                    criterionTotal += score?.Score ?? 0;
+                    criterionMax += sub.MaxScore;
+                }
+                
+                if (criterionMax > 0)
+                {
+                    var normalized = criterionTotal / criterionMax;
+                    totalWeightedScore += normalized * (double)criterion.WeightPercent;
+                }
+            }
+            total += totalWeightedScore;
+            count++;
+        }
+        return count > 0 ? Math.Round(total / count, 2) : 0;
+    }
+
+    // Calculate the final average score (manager + committee average) / 2
+    double GetFinalAverage(EOM.Web.Models.Nomination nomination)
+    {
+        var managerScore = GetManagerScore(nomination);
+        var committeeScore = GetCommitteeAverage(nomination);
+        
+        // If either score is missing, return the available score
+        if (managerScore == 0 && committeeScore == 0)
+            return 0;
+        if (managerScore == 0)
+            return committeeScore;
+        if (committeeScore == 0)
+            return managerScore;
+            
+        return Math.Round((managerScore + committeeScore) / 2, 2);
+    }
+} 

@@ -1,0 +1,44 @@
+@model EOM.Web.Models.NominationRankingViewModel
+@{
+    ViewData["Title"] = "اختيار الفائز";
+}
+
+<div class="page-header glass-fade-in mb-4">
+    <h1 class="m-0">اختيار الفائز - الدورة رقم @Model.CycleId</h1>
+</div>
+
+<form asp-action="SelectWinner" method="post">
+    <input type="hidden" name="id" value="@Model.CycleId" />
+    <div class="table-responsive mb-4">
+        <table class="table table-hover align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th>الترتيب</th>
+                    <th>الموظف</th>
+                    <th class="text-center">متوسط الدرجة</th>
+                    <th class="text-center">اختيار</th>
+                </tr>
+            </thead>
+            <tbody>
+                @for (int i = 0; i < Model.RankedNominations.Count; i++)
+                {
+                    var item = Model.RankedNominations[i];
+                    <tr>
+                        <td>@(i + 1)</td>
+                        <td>@item.Nomination.Employee?.FirstName @item.Nomination.Employee?.LastName<br /><small class="text-muted">@item.Nomination.Employee?.JobTitle</small></td>
+                        <td class="text-center"><span class="badge bg-info">@item.AverageScore.ToString("F1")</span></td>
+                        <td class="text-center">
+                            <input type="radio" name="nominationId" value="@item.Nomination.NominationId" @(i==0?"checked":"") />
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <div class="d-grid">
+        <button type="submit" class="btn btn-success btn-lg">
+            تأكيد الفائز
+        </button>
+    </div>
+</form> 

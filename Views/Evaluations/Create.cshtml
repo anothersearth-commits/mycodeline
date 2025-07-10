@@ -265,6 +265,94 @@
     </div>
 </div>
 
+<h4 class="mb-2 text-primary">مراجعة تقييم المدير والمرفق</h4>
+<!-- Manager's evaluation and file for committee review (collapsible, collapsed by default) -->
+<div class="card mb-4">
+    <div class="card-header bg-info text-dark d-flex justify-content-between align-items-center manager-header-hover" style="cursor:pointer" data-bs-toggle="collapse" data-bs-target="#managerEvalCollapse" aria-expanded="false" aria-controls="managerEvalCollapse" title="انقر هنا لعرض تقييم المدير والمرفق">
+        <span class="fw-bold">
+            <i class="fas fa-chevron-down me-2 chevron-indicator" style="font-size:1.3em; vertical-align:middle;"></i>
+            تقييم المدير <span class="small">(انقر هنا لعرض التفاصيل والمرفق)</span>
+        </span>
+    </div>
+    <style>
+        .chevron-indicator {
+            transition: transform 0.3s;
+            display: inline-block;
+        }
+        .card-header[aria-expanded="true"] .chevron-indicator {
+            transform: rotate(180deg);
+        }
+        .manager-header-hover {
+            background: #e3f0fa !important;
+            color: #0b3557 !important;
+        }
+        .manager-header-hover:hover {
+            background: #b6e0fe !important;
+            color: #0b3557 !important;
+            filter: brightness(1.08);
+            box-shadow: 0 2px 8px rgba(13,110,253,0.10);
+        }
+    </style>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            var header = document.querySelector('[data-bs-target="#managerEvalCollapse"]');
+            var chevron = header.querySelector('.chevron-indicator');
+            var collapse = document.getElementById('managerEvalCollapse');
+            collapse.addEventListener('show.bs.collapse', function () {
+                chevron.classList.add('rotate');
+            });
+            collapse.addEventListener('hide.bs.collapse', function () {
+                chevron.classList.remove('rotate');
+            });
+        });
+    </script>
+    <div class="collapse" id="managerEvalCollapse">
+        <div class="card-body">
+            @if (Model.Nomination?.ManagerScores != null && Model.Nomination.ManagerScores.Any())
+            {
+                <table class="table table-bordered">
+                    <thead>
+                        <tr>
+                            <th>المعيار الفرعي</th>
+                            <th>الدرجة</th>
+                            <th>ملاحظة</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var ms in Model.Nomination.ManagerScores)
+                        {
+                            <tr>
+                                <td>@ms.SubCriteria?.Name</td>
+                                <td>@ms.Score</td>
+                                <td>@ms.Note</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+            else
+            {
+                <div class="alert alert-warning">لا يوجد تقييم مدير بعد.</div>
+            }
+
+            <hr />
+            <div>
+                <b>مرفق المدير:</b>
+                @if (!string.IsNullOrEmpty(Model.Nomination?.SupportingDocPath))
+                {
+                    <a href="@Url.Content("~" + Model.Nomination.SupportingDocPath)" target="_blank" class="btn btn-outline-primary">
+                        <i class="fas fa-file-pdf"></i> عرض الملف المرفق
+                    </a>
+                }
+                else
+                {
+                    <span class="text-muted">لا يوجد ملف مرفق من المدير.</span>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
 <form asp-action="Create" method="post">
     <input type="hidden" asp-for="NominationId" />
     <div asp-validation-summary="All" class="alert alert-danger" style="display: none;"></div>

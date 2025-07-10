@@ -428,10 +428,13 @@
                         </div>
                         
                         <div class="action-buttons">
-                            <a href="@Url.Action("Score", new { id = nomination.NominationId })" class="btn-scoring">
-                                <i class="fas fa-edit"></i>
-                                @(hasManagerScores ? "تعديل تقييم المدير" : "إضافة تقييم المدير")
-                            </a>
+                            @if (Model.Status != EOM.Web.Models.CycleStatus.Closed && Model.Status != EOM.Web.Models.CycleStatus.Published)
+                            {
+                                <a href="@Url.Action("Score", new { id = nomination.NominationId })" class="btn-scoring">
+                                    <i class="fas fa-edit"></i>
+                                    @(hasManagerScores ? "تعديل تقييم المدير" : "إضافة تقييم المدير")
+                                </a>
+                            }
                             
                             @if (hasFile)
                             {
@@ -441,7 +444,7 @@
                                 </a>
                             }
                             
-                            @if (User.IsInRole("Manager") || User.IsInRole("EOM-Admin"))
+                            @if ((Model.Status == EOM.Web.Models.CycleStatus.Nomination) && (User.IsInRole("Manager") || User.IsInRole("EOM-Admin")))
                             {
                                 <form style="display: inline;" method="post" action="@Url.Action("Delete", new { id = nomination.NominationId })" id="deleteForm-@nomination.NominationId">
                                     @Html.AntiForgeryToken()

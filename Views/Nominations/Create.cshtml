@@ -84,7 +84,7 @@
         var existingNominations = (int)(ViewData["ExistingNominations"] ?? 0);
         var canNominate = quota == null || existingNominations < quota?.MaxNominations;
 
-        if (quota != null)
+        if (quota != null && quota.MaxNominations > 0)
         {
             <div class="quota-info @(existingNominations >= quota?.MaxNominations ? "danger" : (existingNominations >= quota?.MaxNominations * 0.8 ? "warning" : "success"))">
                 <div class="quota-text">
@@ -103,7 +103,7 @@
             }
         }
 
-        if (canNominate)
+        if (canNominate || (quota != null && quota.MaxNominations <= 0))
         {
             <div class="form-container">
                 <form asp-action="Create" method="post">
