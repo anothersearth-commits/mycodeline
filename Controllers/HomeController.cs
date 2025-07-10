@@ -146,6 +146,17 @@ public class HomeController : Controller
                 // Recent activity - last 5 completed evaluations
                 var recentActivity = completedEvaluations.Take(5).ToList();
                 ViewBag.RecentActivity = recentActivity;
+
+                // Get the latest cycle (most recent by year/month) for committee review
+                var latestCycle = await _context.AwardCycles
+                    .Include(ac => ac.AwardType)
+                    .Include(ac => ac.Nominations)
+                    .ThenInclude(n => n.Employee)
+                    .OrderByDescending(ac => ac.Year)
+                    .ThenByDescending(ac => ac.Month)
+                    .FirstOrDefaultAsync();
+                
+                ViewBag.LatestCycle = latestCycle;
             }
         }
         

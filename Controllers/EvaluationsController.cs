@@ -322,6 +322,35 @@ public class EvaluationsController : Controller
         return View(evaluation);
     }
 
+    // GET: Evaluations/LatestCycle
+    [Authorize(Roles = "EOM-Committee")]
+    public async Task<IActionResult> LatestCycle()
+    {
+        // Get the latest cycle (most recent by year/month)
+        var latestCycle = await _context.AwardCycles
+            .Include(ac => ac.AwardType)
+            .Include(ac => ac.Nominations)
+            .ThenInclude(n => n.Employee)
+            .ThenInclude(e => e.Department)
+            .Include(ac => ac.Nominations)
+            .ThenInclude(n => n.Manager)
+            .Include(ac => ac.Nominations)
+            .ThenInclude(n => n.Evaluations)
+            .ThenInclude(e => e.CommitteeMember)
+            .ThenInclude(cm => cm.Employee)
+            .OrderByDescending(ac => ac.Year)
+            .ThenByDescending(ac => ac.Month)
+            .FirstOrDefaultAsync();
+
+        if (latestCycle == null)
+        {
+            TempData["Message"] = "لا توجد دورات للمراجعة";
+            return RedirectToAction("Index", "Home");
+        }
+
+        return View(latestCycle);
+    }
+
     private bool EvaluationExists(int id)
     {
         return _context.Evaluations.Any(e => e.EvaluationId == id);

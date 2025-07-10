@@ -4,28 +4,8 @@
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
 
-<div class="container py-4">
-    <div class="page-header glass-fade-in mb-4">
-        <div class="d-flex justify-content-between align-items-center">
-            <h1 class="m-0">تفاصيل الترشيح</h1>
-            <a href="@Url.Action("CycleDetails", "Nominations", new { id = Model.CycleId })" class="btn btn-secondary">
-                <i class="fas fa-arrow-right me-2"></i>العودة للدورة
-            </a>
-        </div>
-    </div>
 
-    <div class="card mb-4">
-        <div class="card-body">
-            <h4>@Model.Employee?.FirstName @Model.Employee?.LastName <small class="text-muted">@Model.Employee?.JobTitle</small></h4>
-            <div>الدائرة: <b>@Model.Employee?.Department?.Name</b></div>
-            <div>مدير المرشح: <b>@Model.Manager?.FirstName @Model.Manager?.LastName</b></div>
-            <div>تاريخ الترشيح: <b>@Model.CreatedAt.ToString("dd/MM/yyyy")</b></div>
-            @if (Model.IsWinner)
-            {
-                <div class="mt-2"><span class="badge bg-success">🏆 وسام الفائز</span></div>
-            }
-        </div>
-    </div>
+<br>
 
     <!-- Professional Header Section -->
     <div class="bg-gradient-primary text-white rounded-4 p-4 mb-5 shadow-lg position-relative overflow-hidden" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
@@ -39,7 +19,7 @@
                         <i class="fas fa-award text-white" style="font-size: 1.5rem;"></i>
                     </div>
                     <div>
-                        <h1 class="h3 mb-1 fw-bold">ترشيح @Model.Employee?.FirstName @Model.Employee?.LastName</h1>
+                        <h1 class="h3 mb-1 fw-bold">ترشيح : @Model.Employee?.FirstName @Model.Employee?.LastName</h1>
                         <p class="mb-0 opacity-90">
                             <i class="fas fa-medal me-2"></i>
                             @Model.AwardCycle?.AwardType?.Name - @Model.AwardCycle?.Month/@Model.AwardCycle?.Year
@@ -63,21 +43,21 @@
     <div class="row g-4 mb-5">
         <div class="col-lg-4">
             <div class="card h-100 border-0 shadow-sm position-relative overflow-hidden">
-                <div class="position-absolute top-0 start-0 w-100 h-2" style="background: linear-gradient(90deg, #4e73df, #224abe);"></div>
+                <div class="position-absolute top-0 start-0 w-100 h-2" style="background: linear-gradient(90deg, #667eea, #764ba2);"></div>
                 <div class="card-body text-center p-4">
                     <div class="mb-3">
                         <div class="d-inline-flex align-items-center justify-content-center rounded-circle mb-3" 
-                             style="width: 60px; height: 60px; background: linear-gradient(135deg, #4e73df, #224abe);">
+                             style="width: 60px; height: 60px; background: linear-gradient(135deg, #667eea, #764ba2);">
                             <i class="fas fa-user-tie text-white" style="font-size: 1.5rem;"></i>
                         </div>
                         <h6 class="text-muted text-uppercase fw-bold mb-0" style="font-size: 0.75rem; letter-spacing: 1px;">درجة المدير</h6>
                     </div>
                     <div class="mb-3">
-                        <span class="display-4 fw-bold" style="color: #4e73df;">@GetManagerScore(Model).ToString("F1")</span>
+                        <span class="display-4 fw-bold" style="color: #667eea;">@GetManagerScore(Model).ToString("F1")</span>
                         <span class="h6 text-muted ms-1">/ 100</span>
                     </div>
                     <div class="progress" style="height: 8px;">
-                        <div class="progress-bar" style="width: @(GetManagerScore(Model))%; background: linear-gradient(90deg, #4e73df, #224abe);"></div>
+                        <div class="progress-bar" style="width: @(GetManagerScore(Model))%; background: linear-gradient(90deg, #667eea, #764ba2);"></div>
                     </div>
                 </div>
             </div>
@@ -85,21 +65,21 @@
         
         <div class="col-lg-4">
             <div class="card h-100 border-0 shadow-sm position-relative overflow-hidden">
-                <div class="position-absolute top-0 start-0 w-100 h-2" style="background: linear-gradient(90deg, #1cc88a, #13855c);"></div>
+                <div class="position-absolute top-0 start-0 w-100 h-2" style="background: linear-gradient(90deg, #00d4aa, #00b894);"></div>
                 <div class="card-body text-center p-4">
                     <div class="mb-3">
                         <div class="d-inline-flex align-items-center justify-content-center rounded-circle mb-3" 
-                             style="width: 60px; height: 60px; background: linear-gradient(135deg, #1cc88a, #13855c);">
+                             style="width: 60px; height: 60px; background: linear-gradient(135deg, #00d4aa, #00b894);">
                             <i class="fas fa-users text-white" style="font-size: 1.5rem;"></i>
                         </div>
                         <h6 class="text-muted text-uppercase fw-bold mb-0" style="font-size: 0.75rem; letter-spacing: 1px;">درجة اللجنة</h6>
                     </div>
                     <div class="mb-3">
-                        <span class="display-4 fw-bold" style="color: #1cc88a;">@GetCommitteeAverage(Model).ToString("F1")</span>
+                        <span class="display-4 fw-bold" style="color: #00d4aa;">@GetCommitteeAverage(Model).ToString("F1")</span>
                         <span class="h6 text-muted ms-1">/ 100</span>
                     </div>
                     <div class="progress" style="height: 8px;">
-                        <div class="progress-bar" style="width: @(GetCommitteeAverage(Model))%; background: linear-gradient(90deg, #1cc88a, #13855c);"></div>
+                        <div class="progress-bar" style="width: @(GetCommitteeAverage(Model))%; background: linear-gradient(90deg, #00d4aa, #00b894);"></div>
                     </div>
                 </div>
             </div>
@@ -107,21 +87,21 @@
         
         <div class="col-lg-4">
             <div class="card h-100 border-0 shadow-sm position-relative overflow-hidden">
-                <div class="position-absolute top-0 start-0 w-100 h-2" style="background: linear-gradient(90deg, #f6c23e, #dda20a);"></div>
+                <div class="position-absolute top-0 start-0 w-100 h-2" style="background: linear-gradient(90deg, #fdcb6e, #e17055);"></div>
                 <div class="card-body text-center p-4">
                     <div class="mb-3">
                         <div class="d-inline-flex align-items-center justify-content-center rounded-circle mb-3" 
-                             style="width: 60px; height: 60px; background: linear-gradient(135deg, #f6c23e, #dda20a);">
+                             style="width: 60px; height: 60px; background: linear-gradient(135deg, #fdcb6e, #e17055);">
                             <i class="fas fa-trophy text-white" style="font-size: 1.5rem;"></i>
                         </div>
                         <h6 class="text-muted text-uppercase fw-bold mb-0" style="font-size: 0.75rem; letter-spacing: 1px;">المتوسط النهائي</h6>
                     </div>
                     <div class="mb-3">
-                        <span class="display-4 fw-bold" style="color: #f6c23e;">@GetFinalAverage(Model).ToString("F1")</span>
+                        <span class="display-4 fw-bold" style="color: #fdcb6e;">@GetFinalAverage(Model).ToString("F1")</span>
                         <span class="h6 text-muted ms-1">/ 100</span>
                     </div>
                     <div class="progress" style="height: 8px;">
-                        <div class="progress-bar" style="width: @(GetFinalAverage(Model))%; background: linear-gradient(90deg, #f6c23e, #dda20a);"></div>
+                        <div class="progress-bar" style="width: @(GetFinalAverage(Model))%; background: linear-gradient(90deg, #fdcb6e, #e17055);"></div>
                     </div>
                 </div>
             </div>
@@ -161,10 +141,6 @@
                     <span>
                         <i class="fas fa-chevron-down me-2"></i>
                         تقييم المدير
-                        @if (Model.ManagerScores.Any())
-                        {
-                            <span class="badge bg-dark ms-2">@Model.ManagerScores.Count معيار</span>
-                        }
                     </span>
                     @if (Model.ManagerScores.Any())
                     {
@@ -188,7 +164,7 @@
                                     <thead class="table-primary">
                                         <tr>
                                             <th>المعيار الفرعي</th>
-                                            <th>الدرجة</th>
+                                            <th class="text-center">الدرجة</th>
                                             <th>ملاحظة</th>
                                         </tr>
                                     </thead>
@@ -197,7 +173,7 @@
                                         {
                                             <tr>
                                                 <td>@ms.SubCriteria?.Name</td>
-                                                <td><span class="badge bg-primary">@ms.Score</span></td>
+                                                <td class="text-center"><span class="badge" style="background-color: #667eea; color: white;">@ms.Score</span></td>
                                                 <td>@ms.Note</td>
                                             </tr>
                                         }
@@ -257,7 +233,7 @@
                                         <thead class="table-secondary">
                                             <tr>
                                                 <th>المعيار الفرعي</th>
-                                                <th>الدرجة</th>
+                                                <th class="text-center">الدرجة</th>
                                                 <th>ملاحظة</th>
                                             </tr>
                                         </thead>
@@ -266,7 +242,7 @@
                                             {
                                                 <tr>
                                                     <td>@es.SubCriteria?.Name</td>
-                                                    <td><span class="badge bg-primary">@es.Score</span></td>
+                                                    <td class="text-center"><span class="badge" style="background-color: #00d4aa; color: white;">@es.Score</span></td>
                                                     <td>@es.Note</td>
                                                 </tr>
                                             }

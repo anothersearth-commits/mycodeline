@@ -265,6 +265,29 @@
                         </div>
                     </div>
                 </div>
+                
+                <!-- Latest Cycle Review -->
+                @if (ViewBag.LatestCycle != null)
+                {
+                    <div class="col-md-4">
+                        <div class="quick-action-card review">
+                            <div class="card-icon">
+                                <i class="fas fa-list-alt"></i>
+                            </div>
+                            <div class="card-content">
+                                <h3>آخر دورة</h3>
+                                <p>مراجعة جميع ترشيحات آخر دورة</p>
+                                <div class="badge-count">@(((EOM.Web.Models.AwardCycle)ViewBag.LatestCycle).Nominations?.Count ?? 0) ترشيح</div>
+                            </div>
+                            <div class="card-action">
+                                <a href="@Url.Action("LatestCycle", "Evaluations")" class="btn-quick">
+                                    مراجعة
+                                    <i class="fas fa-arrow-left"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                }
             </div>
 
             <!-- Progress Section -->
