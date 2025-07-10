@@ -206,82 +206,96 @@
     {
         <!-- Committee Member Dashboard -->
         <div class="committee-dashboard">
-            <!-- Quick Actions Grid -->
-            <div class="row g-4 mb-4">
-                <div class="col-md-4">
-                    <div class="quick-action-card pending">
-                        <div class="card-icon">
-                            <i class="fas fa-clock"></i>
+            <!-- Modern Quick Actions Grid -->
+            <div class="row g-4 mb-5">
+                <!-- Pending Evaluations Card -->
+                <div class="col-lg-3 col-md-6">
+                    <div class="modern-action-card" style="border-top: 4px solid #e74c3c;">
+                        <div class="card-header-modern">
+                            <div class="icon-wrapper" style="background: linear-gradient(135deg, #e74c3c, #c0392b);">
+                                <i class="fas fa-clock"></i>
+                            </div>
+                            <div class="card-stats">
+                                <h2 class="stats-number">@pendingCount</h2>
+                                <span class="stats-label">مطلوب</span>
+                            </div>
                         </div>
-                        <div class="card-content">
-                            <h3>التقييمات المعلقة</h3>
-                            <p>عرض جميع الترشيحات التي تحتاج إلى تقييم</p>
-                            <div class="badge-count">@pendingCount مطلوب</div>
-                        </div>
-                        <div class="card-action">
-                            <a href="@Url.Action("Pending", "Evaluations")" class="btn-quick">
-                                عرض الكل
+                        <div class="card-body-modern">
+                            <h3 class="card-title-modern">التقييمات المعلقة</h3>
+                            <p class="card-description">جميع الترشيحات التي تحتاج إلى تقييم</p>
+                            <a href="@Url.Action("Pending", "Evaluations")" class="btn-modern">
+                                <span>عرض الكل</span>
                                 <i class="fas fa-arrow-left"></i>
                             </a>
                         </div>
                     </div>
                 </div>
                 
-                <div class="col-md-4">
-                    <div class="quick-action-card completed">
-                        <div class="card-icon">
-                            <i class="fas fa-check-circle"></i>
+                <!-- Completed Evaluations Card -->
+                <div class="col-lg-3 col-md-6">
+                    <div class="modern-action-card" style="border-top: 4px solid #27ae60;">
+                        <div class="card-header-modern">
+                            <div class="icon-wrapper" style="background: linear-gradient(135deg, #27ae60, #229954);">
+                                <i class="fas fa-check-circle"></i>
+                            </div>
+                            <div class="card-stats">
+                                <h2 class="stats-number">@completedCount</h2>
+                                <span class="stats-label">مكتملة</span>
+                            </div>
                         </div>
-                        <div class="card-content">
-                            <h3>التقييمات المكتملة</h3>
-                            <p>مراجعة وتعديل التقييمات المنجزة</p>
-                            <div class="badge-count">@completedCount مكتملة</div>
-                        </div>
-                        <div class="card-action">
-                            <a href="@Url.Action("Index", "Evaluations")" class="btn-quick">
-                                عرض الكل
+                        <div class="card-body-modern">
+                            <h3 class="card-title-modern">التقييمات المكتملة</h3>
+                            <p class="card-description">مراجعة وتعديل التقييمات المنجزة</p>
+                            <a href="@Url.Action("Index", "Evaluations")" class="btn-modern">
+                                <span>عرض الكل</span>
                                 <i class="fas fa-arrow-left"></i>
                             </a>
                         </div>
                     </div>
                 </div>
 
-                <!-- Manage Cycles Action -->
-                <div class="col-md-4">
-                    <div class="quick-action-card manage">
-                        <div class="card-icon">
-                            <i class="fas fa-cogs"></i>
+                <!-- Manage Cycles Card -->
+                <div class="col-lg-3 col-md-6">
+                    <div class="modern-action-card" style="border-top: 4px solid #3498db;">
+                        <div class="card-header-modern">
+                            <div class="icon-wrapper" style="background: linear-gradient(135deg, #3498db, #2980b9);">
+                                <i class="fas fa-cogs"></i>
+                            </div>
+                            <div class="card-stats">
+                                <h2 class="stats-number">@((ViewBag.EvaluationCycles?.Count ?? 0))</h2>
+                                <span class="stats-label">قيد التقييم</span>
+                            </div>
                         </div>
-                        <div class="card-content">
-                            <h3>إدارة الدورات</h3>
-                            <p>فتح، إغلاق، أو تغيير حالة الدورات الحالية</p>
-                            <div class="badge-count">@((ViewBag.EvaluationCycles?.Count ?? 0)) قيد التقييم</div>
-                        </div>
-                        <div class="card-action">
-                            <a href="@Url.Action("Index", "AwardCycles")" class="btn-quick">
-                                إدارة
+                        <div class="card-body-modern">
+                            <h3 class="card-title-modern">إدارة الدورات</h3>
+                            <p class="card-description">فتح وإغلاق وتغيير حالة الدورات</p>
+                            <a href="@Url.Action("Index", "AwardCycles")" class="btn-modern">
+                                <span>إدارة</span>
                                 <i class="fas fa-arrow-left"></i>
                             </a>
                         </div>
                     </div>
                 </div>
                 
-                <!-- Latest Cycle Review -->
+                <!-- Latest Cycle Review Card -->
                 @if (ViewBag.LatestCycle != null)
                 {
-                    <div class="col-md-4">
-                        <div class="quick-action-card review">
-                            <div class="card-icon">
-                                <i class="fas fa-list-alt"></i>
+                    <div class="col-lg-3 col-md-6">
+                        <div class="modern-action-card" style="border-top: 4px solid #9b59b6;">
+                            <div class="card-header-modern">
+                                <div class="icon-wrapper" style="background: linear-gradient(135deg, #9b59b6, #8e44ad);">
+                                    <i class="fas fa-history"></i>
+                                </div>
+                                <div class="card-stats">
+                                    <h2 class="stats-number">@(((EOM.Web.Models.AwardCycle)ViewBag.LatestCycle).Nominations?.Count ?? 0)</h2>
+                                    <span class="stats-label">ترشيح</span>
+                                </div>
                             </div>
-                            <div class="card-content">
-                                <h3>آخر دورة</h3>
-                                <p>مراجعة جميع ترشيحات آخر دورة</p>
-                                <div class="badge-count">@(((EOM.Web.Models.AwardCycle)ViewBag.LatestCycle).Nominations?.Count ?? 0) ترشيح</div>
-                            </div>
-                            <div class="card-action">
-                                <a href="@Url.Action("LatestCycle", "Evaluations")" class="btn-quick">
-                                    مراجعة
+                            <div class="card-body-modern">
+                                <h3 class="card-title-modern">آخر دورة</h3>
+                                <p class="card-description">مراجعة جميع ترشيحات آخر دورة</p>
+                                <a href="@Url.Action("LatestCycle", "Evaluations")" class="btn-modern">
+                                    <span>مراجعة</span>
                                     <i class="fas fa-arrow-left"></i>
                                 </a>
                             </div>
@@ -289,6 +303,113 @@
                     </div>
                 }
             </div>
+
+            <!-- Add Modern CSS Styles -->
+            <style>
+                .modern-action-card {
+                    background: white;
+                    border-radius: 16px;
+                    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+                    transition: all 0.3s ease;
+                    overflow: hidden;
+                    height: 100%;
+                }
+
+                .modern-action-card:hover {
+                    transform: translateY(-4px);
+                    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+                }
+
+                .card-header-modern {
+                    padding: 1.5rem 1.5rem 1rem;
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                }
+
+                .icon-wrapper {
+                    width: 60px;
+                    height: 60px;
+                    border-radius: 16px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    color: white;
+                    font-size: 1.5rem;
+                }
+
+                .card-stats {
+                    text-align: left;
+                }
+
+                .stats-number {
+                    font-size: 2.5rem;
+                    font-weight: 700;
+                    margin: 0;
+                    color: #1e293b;
+                    line-height: 1;
+                }
+
+                .stats-label {
+                    font-size: 0.875rem;
+                    color: #64748b;
+                    font-weight: 500;
+                }
+
+                .card-body-modern {
+                    padding: 0 1.5rem 1.5rem;
+                }
+
+                .card-title-modern {
+                    font-size: 1.125rem;
+                    font-weight: 600;
+                    color: #1e293b;
+                    margin-bottom: 0.5rem;
+                }
+
+                .card-description {
+                    font-size: 0.875rem;
+                    color: #64748b;
+                    margin-bottom: 1.5rem;
+                    line-height: 1.5;
+                }
+
+                .btn-modern {
+                    display: inline-flex;
+                    align-items: center;
+                    gap: 0.5rem;
+                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                    color: white;
+                    padding: 0.625rem 1.25rem;
+                    border-radius: 10px;
+                    text-decoration: none;
+                    font-weight: 500;
+                    transition: all 0.2s ease;
+                    border: none;
+                    cursor: pointer;
+                }
+
+                .btn-modern:hover {
+                    transform: translateY(-2px);
+                    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+                    color: white;
+                    text-decoration: none;
+                }
+
+                .btn-modern i {
+                    font-size: 0.875rem;
+                }
+
+                @@media (max-width: 768px) {
+                    .modern-action-card {
+                        margin-bottom: 1rem;
+                    }
+                    
+                    .stats-number {
+                        font-size: 2rem;
+                    }
+                }
+            </style>
 
             <!-- Progress Section -->
             <div class="row mb-4">
