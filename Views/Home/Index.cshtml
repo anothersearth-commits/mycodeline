@@ -56,7 +56,7 @@
                 <div class="col-lg-6">
                     <div class="hero-content">
                         <h1 class="hero-title">
-                            تقديم التميز
+                            تحقيق التميز
                             <span class="gradient-text">وتكريم الإنجاز</span>
                         </h1>
                         <p class="hero-subtitle">
@@ -334,8 +334,8 @@
                 <div class="col-lg-3 col-md-6">
                     <div class="modern-action-card" style="border-top: 4px solid #e74c3c;">
                         <div class="card-header-modern">
-                            <div class="icon-wrapper" style="background: linear-gradient(135deg, #e74c3c, #c0392b);">
-                                <i class="fas fa-clock"></i>
+                            <div class="icon-wrapper">
+                                <img src="~/img/cooperation.png" alt="Pending Evaluations" class="card-icon-img" />
                             </div>
                             <div class="card-stats">
                                 <h2 class="stats-number">@pendingCount</h2>
@@ -357,8 +357,8 @@
                 <div class="col-lg-3 col-md-6">
                     <div class="modern-action-card" style="border-top: 4px solid #27ae60;">
                         <div class="card-header-modern">
-                            <div class="icon-wrapper" style="background: linear-gradient(135deg, #27ae60, #229954);">
-                                <i class="fas fa-check-circle"></i>
+                            <div class="icon-wrapper">
+                                <img src="~/img/competitive-advantage.png" alt="Completed Evaluations" class="card-icon-img" />
                             </div>
                             <div class="card-stats">
                                 <h2 class="stats-number">@completedCount</h2>
@@ -380,8 +380,8 @@
                 <div class="col-lg-3 col-md-6">
                     <div class="modern-action-card" style="border-top: 4px solid #3498db;">
                         <div class="card-header-modern">
-                            <div class="icon-wrapper" style="background: linear-gradient(135deg, #3498db, #2980b9);">
-                                <i class="fas fa-cogs"></i>
+                            <div class="icon-wrapper">
+                                <img src="~/img/equity.png" alt="Manage Cycles" class="card-icon-img" />
                             </div>
                             <div class="card-stats">
                                 <h2 class="stats-number">@((ViewBag.EvaluationCycles?.Count ?? 0))</h2>
@@ -405,8 +405,8 @@
                     <div class="col-lg-3 col-md-6">
                         <div class="modern-action-card" style="border-top: 4px solid #9b59b6;">
                             <div class="card-header-modern">
-                                <div class="icon-wrapper" style="background: linear-gradient(135deg, #9b59b6, #8e44ad);">
-                                    <i class="fas fa-history"></i>
+                                <div class="icon-wrapper">
+                                    <img src="~/img/output.png" alt="Latest Cycle" class="card-icon-img" />
                                 </div>
                                 <div class="card-stats">
                                     <h2 class="stats-number">@(((EOM.Web.Models.AwardCycle)ViewBag.LatestCycle).Nominations?.Count ?? 0)</h2>
@@ -456,8 +456,16 @@
                     display: flex;
                     align-items: center;
                     justify-content: center;
-                    color: white;
-                    font-size: 1.5rem;
+                    background: var(--glass-bg-strong);
+                    border: 1px solid var(--glass-border);
+                    padding: 8px;
+                }
+                
+                .card-icon-img {
+                    width: 100%;
+                    height: 100%;
+                    object-fit: contain;
+                    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
                 }
 
                 .card-stats {
@@ -1040,12 +1048,19 @@
     transform: translateY(-1px);
 }
 
-/* Progress Card */
+/* Progress Card - Clean Modern Style */
 .progress-card {
     background: white;
+    border: none;
     border-radius: 16px;
     padding: 2rem;
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    transition: all 0.3s ease;
+}
+
+.progress-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
 }
 
 .progress-header {
@@ -1056,30 +1071,31 @@
 }
 
 .progress-header h3 {
-    font-size: 1.5rem;
+    font-size: 1.4rem;
     font-weight: 700;
-    color: #333;
+    color: #2d3748;
     margin: 0;
 }
 
 .progress-percentage {
-    font-size: 2rem;
-    font-weight: 700;
-    color: #007bff;
+    font-size: 2.5rem;
+    font-weight: 800;
+    color: #667eea;
 }
 
 .progress-bar-container {
-    height: 12px;
-    background: #e9ecef;
-    border-radius: 10px;
+    height: 6px;
+    background: #f1f5f9;
+    border-radius: 8px;
     overflow: hidden;
     margin-bottom: 1.5rem;
 }
 
 .progress-bar {
     height: 100%;
-    background: linear-gradient(90deg, #007bff, #0056b3);
-    transition: width 0.3s ease;
+    background: linear-gradient(90deg, #667eea, #764ba2);
+    transition: width 0.6s ease;
+    border-radius: 8px;
 }
 
 .progress-details {
@@ -1096,22 +1112,29 @@
 
 .detail-item span:first-child {
     font-weight: 600;
-    color: #666;
+    color: var(--glass-text-secondary);
     font-size: 0.9rem;
 }
 
 .detail-item span:last-child {
     font-weight: 700;
-    color: #333;
+    color: var(--glass-text-primary);
     font-size: 1.1rem;
 }
 
-/* Activity Card */
+/* Activity Card - Clean Modern Style */
 .activity-card {
     background: white;
+    border: none;
     border-radius: 16px;
     padding: 2rem;
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    transition: all 0.3s ease;
+}
+
+.activity-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
 }
 
 .activity-header {
@@ -1122,20 +1145,22 @@
 }
 
 .activity-header h3 {
-    font-size: 1.5rem;
+    font-size: 1.4rem;
     font-weight: 700;
-    color: #333;
+    color: #2d3748;
     margin: 0;
 }
 
 .view-all-link {
-    color: #007bff;
+    color: #667eea;
     text-decoration: none;
     font-weight: 600;
+    transition: all 0.3s ease;
 }
 
 .view-all-link:hover {
-    color: #0056b3;
+    color: #5a67d8;
+    text-decoration: none;
 }
 
 .activity-list {
@@ -1147,35 +1172,39 @@
 .activity-item {
     display: flex;
     align-items: center;
-    padding: 1rem;
+    padding: 1.25rem;
     border-radius: 12px;
-    background: #f8f9fa;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
     transition: all 0.3s ease;
 }
 
 .activity-item:hover {
-    background: #e9ecef;
+    background: #f1f5f9;
+    border-color: #cbd5e0;
+    transform: translateY(-1px);
 }
 
 .activity-icon {
-    width: 40px;
-    height: 40px;
+    width: 44px;
+    height: 44px;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
     font-weight: 700;
     margin-left: 1rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .activity-icon.completed {
-    background: #28a745;
+    background: linear-gradient(135deg, #27ae60, #229954);
     color: white;
 }
 
 .activity-icon.pending {
-    background: #ffc107;
-    color: #212529;
+    background: linear-gradient(135deg, #f39c12, #e67e22);
+    color: white;
 }
 
 .activity-content {
@@ -1184,37 +1213,40 @@
 
 .activity-title {
     font-weight: 600;
-    color: #333;
+    color: #2d3748;
     margin-bottom: 0.25rem;
 }
 
 .activity-meta {
-    color: #666;
+    color: #718096;
     font-size: 0.9rem;
 }
 
 .activity-score {
     font-size: 1.1rem;
     font-weight: 700;
-    color: #007bff;
+    color: #667eea;
     margin-right: 1rem;
 }
 
 .btn-evaluate {
-    background: #007bff;
+    background: linear-gradient(135deg, #667eea, #764ba2);
     color: white;
-    padding: 0.5rem 1rem;
+    padding: 0.625rem 1.25rem;
     border-radius: 8px;
     text-decoration: none;
     font-weight: 600;
     font-size: 0.9rem;
     transition: all 0.3s ease;
+    border: none;
+    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.2);
 }
 
 .btn-evaluate:hover {
-    background: #0056b3;
-    color: white;
     transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+    color: white;
+    text-decoration: none;
 }
 
 /* Responsive Design */
