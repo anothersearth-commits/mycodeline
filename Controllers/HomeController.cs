@@ -82,6 +82,25 @@ public class HomeController : Controller
                 .Where(n => n.ManagerId == employeeId && openCycles.Select(c => c.CycleId).Contains(n.CycleId))
                 .ToListAsync();
             ViewBag.CurrentNominations = currentNominations;
+
+            // Manager-specific metrics for floating cards
+            // Get total nominations by this manager across all cycles
+            var managerTotalNominations = await _context.Nominations
+                .Where(n => n.ManagerId == employeeId)
+                .CountAsync();
+            ViewBag.ManagerTotalNominations = managerTotalNominations;
+
+            // Get manager's nominations in current active cycles
+            var managerCurrentNominations = currentNominations.Count;
+            ViewBag.ManagerCurrentNominations = managerCurrentNominations;
+
+            // Get pending scoring count (nominations that need manager scoring)
+            var pendingScoring = await _context.Nominations
+                .Where(n => n.ManagerId == employeeId && 
+                           openCycles.Select(c => c.CycleId).Contains(n.CycleId) &&
+                           !n.ManagerScores.Any())
+                .CountAsync();
+            ViewBag.ManagerPendingScoring = pendingScoring;
         }
 
         // Get committee member data if they are a committee member

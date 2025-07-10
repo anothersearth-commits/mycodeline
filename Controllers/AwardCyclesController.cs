@@ -28,7 +28,35 @@ public class AwardCyclesController : Controller
             .OrderByDescending(a => a.Year)
             .ThenByDescending(a => a.Month)
             .ToListAsync();
-        
+
+        // Calculate evaluation completion status for each cycle
+        var evaluationStatus = new Dictionary<int, bool>();
+        var allCommitteeMembers = await _context.CommitteeMembers
+            .Where(cm => cm.IsActive)
+            .ToListAsync();
+
+        foreach (var cycle in cycles)
+        {
+            if (cycle.Status == CycleStatus.Evaluating)
+            {
+                var nominationsCount = await _context.Nominations
+                    .Where(n => n.CycleId == cycle.CycleId)
+                    .CountAsync();
+
+                var expectedEvaluations = allCommitteeMembers.Count * nominationsCount;
+                var actualEvaluations = await _context.Evaluations
+                    .Where(e => e.Nomination.CycleId == cycle.CycleId)
+                    .CountAsync();
+
+                evaluationStatus[cycle.CycleId] = actualEvaluations >= expectedEvaluations;
+            }
+            else
+            {
+                evaluationStatus[cycle.CycleId] = true; // Not applicable for non-evaluating cycles
+            }
+        }
+
+        ViewBag.EvaluationStatus = evaluationStatus;
         return View(cycles);
     }
 
@@ -283,6 +311,43 @@ public class AwardCyclesController : Controller
         return RedirectToAction(nameof(Index));
     }
 
+    // POST: AwardCycles/ReopenForEvaluation/5
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    [Authorize(Roles = "EOM-Admin")]
+    public async Task<IActionResult> ReopenForEvaluation(int id)
+    {
+        var cycle = await _context.AwardCycles.FindAsync(id);
+        if (cycle == null)
+        {
+            return NotFound();
+        }
+
+        // Only allow reopening if cycle is closed and no winner was selected
+        if (cycle.Status == CycleStatus.Closed)
+        {
+            var hasWinner = await _context.Nominations
+                .AnyAsync(n => n.CycleId == id && n.IsWinner);
+
+            if (!hasWinner)
+            {
+                cycle.Status = CycleStatus.Evaluating;
+                await _context.SaveChangesAsync();
+                TempData["Success"] = "تم إعادة فتح الدورة للتقييم. يمكنك الآن اختيار الفائز.";
+            }
+            else
+            {
+                TempData["Error"] = "لا يمكن إعادة فتح الدورة لأنه تم اختيار فائز بالفعل.";
+            }
+        }
+        else
+        {
+            TempData["Error"] = "يمكن إعادة فتح الدورات المغلقة فقط.";
+        }
+
+        return RedirectToAction(nameof(Index));
+    }
+
     // GET: AwardCycles/SelectWinner/5
     [HttpGet]
     public async Task<IActionResult> SelectWinner(int id)
@@ -291,6 +356,31 @@ public class AwardCyclesController : Controller
         if (cycle == null)
         {
             return NotFound();
+        }
+
+        // Check if all committee members have evaluated all nominations
+        var allCommitteeMembers = await _context.CommitteeMembers
+            .Where(cm => cm.IsActive)
+            .ToListAsync();
+
+        var allNominations = await _context.Nominations
+            .Where(n => n.CycleId == id)
+            .ToListAsync();
+
+        // Calculate total expected evaluations
+        int expectedEvaluations = allCommitteeMembers.Count * allNominations.Count;
+
+        // Calculate actual evaluations
+        int actualEvaluations = await _context.Evaluations
+            .Where(e => e.Nomination.CycleId == id)
+            .CountAsync();
+
+        // If not all evaluations are complete, redirect with error message
+        if (actualEvaluations < expectedEvaluations)
+        {
+            int pendingEvaluations = expectedEvaluations - actualEvaluations;
+            TempData["Error"] = $"لا يمكن اختيار الفائز حتى يكمل جميع أعضاء اللجنة تقييم جميع المرشحين. يتبقى {pendingEvaluations} تقييم.";
+            return RedirectToAction("Details", new { id = id });
         }
 
         var ranked = await _rankingService.GetRankedNominationsAsync(id);
@@ -307,24 +397,58 @@ public class AwardCyclesController : Controller
     // POST: AwardCycles/SelectWinner/5
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> SelectWinner(int id, int nominationId)
+    public async Task<IActionResult> SelectWinner(int id, int[] nominationIds)
     {
-        var nomination = await _context.Nominations.FirstOrDefaultAsync(n => n.NominationId == nominationId && n.CycleId == id);
-        if (nomination == null)
+        // Double-check validation before allowing winner selection
+        var allCommitteeMembers = await _context.CommitteeMembers
+            .Where(cm => cm.IsActive)
+            .ToListAsync();
+
+        var allNominations = await _context.Nominations
+            .Where(n => n.CycleId == id)
+            .ToListAsync();
+
+        int expectedEvaluations = allCommitteeMembers.Count * allNominations.Count;
+        int actualEvaluations = await _context.Evaluations
+            .Where(e => e.Nomination.CycleId == id)
+            .CountAsync();
+
+        if (actualEvaluations < expectedEvaluations)
         {
-            return NotFound();
+            int pendingEvaluations = expectedEvaluations - actualEvaluations;
+            TempData["Error"] = $"لا يمكن اختيار الفائز حتى يكمل جميع أعضاء اللجنة تقييم جميع المرشحين. يتبقى {pendingEvaluations} تقييم.";
+            return RedirectToAction("Details", new { id = id });
         }
 
-        nomination.IsWinner = true;
-        nomination.WonAt = DateTime.UtcNow;
+        // Validate that at least one winner is selected
+        if (nominationIds == null || nominationIds.Length == 0)
+        {
+            TempData["Error"] = "يجب اختيار فائز واحد على الأقل.";
+            return RedirectToAction("SelectWinner", new { id = id });
+        }
 
-        // Optionally store committee member who selected winner
+        // Reuse allNominations already loaded above
+
+        // Committee member who is selecting winners
         var committeeMemberId = int.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "0");
-        nomination.SelectedByCommitteeMemberId = committeeMemberId;
 
-        // Set other nominations IsWinner false (ensure single winner)
-        var others = _context.Nominations.Where(n => n.CycleId == id && n.NominationId != nominationId);
-        await others.ForEachAsync(n => n.IsWinner = false);
+        // Set all nominations to not winners first
+        foreach (var nom in allNominations)
+        {
+            nom.IsWinner = false;
+        }
+
+        // Set selected nominations as winners
+        foreach (var nominationId in nominationIds)
+        {
+            var nomination = allNominations.FirstOrDefault(n => n.NominationId == nominationId);
+            if (nomination != null)
+            {
+                nomination.IsWinner = true;
+                nomination.WonAt = DateTime.UtcNow;
+                nomination.SelectedByCommitteeMemberId = committeeMemberId;
+            }
+        }
 
         // Mark cycle completed
         var cycle = await _context.AwardCycles.FindAsync(id);
@@ -335,7 +459,8 @@ public class AwardCyclesController : Controller
 
         await _context.SaveChangesAsync();
 
-        TempData["Success"] = "Winner selected and cycle completed.";
+        var winnerCount = nominationIds.Length;
+        TempData["Success"] = $"تم اختيار {winnerCount} فائز وإنهاء الدورة بنجاح.";
         return RedirectToAction("Details", new { id });
     }
 

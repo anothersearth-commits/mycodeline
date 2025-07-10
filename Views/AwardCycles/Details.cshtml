@@ -141,11 +141,7 @@
                         }
                         else if (Model.Status == CycleStatus.Evaluating)
                         {
-                            <form method="post" asp-action="CloseCycle" asp-route-id="@Model.CycleId">
-                                <button type="submit" class="btn btn-danger w-100 mb-2">
-                                    ⏹️ إغلاق الدورة
-                                </button>
-                            </form>
+                            <!-- Close Cycle button removed - only available from main index page -->
                         }
                         
                         <div class="mt-3">

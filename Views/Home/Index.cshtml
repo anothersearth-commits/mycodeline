@@ -55,7 +55,7 @@
             <div class="row align-items-center" style="min-height: 60vh;">
                 <div class="col-lg-6">
                     <div class="hero-content">
-                        <h1 class="hero-title">
+                        <h1 class="hero-title spotlight-text" id="heroTitle">
                             تحقيق التميز
                             <span class="gradient-text">وتكريم الإنجاز</span>
                         </h1>
@@ -78,20 +78,36 @@
                 <div class="col-lg-6">
                     <div class="hero-visual">
                         <div class="floating-card card-1" style="@Html.Raw(string.Join(";", shuffledPositions[0].GetType().GetProperties().Select(p => $"{p.Name}: {p.GetValue(shuffledPositions[0])}")))">
-                            <div class="card-icon">🏆</div>
+                            <div class="card-icon"><img src="~/img/credibility.png" alt="Employee of Month" class="floating-card-img" /></div>
                             <div class="card-title">موظف الشهر</div>
                             <div class="card-value">@((ViewBag.LatestCycle as EOM.Web.Models.AwardCycle)?.Year ?? DateTime.Now.Year)/@((ViewBag.LatestCycle as EOM.Web.Models.AwardCycle)?.Month ?? DateTime.Now.Month)</div>
                         </div>
-                        <div class="floating-card card-2" style="@Html.Raw(string.Join(";", shuffledPositions[1].GetType().GetProperties().Select(p => $"{p.Name}: {p.GetValue(shuffledPositions[1])}")))">
-                            <div class="card-icon">📊</div>
-                            <div class="card-title">نسبة الإنجاز</div>
-                            <div class="card-value">@progressPercentage%</div>
-                        </div>
-                        <div class="floating-card card-3" style="@Html.Raw(string.Join(";", shuffledPositions[2].GetType().GetProperties().Select(p => $"{p.Name}: {p.GetValue(shuffledPositions[2])}")))">
-                            <div class="card-icon">⭐</div>
-                            <div class="card-title">إجمالي الترشيحات</div>
-                            <div class="card-value">@((ViewBag.LatestCycle as EOM.Web.Models.AwardCycle)?.Nominations?.Count ?? 0)</div>
-                        </div>
+                        @if (User.IsInRole("Manager"))
+                        {
+                            <div class="floating-card card-2" style="@Html.Raw(string.Join(";", shuffledPositions[1].GetType().GetProperties().Select(p => $"{p.Name}: {p.GetValue(shuffledPositions[1])}")))">
+                                <div class="card-icon"><img src="~/img/survey.png" alt="Manager Nominations" class="floating-card-img" /></div>
+                                <div class="card-title">ترشيحاتي الحالية</div>
+                                <div class="card-value">@(ViewBag.ManagerCurrentNominations ?? 0)</div>
+                            </div>
+                            <div class="floating-card card-3" style="@Html.Raw(string.Join(";", shuffledPositions[2].GetType().GetProperties().Select(p => $"{p.Name}: {p.GetValue(shuffledPositions[2])}")))">
+                                <div class="card-icon"><img src="~/img/analysis.png" alt="Pending Scoring" class="floating-card-img" /></div>
+                                <div class="card-title">تقييمات معلقة</div>
+                                <div class="card-value">@(ViewBag.ManagerPendingScoring ?? 0)</div>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="floating-card card-2" style="@Html.Raw(string.Join(";", shuffledPositions[1].GetType().GetProperties().Select(p => $"{p.Name}: {p.GetValue(shuffledPositions[1])}")))">
+                                <div class="card-icon"><img src="~/img/analysis.png" alt="Progress Analysis" class="floating-card-img" /></div>
+                                <div class="card-title">نسبة الإنجاز</div>
+                                <div class="card-value">@progressPercentage%</div>
+                            </div>
+                            <div class="floating-card card-3" style="@Html.Raw(string.Join(";", shuffledPositions[2].GetType().GetProperties().Select(p => $"{p.Name}: {p.GetValue(shuffledPositions[2])}")))">
+                                <div class="card-icon"><img src="~/img/survey.png" alt="Total Nominations" class="floating-card-img" /></div>
+                                <div class="card-title">إجمالي الترشيحات</div>
+                                <div class="card-value">@((ViewBag.LatestCycle as EOM.Web.Models.AwardCycle)?.Nominations?.Count ?? 0)</div>
+                            </div>
+                        }
                     </div>
                 </div>
             </div>
@@ -1274,4 +1290,26 @@
 
 @section Scripts {
     <script src="https://kit.fontawesome.com/your-fontawesome-kit.js"></script>
+    <script>
+        // Spotlight Text Effect
+        document.addEventListener('DOMContentLoaded', function() {
+            const spotlightText = document.getElementById('heroTitle');
+            
+            if (spotlightText) {
+                spotlightText.addEventListener('mousemove', function(e) {
+                    const rect = this.getBoundingClientRect();
+                    const x = ((e.clientX - rect.left) / rect.width) * 100;
+                    const y = ((e.clientY - rect.top) / rect.height) * 100;
+                    
+                    this.style.setProperty('--mouse-x', x + '%');
+                    this.style.setProperty('--mouse-y', y + '%');
+                });
+                
+                spotlightText.addEventListener('mouseleave', function() {
+                    this.style.setProperty('--mouse-x', '50%');
+                    this.style.setProperty('--mouse-y', '50%');
+                });
+            }
+        });
+    </script>
 }

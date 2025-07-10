@@ -1,10 +1,10 @@
 @model EOM.Web.Models.NominationRankingViewModel
 @{
-    ViewData["Title"] = "اختيار الفائز";
+    ViewData["Title"] = "اختيار الفائزين";
 }
 
 <div class="page-header glass-fade-in mb-4">
-    <h1 class="m-0">اختيار الفائز - الدورة رقم @Model.CycleId</h1>
+    <h1 class="m-0">اختيار الفائزين - الدورة رقم @Model.CycleId</h1>
 </div>
 
 <form asp-action="SelectWinner" method="post">
@@ -16,6 +16,7 @@
                     <th>الترتيب</th>
                     <th>الموظف</th>
                     <th class="text-center">متوسط الدرجة</th>
+                    <th class="text-center">تفاصيل</th>
                     <th class="text-center">اختيار</th>
                 </tr>
             </thead>
@@ -28,7 +29,12 @@
                         <td>@item.Nomination.Employee?.FirstName @item.Nomination.Employee?.LastName<br /><small class="text-muted">@item.Nomination.Employee?.JobTitle</small></td>
                         <td class="text-center"><span class="badge bg-info">@item.AverageScore.ToString("F1")</span></td>
                         <td class="text-center">
-                            <input type="radio" name="nominationId" value="@item.Nomination.NominationId" @(i==0?"checked":"") />
+                            <a href="@Url.Action("Details", "Nominations", new { id = item.Nomination.NominationId })" class="btn btn-info btn-sm" target="_blank">
+                                👁️ تفاصيل
+                            </a>
+                        </td>
+                        <td class="text-center">
+                            <input type="checkbox" name="nominationIds" value="@item.Nomination.NominationId" @(i==0?"checked":"") class="large-checkbox" />
                         </td>
                     </tr>
                 }
@@ -38,7 +44,22 @@
 
     <div class="d-grid">
         <button type="submit" class="btn btn-success btn-lg">
-            تأكيد الفائز
+            تأكيد الفائزين
         </button>
     </div>
-</form> 
+</form>
+
+<style>
+.large-checkbox {
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+    transform: scale(1.5);
+    margin: 5px;
+}
+
+.large-checkbox:hover {
+    transform: scale(1.6);
+    transition: transform 0.2s ease;
+}
+</style>

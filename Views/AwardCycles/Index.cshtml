@@ -106,9 +106,22 @@
                                                 }
                                                 else if (cycle.Status == CycleStatus.Evaluating)
                                                 {
-                                                    <a href="@Url.Action("SelectWinner", new { id = cycle.CycleId })" class="btn btn-warning btn-sm">
-                                                        🏆 اختيار الفائز
-                                                    </a>
+                                                    var evaluationStatus = ViewBag.EvaluationStatus as Dictionary<int, bool>;
+                                                    var canSelectWinner = evaluationStatus?[cycle.CycleId] ?? false;
+                                                    
+                                                    if (canSelectWinner)
+                                                    {
+                                                        <a href="@Url.Action("SelectWinner", new { id = cycle.CycleId })" class="btn btn-warning btn-sm">
+                                                            🏆 اختيار الفائزين
+                                                        </a>
+                                                    }
+                                                    else
+                                                    {
+                                                        <button class="btn btn-secondary btn-sm" disabled title="يجب إكمال جميع التقييمات أولاً">
+                                                            🏆 اختيار الفائزين
+                                                        </button>
+                                                        <small class="text-muted d-block">يجب إكمال جميع التقييمات</small>
+                                                    }
                                                 }
                                                 else if (cycle.Status == CycleStatus.Published)
                                                 {
@@ -117,6 +130,24 @@
                                                             ⏹️ إغلاق الدورة
                                                         </button>
                                                     </form>
+                                                }
+                                                else if (cycle.Status == CycleStatus.Closed)
+                                                {
+                                                    // Check if cycle has a winner
+                                                    var hasWinner = cycle.Nominations?.Any(n => n.IsWinner) ?? false;
+                                                    
+                                                    if (!hasWinner && User.IsInRole("EOM-Admin"))
+                                                    {
+                                                        <form method="post" asp-action="ReopenForEvaluation" asp-route-id="@cycle.CycleId" style="display: inline;">
+                                                            <button type="submit" class="btn btn-warning btn-sm" title="إعادة فتح للتقييم واختيار الفائز">
+                                                                🔄 إعادة فتح للتقييم
+                                                            </button>
+                                                        </form>
+                                                    }
+                                                    else if (hasWinner)
+                                                    {
+                                                        <span class="badge bg-success">تم اختيار الفائز</span>
+                                                    }
                                                 }
                                             }
                                             
