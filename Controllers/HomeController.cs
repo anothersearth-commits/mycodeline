@@ -25,10 +25,10 @@ public class HomeController : Controller
             return RedirectToAction("Login", "Account");
         }
         
-        // Get open award cycles for managers
+        // Get open award cycles for managers (not closed or published)
         var openCycles = await _context.AwardCycles
             .Include(a => a.AwardType)
-            .Where(a => a.Status == CycleStatus.Nomination)
+            .Where(a => a.Status == CycleStatus.Nomination || a.Status == CycleStatus.Evaluating)
             .OrderByDescending(a => a.Year)
             .ThenByDescending(a => a.Month)
             .ToListAsync();

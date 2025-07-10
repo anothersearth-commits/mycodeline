@@ -14,53 +14,175 @@
     var progressPercentage = ViewBag.ProgressPercentage as int? ?? 0;
     var daysRemaining = ViewBag.DaysRemaining as int? ?? 0;
     var recentActivity = ViewBag.RecentActivity as List<EOM.Web.Models.Evaluation> ?? new List<EOM.Web.Models.Evaluation>();
+    
+    // Random positions for floating cards (server-side) - No overlap guaranteed
+    var random = new Random();
+    var nonOverlappingPositions = new List<object>
+    {
+        // Top area positions (well separated)
+        new { top = "5%", left = "5%" },
+        new { top = "5%", right = "5%" },
+        new { top = "25%", left = "25%" },
+        
+        // Middle area positions
+        new { top = "35%", right = "15%" },
+        new { top = "45%", left = "10%" },
+        
+        // Bottom area positions (well separated)
+        new { bottom = "10%", left = "5%" },
+        new { bottom = "10%", right = "5%" },
+        new { bottom = "30%", left = "30%" },
+        new { bottom = "30%", right = "25%" }
+    };
+    
+    // Shuffle and take first 3 positions (guaranteed no overlap)
+    var shuffledPositions = nonOverlappingPositions.OrderBy(x => random.Next()).Take(3).ToList();
 }
 
-<div class="glass-fade-in">
-    
-    @if (User.IsInRole("Manager") && openCycles.Any())
-    {
-        <div class="row mb-5">
-            <div class="col-12">
-                <div class="glass-card alert-card">
-                    <div class="card-header bg-primary text-white">
-                        <h4 class="mb-0">
-                            <i class="fas fa-bell me-2"></i>
-                            دورات مفتوحة للترشيح
-                        </h4>
+<!-- DesignCode.io Inspired Design -->
+<div class="designcode-home">
+    <!-- Floating Background Elements -->
+    <div class="floating-shapes">
+        <div class="shape shape-1"></div>
+        <div class="shape shape-2"></div>
+        <div class="shape shape-3"></div>
+        <div class="shape shape-4"></div>
+    </div>
+
+    <!-- Hero Section -->
+    <div class="hero-section fade-in">
+        <div class="container">
+            <div class="row align-items-center" style="min-height: 60vh;">
+                <div class="col-lg-6">
+                    <div class="hero-content">
+                        <h1 class="hero-title">
+                            تقديم التميز
+                            <span class="gradient-text">وتكريم الإنجاز</span>
+                        </h1>
+                        <p class="hero-subtitle">
+                            منصة متطورة لإدارة ترشيحات موظف الشهر وتقييم الأداء المتميز
+                        </p>
+                        <div class="hero-stats">
+                            <div class="stat-item">
+                                <div class="stat-number">@(pendingCount + completedCount)</div>
+                                <div class="stat-label">إجمالي التقييمات</div>
+                            </div>
+                            <div class="stat-divider"></div>
+                            <div class="stat-item">
+                                <div class="stat-number">@openCycles.Count</div>
+                                <div class="stat-label">دورات نشطة</div>
+                            </div>
+                        </div>
                     </div>
-                    <div class="card-body">
-                        @foreach (var cycle in openCycles)
-                        {
-                            <div class="alert alert-info mb-3">
-                                <div class="row align-items-center">
-                                    <div class="col-md-8">
-                                        <h5 class="alert-heading">
-                                            @cycle.AwardType?.Name - @cycle.Month/@cycle.Year
-                                        </h5>
-                                        <p class="mb-1">
-                                            <strong>فترة الترشيح:</strong> 
-                                            من @cycle.NominationStart.ToString("dd/MM/yyyy") 
-                                            إلى @cycle.NominationEnd.ToString("dd/MM/yyyy")
-                                        </p>
+                </div>
+                <div class="col-lg-6">
+                    <div class="hero-visual">
+                        <div class="floating-card card-1" style="@Html.Raw(string.Join(";", shuffledPositions[0].GetType().GetProperties().Select(p => $"{p.Name}: {p.GetValue(shuffledPositions[0])}")))">
+                            <div class="card-icon">🏆</div>
+                            <div class="card-title">موظف الشهر</div>
+                            <div class="card-value">@((ViewBag.LatestCycle as EOM.Web.Models.AwardCycle)?.Year ?? DateTime.Now.Year)/@((ViewBag.LatestCycle as EOM.Web.Models.AwardCycle)?.Month ?? DateTime.Now.Month)</div>
+                        </div>
+                        <div class="floating-card card-2" style="@Html.Raw(string.Join(";", shuffledPositions[1].GetType().GetProperties().Select(p => $"{p.Name}: {p.GetValue(shuffledPositions[1])}")))">
+                            <div class="card-icon">📊</div>
+                            <div class="card-title">نسبة الإنجاز</div>
+                            <div class="card-value">@progressPercentage%</div>
+                        </div>
+                        <div class="floating-card card-3" style="@Html.Raw(string.Join(";", shuffledPositions[2].GetType().GetProperties().Select(p => $"{p.Name}: {p.GetValue(shuffledPositions[2])}")))">
+                            <div class="card-icon">⭐</div>
+                            <div class="card-title">إجمالي الترشيحات</div>
+                            <div class="card-value">@((ViewBag.LatestCycle as EOM.Web.Models.AwardCycle)?.Nominations?.Count ?? 0)</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Role-Based Dashboards -->
+    @if (User.IsInRole("Manager"))
+    {
+        <!-- Manager Dashboard -->
+        <div class="dashboard-section slide-up">
+            <div class="container">
+                <div class="section-header">
+                    <h2 class="section-title">لوحة المدير</h2>
+                    <p class="section-subtitle">إدارة الترشيحات والمتابعة</p>
+                </div>
+                
+                @if (openCycles.Any())
+                {
+                    <div class="glass-card priority-card mb-4">
+                        <div class="card-header">
+                            <div class="header-icon">
+                                <i class="fas fa-bell"></i>
+                            </div>
+                            <div class="header-content">
+                                <h3>دورات مفتوحة للترشيح</h3>
+                                <p>@openCycles.Count دورة تحتاج إلى انتباهك</p>
+                            </div>
+                            <div class="priority-badge">
+                                <span>عاجل</span>
+                            </div>
+                        </div>
+                        <div class="card-content">
+                            <div class="cycles-grid">
+                                @foreach (var cycle in openCycles)
+                                {
+                                    <div class="cycle-card">
+                                        <div class="cycle-header">
+                                            <h4>@cycle.AwardType?.Name</h4>
+                                            <span class="cycle-date">@cycle.Month/@cycle.Year</span>
+                                        </div>
+                                        <div class="cycle-period">
+                                            @cycle.NominationStart.ToString("dd/MM") - @cycle.NominationEnd.ToString("dd/MM")
+                                        </div>
                                         @if (!hasNominations)
                                         {
-                                            <p class="mb-0 text-danger">
-                                                <i class="fas fa-exclamation-triangle me-1"></i>
-                                                لم تقم بترشيح أي موظف بعد!
-                                            </p>
+                                            <div class="action-needed">
+                                                <i class="fas fa-exclamation-triangle"></i>
+                                                <span>لم تقم بالترشيح بعد</span>
+                                            </div>
                                         }
-                                    </div>
-                                    <div class="col-md-4 text-end">
-                                        <a href="@Url.Action("Create", "Nominations", new { cycleId = cycle.CycleId })" 
-                                           class="btn btn-success btn-lg">
-                                            <i class="fas fa-user-plus me-2"></i>
-                                            ترشيح موظف
+                                        <a href="@Url.Action("Create", "Nominations", new { cycleId = cycle.CycleId })" class="btn-glass">
+                                            <span>ترشيح موظف</span>
+                                            <i class="fas fa-arrow-left"></i>
                                         </a>
                                     </div>
-                                </div>
+                                }
                             </div>
-                        }
+                        </div>
+                    </div>
+                }
+
+                <div class="features-grid">
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <i class="fas fa-users"></i>
+                        </div>
+                        <div class="feature-content">
+                            <h3>الترشيحات الحالية</h3>
+                            <p>عرض ومتابعة جميع ترشيحاتك</p>
+                            <div class="feature-stats">
+                                <span class="stats-number">@currentNominations.Count</span>
+                                <span class="stats-label">ترشيح نشط</span>
+                            </div>
+                        </div>
+                        <a href="@Url.Action("Cycles", "Nominations")" class="btn-feature">عرض الكل</a>
+                    </div>
+
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <i class="fas fa-history"></i>
+                        </div>
+                        <div class="feature-content">
+                            <h3>الدورات السابقة</h3>
+                            <p>مراجعة الدورات والنتائج السابقة</p>
+                            <div class="feature-stats">
+                                <span class="stats-number">@recentCycles.Count</span>
+                                <span class="stats-label">دورة مكتملة</span>
+                            </div>
+                        </div>
+                        <a href="@Url.Action("Cycles", "Nominations")" class="btn-feature">استعراض</a>
                     </div>
                 </div>
             </div>
@@ -205,7 +327,7 @@
     @if (User.IsInRole("EOM-Committee"))
     {
         <!-- Committee Member Dashboard -->
-        <div class="committee-dashboard">
+        <div class="committee-dashboard slide-up">
             <!-- Modern Quick Actions Grid -->
             <div class="row g-4 mb-5">
                 <!-- Pending Evaluations Card -->
