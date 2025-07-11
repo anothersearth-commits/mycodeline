@@ -129,7 +129,7 @@ public class NominationsController : Controller
         ViewData["DepartmentEmployees"] = departmentEmployees;
         if (departmentQuota != null && departmentQuota.MaxNominations <= 0)
         {
-            departmentQuota.MaxNominations = departmentQuota.Quota > 0 ? departmentQuota.Quota : 2;
+            departmentQuota.MaxNominations = 2; // Default fallback
         }
 
         ViewData["DepartmentQuota"] = departmentQuota;

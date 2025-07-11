@@ -6,11 +6,15 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace EOM.Web.Migrations
 {
     /// <inheritdoc />
-    public partial class AddEvaluationScorePKAgain : Migration
+    public partial class RemoveQuotaColumn : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.DropColumn(
+                name: "Quota",
+                table: "DepartmentQuotas");
+
             migrationBuilder.AlterColumn<int>(
                 name: "Score",
                 table: "EvaluationScores",
@@ -97,6 +101,13 @@ namespace EOM.Web.Migrations
                 oldClrType: typeof(int),
                 oldType: "int",
                 oldNullable: true);
+
+            migrationBuilder.AddColumn<int>(
+                name: "Quota",
+                table: "DepartmentQuotas",
+                type: "int",
+                nullable: false,
+                defaultValue: 0);
         }
     }
 }

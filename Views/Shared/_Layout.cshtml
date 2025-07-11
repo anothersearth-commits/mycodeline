@@ -31,7 +31,30 @@
                 </button>
                 <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
                     <ul class="navbar-nav flex-grow-1">
-                        <!-- Navigation links removed as requested -->
+                        <li class="nav-item">
+                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">الرئيسية</a>
+                        </li>
+                        @if (User.IsInRole("Manager"))
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-area="" asp-controller="Nominations" asp-action="Cycles">الترشيحات</a>
+                            </li>
+                        }
+                        @if (User.IsInRole("EOM-Committee"))
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-area="" asp-controller="Evaluations" asp-action="Index">التقييمات</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-area="" asp-controller="DepartmentQuotas" asp-action="Index">حصص الدوائر</a>
+                            </li>
+                        }
+                        @if (User.IsInRole("EOM-Admin") || User.IsInRole("EOM-Committee"))
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-area="" asp-controller="AwardCycles" asp-action="Index">إدارة الدورات</a>
+                            </li>
+                        }
                     </ul>
                     <partial name="_LoginPartial" />
                 </div>

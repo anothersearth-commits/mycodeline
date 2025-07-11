@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace EOM.Web.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20250708210450_AddEvaluationScorePKAgain")]
-    partial class AddEvaluationScorePKAgain
+    [Migration("20250711102708_RemoveQuotaColumn")]
+    partial class RemoveQuotaColumn
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -171,9 +171,6 @@ namespace EOM.Web.Migrations
                         .HasColumnType("int");
 
                     b.Property<int>("MaxNominations")
-                        .HasColumnType("int");
-
-                    b.Property<int>("Quota")
                         .HasColumnType("int");
 
                     b.HasKey("DepartmentId", "AwardTypeId");

@@ -444,21 +444,18 @@ public static class SeedData
                     {
                         DepartmentId = 10, // IT Department
                         AwardTypeId = employeeOfMonthAwardType.AwardTypeId,
-                        Quota = 2,
                         MaxNominations = 2
                     },
                     new DepartmentQuota
                     {
                         DepartmentId = 20, // Sales Department
                         AwardTypeId = employeeOfMonthAwardType.AwardTypeId,
-                        Quota = 1,
                         MaxNominations = 1
                     },
                     new DepartmentQuota
                     {
                         DepartmentId = 30, // Finance Department
                         AwardTypeId = employeeOfMonthAwardType.AwardTypeId,
-                        Quota = 1,
                         MaxNominations = 1
                     }
                 };

@@ -6,8 +6,6 @@ public class DepartmentQuota
     
     public int AwardTypeId { get; set; }
     
-    public int Quota { get; set; }
-    
     public int MaxNominations { get; set; }
     
     // Navigation properties

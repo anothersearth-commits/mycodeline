@@ -170,9 +170,6 @@ namespace EOM.Web.Migrations
                     b.Property<int>("MaxNominations")
                         .HasColumnType("int");
 
-                    b.Property<int>("Quota")
-                        .HasColumnType("int");
-
                     b.HasKey("DepartmentId", "AwardTypeId");
 
                     b.HasIndex("AwardTypeId");

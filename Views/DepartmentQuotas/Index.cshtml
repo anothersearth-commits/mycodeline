@@ -1,0 +1,294 @@
+@model IEnumerable<EOM.Web.Models.Department>
+
+@{
+    ViewData["Title"] = "إدارة حصص الدوائر";
+    var awardTypes = ViewBag.AwardTypes as List<EOM.Web.Models.AwardType> ?? new List<EOM.Web.Models.AwardType>();
+}
+
+<div class="glass-fade-in">
+    <div class="glass-card page-header mb-4">
+        <h1>إدارة حصص الدوائر</h1>
+        <p class="text-muted mb-0">تحديد الحد الأقصى للترشيحات لكل دائرة حسب نوع الجائزة</p>
+    </div>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success mb-4">
+            ✅ @TempData["Success"]
+        </div>
+    }
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger mb-4">
+            ❌ @TempData["Error"]
+        </div>
+    }
+
+    @if (!Model.Any())
+    {
+        <div class="glass-card text-center py-5">
+            <div style="font-size: 4rem; margin-bottom: 1rem; color: var(--glass-text-secondary);">🏢</div>
+            <h5 style="color: var(--glass-text-primary);">لا توجد دوائر نشطة</h5>
+            <p style="color: var(--glass-text-secondary);">يجب إضافة دوائر أولاً لإدارة الحصص</p>
+        </div>
+    }
+    else
+    {
+        @foreach (var department in Model)
+        {
+            <div class="glass-card mb-4">
+                <div class="card-header">
+                    <h3>🏢 @department.Name</h3>
+                    @if (!string.IsNullOrEmpty(department.Description))
+                    {
+                        <p class="text-muted mb-0">@department.Description</p>
+                    }
+                </div>
+                <div class="card-body">
+                    @if (!awardTypes.Any())
+                    {
+                        <div class="alert alert-warning">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            لا توجد أنواع جوائز نشطة. يجب إضافة أنواع جوائز أولاً.
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>نوع الجائزة</th>
+                                        <th class="text-center">أقصى ترشيحات</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var awardType in awardTypes)
+                                    {
+                                        var existingQuota = department.DepartmentQuotas.FirstOrDefault(dq => dq.AwardTypeId == awardType.AwardTypeId);
+                                        <tr>
+                                            <td>
+                                                <strong>@awardType.Name</strong>
+                                            </td>
+                                            <td class="text-center">
+                                                <div class="quota-select-container">
+                                                    <select class="form-select quota-select" 
+                                                            data-department-id="@department.DepartmentId" 
+                                                            data-award-type-id="@awardType.AwardTypeId"
+                                                            onchange="updateMaxNominations(this)">
+                                                        @for (int i = 0; i <= 20; i++)
+                                                        {
+                                                            @if (i == (existingQuota?.MaxNominations ?? 0))
+                                                            {
+                                                                <option value="@i" selected>@i</option>
+                                                            }
+                                                            else
+                                                            {
+                                                                <option value="@i">@i</option>
+                                                            }
+                                                        }
+                                                    </select>
+                                                    <div class="save-indicator" id="indicator_@(department.DepartmentId)_@(awardType.AwardTypeId)" style="display: none;">
+                                                        <i class="fas fa-check"></i>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+    }
+</div>
+
+<!-- Hidden form for CSRF token -->
+<form style="display: none;">
+    @Html.AntiForgeryToken()
+</form>
+
+<script>
+function updateMaxNominations(select) {
+    const departmentId = select.dataset.departmentId;
+    const awardTypeId = select.dataset.awardTypeId;
+    const maxNominations = parseInt(select.value) || 0;
+    const indicator = document.getElementById(`indicator_${departmentId}_${awardTypeId}`);
+    
+    // Show loading indicator
+    indicator.innerHTML = '<i class="fas fa-spinner"></i>';
+    indicator.className = 'save-indicator loading';
+    indicator.style.display = 'flex';
+    
+    // Create form data
+    const formData = new FormData();
+    formData.append('departmentId', departmentId);
+    formData.append('awardTypeId', awardTypeId);
+    formData.append('maxNominations', maxNominations);
+    formData.append('__RequestVerificationToken', document.querySelector('input[name="__RequestVerificationToken"]').value);
+    
+    // Send AJAX request
+    fetch('/DepartmentQuotas/UpdateQuota', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => {
+        if (response.ok) {
+            // Show success indicator
+            indicator.innerHTML = '<i class="fas fa-check"></i>';
+            indicator.className = 'save-indicator';
+            setTimeout(() => {
+                indicator.style.display = 'none';
+            }, 2000);
+        } else {
+            // Show error indicator
+            indicator.innerHTML = '<i class="fas fa-times"></i>';
+            indicator.className = 'save-indicator error';
+            setTimeout(() => {
+                indicator.style.display = 'none';
+            }, 3000);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        indicator.innerHTML = '<i class="fas fa-times"></i>';
+        indicator.className = 'save-indicator error';
+        setTimeout(() => {
+            indicator.style.display = 'none';
+        }, 3000);
+    });
+}
+</script>
+
+<style>
+.page-header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: 2rem;
+}
+
+.card-header {
+    background: var(--glass-bg-strong);
+    border-bottom: 1px solid var(--glass-border);
+    padding: 1.5rem;
+}
+
+.card-body {
+    padding: 0.5rem 1.5rem 1.5rem 1.5rem;
+}
+
+.badge {
+    font-size: 0.9rem;
+    padding: 0.5rem 0.75rem;
+}
+
+.table th {
+    border-bottom: 2px solid var(--glass-border);
+    font-weight: 600;
+    color: var(--glass-text-primary);
+}
+
+.table td {
+    border-bottom: 1px solid var(--glass-border);
+    vertical-align: middle;
+}
+
+.btn-sm {
+    margin: 0 2px;
+}
+
+.quota-select-container {
+    position: relative;
+    display: inline-block;
+    width: 80px;
+    margin: 0 auto;
+}
+
+.quota-select {
+    text-align: center;
+    text-align-last: center;
+    font-weight: 600;
+    font-size: 0.9rem;
+    padding: 0.25rem 0.5rem;
+    border: 2px solid #dee2e6;
+    border-radius: 8px;
+    background: white;
+    color: #212529;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.quota-select:focus {
+    border-color: #007bff;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+    outline: none;
+}
+
+.quota-select:hover {
+    border-color: #007bff;
+}
+
+.save-indicator {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    background: #28a745;
+    color: white;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    animation: saveSuccess 0.3s ease;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.save-indicator.loading {
+    background: #007bff;
+    animation: spin 1s linear infinite;
+}
+
+.save-indicator.error {
+    background: #dc3545;
+    animation: saveError 0.3s ease;
+}
+
+@@keyframes saveSuccess {
+    0% { transform: scale(0); }
+    50% { transform: scale(1.2); }
+    100% { transform: scale(1); }
+}
+
+@@keyframes saveError {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-3px); }
+    75% { transform: translateX(3px); }
+}
+
+@@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.modal-content {
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+}
+
+.modal-header {
+    border-bottom: 1px solid var(--glass-border);
+}
+
+.modal-footer {
+    border-top: 1px solid var(--glass-border);
+}
+</style>
