@@ -1,0 +1,18 @@
+@model EOM.Web.Models.Nomination
+
+@{
+    ViewData["Title"] = "حذف الترشيح";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<h2 class="text-danger">تأكيد حذف الترشيح</h2>
+
+<div class="alert alert-danger">
+    هل أنت متأكد أنك تريد حذف ترشيح الموظف <strong>@Model.Employee?.FirstName @Model.Employee?.LastName</strong>؟
+</div>
+
+<form asp-action="Delete" method="post">
+    <input type="hidden" asp-for="NominationId" />
+    <button type="submit" class="btn btn-danger">حذف</button>
+    <a asp-action="Index" class="btn btn-secondary">إلغاء</a>
+</form> 

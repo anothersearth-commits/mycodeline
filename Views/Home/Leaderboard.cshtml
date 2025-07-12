@@ -1,0 +1,209 @@
+@model IEnumerable<EOM.Web.Models.Nomination>
+@{
+    ViewData["Title"] = "الفائزون";
+    var cycleInfo = ViewBag.CycleInfo as EOM.Web.Models.AwardCycle;
+    var totalWinners = ViewBag.TotalWinners as int? ?? 0;
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-header bg-success text-white text-center">
+                    <h2 class="mb-0">
+                        <i class="fas fa-trophy me-2"></i>
+                        الفائزون
+                    </h2>
+                    @if (cycleInfo != null)
+                    {
+                        <p class="mb-0 mt-2">
+                            <small>فائزو @cycleInfo.AwardType.Name - @cycleInfo.Month/@cycleInfo.Year</small>
+                        </p>
+                    }
+                </div>
+
+                <div class="card-body">
+                    @if (!string.IsNullOrEmpty(ViewBag.Message as string))
+                    {
+                        <div class="alert alert-info text-center">
+                            <i class="fas fa-info-circle me-2"></i>
+                            @ViewBag.Message
+                        </div>
+                    }
+                    else if (!Model.Any())
+                    {
+                        <div class="alert alert-warning text-center">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            لا يوجد فائزون في آخر دورة مكتملة
+                        </div>
+                    }
+                    else
+                    {
+                        <!-- Winners Statistics -->
+                        <div class="row mb-4">
+                            <div class="col-md-4">
+                                <div class="card bg-primary text-white text-center">
+                                    <div class="card-body">
+                                        <h3 class="card-title">@totalWinners</h3>
+                                        <p class="card-text">إجمالي الفائزين</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="card bg-info text-white text-center">
+                                    <div class="card-body">
+                                        <h3 class="card-title">@cycleInfo?.AwardType.Name</h3>
+                                        <p class="card-text">نوع الجائزة</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="card bg-success text-white text-center">
+                                    <div class="card-body">
+                                        <h3 class="card-title">@cycleInfo?.Month/@cycleInfo?.Year</h3>
+                                        <p class="card-text">تاريخ الدورة</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Winners Grid -->
+                        <div class="row">
+                            @foreach (var winner in Model.Select((nomination, index) => new { nomination, index }))
+                            {
+                                <div class="col-lg-4 col-md-6 mb-4">
+                                    <div class="card h-100 border-success shadow-sm winner-card">
+                                        <div class="card-header bg-gradient-winner text-white text-center position-relative">
+                                            <div class="position-absolute top-0 start-0 p-2">
+                                                <i class="fas fa-crown fa-lg text-warning"></i>
+                                            </div>
+                                            <h5 class="mb-0">
+                                                <i class="fas fa-star me-1"></i>
+                                                <span>فائز</span>
+                                            </h5>
+                                        </div>
+                                        
+                                        <div class="card-body text-center">
+                                            <!-- Winner Avatar -->
+                                            <div class="mb-3">
+                                                <div class="rounded-circle bg-light mx-auto d-flex align-items-center justify-content-center" style="width: 80px; height: 80px;">
+                                                    <i class="fas fa-user fa-2x text-muted"></i>
+                                                </div>
+                                            </div>
+                                            
+                                            <!-- Winner Info -->
+                                            <h5 class="card-title text-primary">
+                                                @winner.nomination.Employee?.FirstName @winner.nomination.Employee?.LastName
+                                            </h5>
+                                            
+                                            <p class="card-text text-muted">
+                                                <i class="fas fa-briefcase me-1"></i>
+                                                @winner.nomination.Employee?.JobTitle
+                                            </p>
+                                            
+                                            @if (winner.nomination.WonAt.HasValue)
+                                            {
+                                                <p class="card-text">
+                                                    <small class="text-muted">
+                                                        <i class="fas fa-calendar me-1"></i>
+                                                        تاريخ الفوز: @winner.nomination.WonAt.Value.ToString("dd/MM/yyyy")
+                                                    </small>
+                                                </p>
+                                            }
+                                            
+                                            @if (winner.nomination.SelectedByCommitteeMember != null)
+                                            {
+                                                <p class="card-text">
+                                                    <small class="text-muted">
+                                                        <i class="fas fa-user-check me-1"></i>
+                                                        تم اختياره من قِبل: @winner.nomination.SelectedByCommitteeMember.FirstName
+                                                    </small>
+                                                </p>
+                                            }
+                                        </div>
+                                        
+                                        <div class="card-footer bg-light text-center">
+                                            <a href="@Url.Action("Details", "Nominations", new { id = winner.nomination.NominationId })" 
+                                               class="btn btn-outline-primary btn-sm">
+                                                <i class="fas fa-eye me-1"></i>
+                                                عرض التفاصيل
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                        
+                        <!-- Back to Home Button -->
+                        <div class="text-center mt-4">
+                            <a href="@Url.Action("Index", "Home")" class="btn btn-secondary">
+                                <i class="fas fa-home me-2"></i>
+                                العودة للصفحة الرئيسية
+                            </a>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .winner-card {
+        transition: all 0.3s ease;
+        border: none;
+        border-radius: 15px;
+        overflow: hidden;
+    }
+    
+    .winner-card:hover {
+        transform: translateY(-8px) scale(1.02);
+        box-shadow: 0 15px 35px rgba(0,0,0,0.2);
+    }
+    
+    .bg-gradient-winner {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 15px 15px 0 0;
+    }
+    
+    .card-body {
+        background: linear-gradient(to bottom, #f8f9fa, #ffffff);
+    }
+    
+    .rounded-circle {
+        border: 3px solid #667eea;
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+    }
+    
+    .card-title {
+        font-weight: 600;
+        color: #2c3e50;
+    }
+    
+    .card-footer {
+        background: linear-gradient(to right, #f8f9fa, #e9ecef);
+        border-radius: 0 0 15px 15px;
+        border-top: 1px solid #dee2e6;
+    }
+    
+    .btn-outline-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,123,255,0.3);
+    }
+    
+    .alert {
+        border-radius: 12px;
+        border: none;
+    }
+    
+    .card.shadow-sm {
+        border-radius: 20px;
+        border: none;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1) !important;
+    }
+    
+    .card-header.bg-success {
+        background: linear-gradient(135deg, #28a745, #20c997) !important;
+        border-radius: 20px 20px 0 0;
+    }
+</style>

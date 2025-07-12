@@ -1,47 +1,52 @@
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace EOM.Web.Models;
 
+// Employee model now maps to VW_EOM_EMPLOYEES view instead of Employees table
+[Table("VW_EOM_EMPLOYEES")]
 public class Employee
 {
     [Key]
+    [Column("EMPLOYEEID")]
     public int EmployeeId { get; set; }
     
-    [Required]
-    [MaxLength(100)]
+    [Column("FIRSTNAME")]
     public string FirstName { get; set; } = string.Empty;
     
-    [Required]
-    [MaxLength(100)]
+    [Column("LASTNAME")]
     public string LastName { get; set; } = string.Empty;
     
-    [Required]
-    [MaxLength(200)]
-    public string Email { get; set; } = string.Empty;
+    [Column("EMAIL")]
+    public string? Email { get; set; }
     
-    [MaxLength(50)]
-    public string? PhoneNumber { get; set; }
+    [Column("DEPARTMENTID")]
+    public long DepartmentId { get; set; }
     
-    public int DepartmentId { get; set; }
-    public virtual Department? Department { get; set; }
-    
-    [MaxLength(100)]
+    [Column("JOBTITLE")]
     public string? JobTitle { get; set; }
     
-    public DateTime HireDate { get; set; }
+    [Column("HIREDATE")]
+    public DateTime? HireDate { get; set; }
     
-    public bool IsActive { get; set; } = true;
-    
-    // AD User ID for authentication
-    [MaxLength(200)]
+    [Column("ACTIVEDIRECTORYID")]
     public string? ActiveDirectoryId { get; set; }
     
-    // Temporary password field for development (will be removed when AD is integrated)
-    [MaxLength(100)]
+    [Column("PASSWORD")]
     public string? Password { get; set; }
     
+    [Column("ISACTIVE")]
+    public int IsActive { get; set; } = 1;
     
-    // Navigation properties
-    public virtual ICollection<EmployeeManager> ManagedEmployees { get; set; } = new List<EmployeeManager>();
-    public virtual ICollection<EmployeeManager> Managers { get; set; } = new List<EmployeeManager>();
+    [Column("PHONENUMBER")]
+    public string? PhoneNumber { get; set; }
+    
+    [Column("MANAGERID")]
+    public int? ManagerId { get; set; }
+    
+    [Column("MANAGERNAME")]
+    public string? ManagerName { get; set; }
+    
+    [Column("IS_MANAGER")]
+    public int IsManager { get; set; } = 0;
 }

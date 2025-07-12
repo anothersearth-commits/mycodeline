@@ -22,7 +22,7 @@ else
 {
     // Quick stats
     var total = Model.Count();
-    var departmentsCount = Model.Select(n => n.Employee?.Department?.Name ?? "قسم غير معروف").Distinct().Count();
+    var departmentsCount = Model.Select(n => n.Employee?.DepartmentId ?? 0).Distinct().Count();
 
     <div class="row mb-4">
         <div class="col-6 col-md-3">
@@ -40,7 +40,7 @@ else
     </div>
 
     var grouped = Model
-        .GroupBy(n => n.Employee?.Department?.Name ?? "قسم غير معروف")
+        .GroupBy(n => $"قسم {n.Employee?.DepartmentId ?? 0}")
         .OrderBy(g => g.Key);
 
     foreach (var dept in grouped)

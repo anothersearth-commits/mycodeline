@@ -206,7 +206,7 @@
                                         }
                                     </td>
                                     <td>@nomination.Employee.JobTitle</td>
-                                    <td>@(nomination.Employee.Department?.Name ?? $"قسم {nomination.Employee.DepartmentId}")</td>
+                                    <td>قسم @nomination.Employee.DepartmentId</td>
                                     <td>@nomination.Manager.FirstName @nomination.Manager.LastName</td>
                                     <td>@nomination.CreatedAt.ToString("dd/MM/yyyy")</td>
                                     <td>

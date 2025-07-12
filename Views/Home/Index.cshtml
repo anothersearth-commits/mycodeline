@@ -15,6 +15,10 @@
     var daysRemaining = ViewBag.DaysRemaining as int? ?? 0;
     var recentActivity = ViewBag.RecentActivity as List<EOM.Web.Models.Evaluation> ?? new List<EOM.Web.Models.Evaluation>();
     
+    // Role switcher data
+    var isDualRole = ViewBag.IsDualRole as bool? ?? false;
+    var currentRole = ViewBag.CurrentRole as string ?? "Committee";
+    
     // Random positions for floating cards (server-side) - No overlap guaranteed
     var random = new Random();
     var nonOverlappingPositions = new List<object>
@@ -115,7 +119,7 @@
     </div>
 
     <!-- Role-Based Dashboards -->
-    @if (User.IsInRole("Manager"))
+    @if (User.IsInRole("Manager") && (currentRole == "Manager" || !isDualRole))
     {
         <!-- Manager Dashboard -->
         <div class="dashboard-section slide-up">
@@ -340,7 +344,7 @@
         </div>
     }
     
-    @if (User.IsInRole("EOM-Committee"))
+    @if (User.IsInRole("EOM-Committee") && (currentRole == "Committee" || !isDualRole))
     {
         <!-- Committee Member Dashboard -->
         <div class="committee-dashboard slide-up">

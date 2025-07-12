@@ -36,9 +36,9 @@ public class AccountController : Controller
             return View();
         }
 
-        // Find employee by ID and verify password
+        // Find employee by ID and verify password using Employee model (mapped to HR view)
         var employee = await _context.Employees
-            .FirstOrDefaultAsync(e => e.EmployeeId == empId && e.IsActive);
+            .FirstOrDefaultAsync(e => e.EmployeeId == empId && e.IsActive == 1);
 
         Console.WriteLine($"Employee found: {employee?.FirstName}, Password in DB: {employee?.Password}");
 
@@ -49,7 +49,7 @@ public class AccountController : Controller
             {
                 new Claim(ClaimTypes.NameIdentifier, employee.EmployeeId.ToString()),
                 new Claim(ClaimTypes.Name, $"{employee.FirstName} {employee.LastName}"),
-                new Claim(ClaimTypes.Email, employee.Email)
+                new Claim(ClaimTypes.Email, employee.Email ?? "")
             };
 
             // Check if user is admin (employee ID 1)
@@ -58,15 +58,14 @@ public class AccountController : Controller
                 claims.Add(new Claim(ClaimTypes.Role, "EOM-Admin"));
             }
 
-            // Check if user is a manager
-            var isManager = await _context.EmployeeManagers
-                .AnyAsync(em => em.ManagerId == employee.EmployeeId && em.IsActive);
+            // Check if user is a manager using Employee.IsManager field
+            var isManager = employee.IsManager == 1;
             if (isManager)
             {
                 claims.Add(new Claim(ClaimTypes.Role, "Manager"));
             }
 
-            // Check if user is a committee member
+            // Check if user is a committee member (string ID match)
             var committeeMember = await _context.CommitteeMembers
                 .FirstOrDefaultAsync(cm => cm.EmployeeId == employee.EmployeeId && cm.IsActive);
             if (committeeMember != null)

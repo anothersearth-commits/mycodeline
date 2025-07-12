@@ -34,6 +34,11 @@
                         <li class="nav-item">
                             <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">الرئيسية</a>
                         </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Leaderboard">
+                                <i class="fas fa-trophy me-1"></i>الفائزون
+                            </a>
+                        </li>
                         @if (User.IsInRole("Manager"))
                         {
                             <li class="nav-item">
@@ -82,6 +87,109 @@ else
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    
+    <!-- Role Switcher Script -->
+    @if (User.Identity?.IsAuthenticated == true)
+    {
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                // Helper function to get cookie value
+                function getCookie(name) {
+                    const value = `; ${document.cookie}`;
+                    const parts = value.split(`; ${name}=`);
+                    if (parts.length === 2) return parts.pop().split(';').shift();
+                    return null;
+                }
+                
+                // Get role data from URL parameters and cookies
+                const urlParams = new URLSearchParams(window.location.search);
+                const activeRoleParam = urlParams.get('activeRole');
+                const cookieRole = getCookie('UserActiveRole');
+                
+                // Calculate if user has dual roles by checking if switcher button exists
+                window.isDualRole = document.querySelector('button[onclick="showRoleSwitcher()"]') !== null;
+                
+                // Determine current role with priority: URL > Cookie > Default
+                window.currentRole = 'Committee'; // Default
+                if (window.isDualRole) {
+                    window.currentRole = activeRoleParam || cookieRole || 'Committee';
+                } else if ('@User.IsInRole("Manager")' === 'True' && !window.isDualRole) {
+                    window.currentRole = 'Manager';
+                }
+            });
+            
+            function showRoleSwitcher() {
+                if (!window.isDualRole) return;
+                
+                Swal.fire({
+                    title: 'تبديل الدور',
+                    text: 'اختر الدور الذي تريد التبديل إليه',
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonText: window.currentRole === 'Committee' ? '<i class="fas fa-user-tie me-2"></i>مدير' : '<i class="fas fa-users me-2"></i>عضو لجنة',
+                    cancelButtonText: 'إلغاء',
+                    confirmButtonColor: '#007bff',
+                    cancelButtonColor: '#6c757d',
+                    background: '#ffffff',
+                    customClass: {
+                        popup: 'arabic-swal',
+                        title: 'arabic-swal-title',
+                        confirmButton: 'arabic-swal-confirm',
+                        cancelButton: 'arabic-swal-cancel'
+                    },
+                    html: `
+                        <div class="role-switch-content">
+                            <p class="mb-3">الدور الحالي: <span class="badge bg-info">${window.currentRole === 'Committee' ? 'عضو لجنة' : 'مدير'}</span></p>
+                            <p class="text-muted">سيتم تحديث الصفحة لإظهار محتوى الدور الجديد</p>
+                        </div>
+                    `
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        const newRole = window.currentRole === 'Committee' ? 'Manager' : 'Committee';
+                        const currentUrl = new URL(window.location);
+                        currentUrl.searchParams.set('activeRole', newRole);
+                        
+                        // Show loading
+                        Swal.fire({
+                            title: 'جاري التبديل...',
+                            allowOutsideClick: false,
+                            didOpen: () => {
+                                Swal.showLoading();
+                            }
+                        });
+                        
+                        // Redirect to the same page with new role
+                        window.location.href = currentUrl.toString();
+                    }
+                });
+            }
+        </script>
+        
+        <style>
+            .arabic-swal {
+                direction: rtl;
+                text-align: right;
+            }
+            
+            .arabic-swal-title {
+                font-family: 'Tajawal', Arial, sans-serif;
+                font-weight: 600;
+            }
+            
+            .arabic-swal-confirm, .arabic-swal-cancel {
+                font-family: 'Tajawal', Arial, sans-serif;
+                font-weight: 500;
+            }
+            
+            .role-switch-content {
+                text-align: center;
+                font-family: 'Tajawal', Arial, sans-serif;
+            }
+        </style>
+    }
+    
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace EOM.Web.Models;
 
@@ -24,8 +25,14 @@ public class Nomination
     
     // Navigation properties
     public virtual AwardCycle? AwardCycle { get; set; }
+
+    [ForeignKey(nameof(EmployeeId))]
     public virtual Employee? Employee { get; set; }
+
+    [ForeignKey(nameof(ManagerId))]
     public virtual Employee? Manager { get; set; }
+
+    [ForeignKey(nameof(SelectedByCommitteeMemberId))]
     public virtual Employee? SelectedByCommitteeMember { get; set; }
     public virtual ICollection<ManagerScore> ManagerScores { get; set; } = new List<ManagerScore>();
     public virtual ICollection<Evaluation> Evaluations { get; set; } = new List<Evaluation>();

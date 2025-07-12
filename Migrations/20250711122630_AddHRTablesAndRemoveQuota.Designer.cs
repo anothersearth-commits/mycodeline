@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace EOM.Web.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20250711102708_RemoveQuotaColumn")]
-    partial class RemoveQuotaColumn
+    [Migration("20250711122630_AddHRTablesAndRemoveQuota")]
+    partial class AddHRTablesAndRemoveQuota
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -419,6 +419,137 @@ namespace EOM.Web.Migrations
                     b.HasIndex("CriterionId");
 
                     b.ToTable("SubCriteria");
+                });
+
+            modelBuilder.Entity("EOM.Web.Models.VwEomDepartments", b =>
+                {
+                    b.Property<long>("DepartmentId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasColumnName("DEPARTMENTID");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<long>("DepartmentId"));
+
+                    b.Property<string>("Description")
+                        .HasColumnType("longtext")
+                        .HasColumnName("DESCRIPTION");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("tinyint(1)")
+                        .HasColumnName("ISACTIVE");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("longtext")
+                        .HasColumnName("NAME");
+
+                    b.HasKey("DepartmentId");
+
+                    b.ToTable("VW_EOM_DEPARTMENTS");
+                });
+
+            modelBuilder.Entity("EOM.Web.Models.VwEomEmployees", b =>
+                {
+                    b.Property<string>("EmployeeId")
+                        .HasColumnType("varchar(255)")
+                        .HasColumnName("EMPLOYEEID");
+
+                    b.Property<string>("ActiveDirectoryId")
+                        .HasColumnType("longtext")
+                        .HasColumnName("ACTIVEDIRECTORYID");
+
+                    b.Property<long>("DepartmentId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("DEPARTMENTID");
+
+                    b.Property<string>("Email")
+                        .HasColumnType("longtext")
+                        .HasColumnName("EMAIL");
+
+                    b.Property<string>("FirstName")
+                        .IsRequired()
+                        .HasColumnType("longtext")
+                        .HasColumnName("FIRSTNAME");
+
+                    b.Property<DateTime?>("HireDate")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("HIREDATE");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("tinyint(1)")
+                        .HasColumnName("ISACTIVE");
+
+                    b.Property<string>("JobTitle")
+                        .HasColumnType("longtext")
+                        .HasColumnName("JOBTITLE");
+
+                    b.Property<string>("LastName")
+                        .IsRequired()
+                        .HasColumnType("longtext")
+                        .HasColumnName("LASTNAME");
+
+                    b.Property<string>("ManagerId")
+                        .HasColumnType("longtext")
+                        .HasColumnName("MANAGERID");
+
+                    b.Property<string>("ManagerName")
+                        .HasColumnType("longtext")
+                        .HasColumnName("MANAGERNAME");
+
+                    b.Property<string>("Password")
+                        .HasColumnType("longtext")
+                        .HasColumnName("PASSWORD");
+
+                    b.Property<string>("PhoneNumber")
+                        .HasColumnType("longtext")
+                        .HasColumnName("PHONENUMBER");
+
+                    b.HasKey("EmployeeId");
+
+                    b.ToTable("VW_EOM_EMPLOYEES");
+                });
+
+            modelBuilder.Entity("EOM.Web.Models.VwEomManagers", b =>
+                {
+                    b.Property<string>("ManagerId")
+                        .HasColumnType("varchar(255)")
+                        .HasColumnName("MANAGERID");
+
+                    b.Property<string>("ActiveDirectoryId")
+                        .HasColumnType("longtext")
+                        .HasColumnName("ACTIVEDIRECTORYID");
+
+                    b.Property<long>("DepartmentId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("DEPARTMENTID");
+
+                    b.Property<string>("DepartmentName")
+                        .HasColumnType("longtext")
+                        .HasColumnName("DEPARTMENTNAME");
+
+                    b.Property<string>("Email")
+                        .HasColumnType("longtext")
+                        .HasColumnName("EMAIL");
+
+                    b.Property<string>("JobTitle")
+                        .HasColumnType("longtext")
+                        .HasColumnName("JOBTITLE");
+
+                    b.Property<string>("ManagerName")
+                        .HasColumnType("longtext")
+                        .HasColumnName("MANAGERNAME");
+
+                    b.Property<string>("ManagerNameAr")
+                        .HasColumnType("longtext")
+                        .HasColumnName("MANAGERNAME_AR");
+
+                    b.Property<string>("Phone")
+                        .HasColumnType("longtext")
+                        .HasColumnName("PHONE");
+
+                    b.HasKey("ManagerId");
+
+                    b.ToTable("VW_EOM_MANAGERS");
                 });
 
             modelBuilder.Entity("EOM.Web.Models.AwardCycle", b =>

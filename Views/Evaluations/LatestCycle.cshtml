@@ -58,7 +58,7 @@
                             </tr>
                         </thead>
                         <tbody>
-                            @foreach (var nomination in Model.Nominations.OrderBy(n => n.Employee?.Department?.Name).ThenBy(n => n.Employee?.LastName))
+                            @foreach (var nomination in Model.Nominations.OrderBy(n => n.Employee?.DepartmentId).ThenBy(n => n.Employee?.LastName))
                             {
                                 <tr class="@(nomination.IsWinner ? "table-success" : "")">
                                     <td>
@@ -73,7 +73,7 @@
                                             </div>
                                         </div>
                                     </td>
-                                    <td>@nomination.Employee?.Department?.Name</td>
+                                    <td>قسم @nomination.Employee?.DepartmentId</td>
                                     <td>@nomination.Manager?.FirstName @nomination.Manager?.LastName</td>
                                     <td>@nomination.CreatedAt.ToString("dd/MM/yyyy")</td>
                                     <td>

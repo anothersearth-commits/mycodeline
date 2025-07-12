@@ -9,7 +9,7 @@ using System.Linq;
 namespace EOM.Web.Controllers;
 
 [Authorize(Roles = "EOM-Admin,EOM-Committee")]
-public class AwardCyclesController : Controller
+public class AwardCyclesController : BaseController
 {
     private readonly ApplicationDbContext _context;
     private readonly Services.CycleRankingService _rankingService;
@@ -72,7 +72,6 @@ public class AwardCyclesController : Controller
             .Include(a => a.AwardType)
             .Include(a => a.Nominations)
                 .ThenInclude(n => n.Employee)
-                    .ThenInclude(e => e.Department)
             .Include(a => a.Nominations)
                 .ThenInclude(n => n.Manager)
             .Include(a => a.Nominations)

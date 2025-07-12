@@ -10,12 +10,14 @@ public class ApplicationDbContext : DbContext
     {
     }
 
-    // HR Tables (existing)
+    // Employee model now maps to VW_EOM_EMPLOYEES view (replacing both Employees table and VwEomEmployees)
     public DbSet<Employee> Employees { get; set; }
-    public DbSet<EmployeeManager> EmployeeManagers { get; set; }
+    
+    // HR Views
+    public DbSet<VwEomDepartments> VwEomDepartments { get; set; }
+    public DbSet<VwEomManagers> VwEomManagers { get; set; }
     
     // EOM Tables
-    public DbSet<Department> Departments { get; set; }
     public DbSet<AwardType> AwardTypes { get; set; }
     public DbSet<AwardCycle> AwardCycles { get; set; }
     public DbSet<Criterion> Criteria { get; set; }
@@ -31,29 +33,11 @@ public class ApplicationDbContext : DbContext
     {
         base.OnModelCreating(builder);
 
-        // Configure HR relationships
-        builder.Entity<EmployeeManager>()
-            .HasOne(em => em.Employee)
-            .WithMany(e => e.Managers)
-            .HasForeignKey(em => em.EmployeeId)
-            .OnDelete(DeleteBehavior.Restrict);
+        // Note: Old HR table relationships removed - now using HR views
 
-        builder.Entity<EmployeeManager>()
-            .HasOne(em => em.Manager)
-            .WithMany(e => e.ManagedEmployees)
-            .HasForeignKey(em => em.ManagerId)
-            .OnDelete(DeleteBehavior.Restrict);
-
-        // Configure Department relationship
+        // Configure Employee as a view (no foreign key constraints)
         builder.Entity<Employee>()
-            .HasOne(e => e.Department)
-            .WithMany(d => d.Employees)
-            .HasForeignKey(e => e.DepartmentId);
-
-        builder.Entity<CommitteeMember>()
-            .HasOne(cm => cm.Employee)
-            .WithMany()
-            .HasForeignKey(cm => cm.EmployeeId);
+            .ToView("VW_EOM_EMPLOYEES");
 
         // Configure composite keys
         builder.Entity<DepartmentQuota>()
@@ -90,6 +74,21 @@ public class ApplicationDbContext : DbContext
             .HasOne(n => n.AwardCycle)
             .WithMany(ac => ac.Nominations)
             .HasForeignKey(n => n.CycleId);
+
+        builder.Entity<Nomination>()
+            .HasOne(n => n.Employee)
+            .WithMany()
+            .HasForeignKey(n => n.EmployeeId);
+
+        builder.Entity<Nomination>()
+            .HasOne(n => n.Manager)
+            .WithMany()
+            .HasForeignKey(n => n.ManagerId);
+
+        builder.Entity<Nomination>()
+            .HasOne(n => n.SelectedByCommitteeMember)
+            .WithMany()
+            .HasForeignKey(n => n.SelectedByCommitteeMemberId);
 
         builder.Entity<ManagerScore>()
             .HasOne(ms => ms.Nomination)
@@ -131,6 +130,16 @@ public class ApplicationDbContext : DbContext
             .Property(at => at.Name)
             .HasMaxLength(100);
 
+        // Configure Employee to map to VW_EOM_EMPLOYEES view
+        builder.Entity<Employee>()
+            .HasKey(e => e.EmployeeId);
+
+        builder.Entity<VwEomManagers>()
+            .HasKey(m => m.ManagerId);
+
+        builder.Entity<VwEomDepartments>()
+            .HasKey(d => d.DepartmentId);
+
         builder.Entity<AwardType>()
             .Property(at => at.Description)
             .HasMaxLength(500);
@@ -163,8 +172,11 @@ public class ApplicationDbContext : DbContext
             .Property(n => n.SupportingDocPath)
             .HasMaxLength(500);
 
-        builder.Entity<Employee>()
-            .Property(e => e.Password)
-            .HasMaxLength(100);
+        builder.Entity<CommitteeMember>()
+            .HasOne(cm => cm.Employee)
+            .WithMany()
+            .HasForeignKey(cm => cm.EmployeeId);
+
+        // Employee model now maps to VW_EOM_EMPLOYEES view instead of physical table
     }
 }

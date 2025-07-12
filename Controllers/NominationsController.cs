@@ -9,7 +9,7 @@ using System.Security.Claims;
 namespace EOM.Web.Controllers;
 
 [Authorize]
-public class NominationsController : Controller
+public class NominationsController : BaseController
 {
     private readonly ApplicationDbContext _context;
     private readonly IWebHostEnvironment _webHostEnvironment;
@@ -110,11 +110,10 @@ public class NominationsController : Controller
             .Select(n => n.EmployeeId)
             .ToListAsync();
 
-        // Get employees in the same department (managed by this manager) excluding already nominated ones
+        // Fetch employees directly reporting to this manager (using ManagerId from HR view)
         var departmentEmployees = await _context.Employees
-            .Where(e => e.DepartmentId == currentEmployee.DepartmentId 
-                       && e.EmployeeId != currentEmployeeId 
-                       && e.IsActive
+            .Where(e => e.ManagerId == currentEmployee.EmployeeId
+                       && e.IsActive == 1
                        && !nominatedEmployeeIds.Contains(e.EmployeeId))
             .ToListAsync();
 
@@ -156,11 +155,11 @@ public class NominationsController : Controller
         // Set the manager ID to current user
         nomination.ManagerId = currentEmployeeId;
         
-        // Check if employee is in same department
+        // Check if employee reports to this manager
         var selectedEmployee = await _context.Employees.FindAsync(nomination.EmployeeId);
-        if (selectedEmployee == null || selectedEmployee.DepartmentId != currentEmployee.DepartmentId)
+        if (selectedEmployee == null || selectedEmployee.ManagerId != currentEmployee.EmployeeId)
         {
-            ModelState.AddModelError("EmployeeId", "يمكنك فقط ترشيح الموظفين في دائرتك");
+            ModelState.AddModelError("EmployeeId", "يمكنك فقط ترشيح الموظفين التابعين لك");
         }
 
         // Check if employee is already nominated in this cycle
@@ -218,9 +217,7 @@ public class NominationsController : Controller
             .ToListAsync();
 
         var departmentEmployees = await _context.Employees
-            .Where(e => e.DepartmentId == currentEmployee.DepartmentId 
-                       && e.EmployeeId != currentEmployeeId 
-                       && e.IsActive)
+            .Where(e => e.ManagerId == currentEmployee.EmployeeId && e.IsActive == 1)
             .ToListAsync();
 
         ViewData["CycleId"] = new SelectList(activeCycles, "CycleId", "AwardType.Name", nomination.CycleId);
@@ -420,10 +417,9 @@ public class NominationsController : Controller
         }
 
         var nomination = await _context.Nominations
-            .Include(n => n.AwardCycle)
-            .ThenInclude(ac => ac.AwardType)
+            .Include(n => n.Employee)
             .FirstOrDefaultAsync(m => m.NominationId == id);
-        
+
         if (nomination == null)
         {
             return NotFound();
@@ -437,43 +433,13 @@ public class NominationsController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> DeleteConfirmed(int id)
     {
-        var nomination = await _context.Nominations
-            .Include(n => n.AwardCycle)
-            .Include(n => n.Employee)
-            .FirstOrDefaultAsync(n => n.NominationId == id);
-            
+        var nomination = await _context.Nominations.FindAsync(id);
         if (nomination != null)
         {
-            var cycleId = nomination.CycleId;
-            var employeeName = $"{nomination.Employee?.FirstName} {nomination.Employee?.LastName}";
-            
-            // Clean up supporting document file if it exists
-            if (!string.IsNullOrEmpty(nomination.SupportingDocPath))
-            {
-                try
-                {
-                    var filePath = Path.Combine(_webHostEnvironment.WebRootPath, nomination.SupportingDocPath.TrimStart('/'));
-                    if (System.IO.File.Exists(filePath))
-                    {
-                        System.IO.File.Delete(filePath);
-                    }
-                }
-                catch (Exception ex)
-                {
-                    // Log error but continue with deletion
-                    System.Diagnostics.Debug.WriteLine($"Error deleting supporting document: {ex.Message}");
-                }
-            }
-            
             _context.Nominations.Remove(nomination);
             await _context.SaveChangesAsync();
-            
-            TempData["SuccessMessage"] = $"تم حذف ترشيح {employeeName} بنجاح";
-            return RedirectToAction("CycleDetails", new { id = cycleId });
         }
-
-        TempData["ErrorMessage"] = "حدث خطأ أثناء حذف الترشيح";
-        return RedirectToAction("Index", "Home");
+        return RedirectToAction(nameof(Index));
     }
 
     // POST: Nominations/SelectWinner/5

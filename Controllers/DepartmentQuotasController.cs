@@ -20,10 +20,8 @@ public class DepartmentQuotasController : Controller
     // GET: DepartmentQuotas
     public async Task<IActionResult> Index()
     {
-        var departments = await _context.Departments
-            .Where(d => d.IsActive)
-            .Include(d => d.DepartmentQuotas)
-            .ThenInclude(dq => dq.AwardType)
+        var departments = await _context.VwEomDepartments
+            .Where(d => d.IsActive == 1)
             .OrderBy(d => d.Name)
             .ToListAsync();
 
@@ -32,14 +30,20 @@ public class DepartmentQuotasController : Controller
             .OrderBy(at => at.Name)
             .ToListAsync();
 
+        // Get all department quotas
+        var departmentQuotas = await _context.DepartmentQuotas
+            .Include(dq => dq.AwardType)
+            .ToListAsync();
+
         ViewBag.AwardTypes = awardTypes;
+        ViewBag.DepartmentQuotas = departmentQuotas;
         return View(departments);
     }
 
     // POST: DepartmentQuotas/UpdateQuota
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> UpdateQuota(int departmentId, int awardTypeId, int maxNominations)
+    public async Task<IActionResult> UpdateQuota(long departmentId, int awardTypeId, int maxNominations)
     {
         try
         {
@@ -91,7 +95,7 @@ public class DepartmentQuotasController : Controller
     // POST: DepartmentQuotas/DeleteQuota
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> DeleteQuota(int departmentId, int awardTypeId)
+    public async Task<IActionResult> DeleteQuota(long departmentId, int awardTypeId)
     {
         var quota = await _context.DepartmentQuotas
             .FirstOrDefaultAsync(dq => dq.DepartmentId == departmentId && dq.AwardTypeId == awardTypeId);

@@ -10,11 +10,8 @@ public static class SeedData
         using var context = new ApplicationDbContext(
             serviceProvider.GetRequiredService<DbContextOptions<ApplicationDbContext>>());
 
-        // Create test employees (HR data)
-        await CreateEmployeesAsync(context);
-        
-        // Create test managers hierarchy
-        await CreateManagersAsync(context);
+        // Create Employee records for CommitteeMember compatibility (sync with HR views)
+        await CreateEmployeeRecordsAsync(context);
         
         // Create award types and criteria
         await CreateAwardTypesAsync(context);
@@ -22,10 +19,7 @@ public static class SeedData
         // Create sub-criteria if they don't exist
         await CreateSubCriteriaIfNeededAsync(context);
         
-        // Update existing employees with passwords if needed
-        await UpdateEmployeePasswordsAsync(context);
-        
-        // Create test committee members
+        // Create committee members  
         await CreateCommitteeMembersAsync(context);
         
         // Create department quotas
@@ -35,16 +29,102 @@ public static class SeedData
         await CreateAwardCyclesAsync(context);
     }
 
+    // Employee data now comes from VW_EOM_EMPLOYEES HR view, no seeding needed
+    private static async Task CreateEmployeeRecordsAsync(ApplicationDbContext context)
+    {
+        // If there are already employees in the view/table, skip.
+        if (await context.Employees.AnyAsync())
+            return;
+
+        var employees = new List<Employee>
+        {
+            // Admin (will get "EOM-Admin" role)
+            new Employee
+            {
+                EmployeeId = 1,
+                FirstName = "Admin",
+                LastName = "User",
+                Email = "admin@company.com",
+                DepartmentId = 10,
+                JobTitle = "System Administrator",
+                HireDate = DateTime.UtcNow.AddYears(-5),
+                Password = "123456",
+                IsActive = 1,
+                IsManager = 0
+            },
+            // Manager Sara (id 2) – will get Manager role via IsManager = 1
+            new Employee
+            {
+                EmployeeId = 2,
+                FirstName = "Sara",
+                LastName = "Mohammed",
+                Email = "sara@company.com",
+                DepartmentId = 10,
+                JobTitle = "IT Manager",
+                HireDate = DateTime.UtcNow.AddYears(-3),
+                Password = "123456",
+                IsActive = 1,
+                IsManager = 1
+            },
+            // Committee member Fatima (id 4)
+            new Employee
+            {
+                EmployeeId = 4,
+                FirstName = "Fatima",
+                LastName = "Ali",
+                Email = "fatima@company.com",
+                DepartmentId = 30,
+                JobTitle = "Senior Accountant",
+                HireDate = DateTime.UtcNow.AddYears(-2),
+                Password = "123456",
+                IsActive = 1,
+                IsManager = 0
+            },
+            // Committee member Mohammed (id 5)
+            new Employee
+            {
+                EmployeeId = 5,
+                FirstName = "Mohammed",
+                LastName = "Hassan",
+                Email = "mohammed@company.com",
+                DepartmentId = 10,
+                JobTitle = "Software Developer",
+                HireDate = DateTime.UtcNow.AddYears(-1),
+                Password = "123456",
+                IsActive = 1,
+                IsManager = 0
+            },
+            // Dual-role user: Manager + Committee member (id 6)
+            new Employee
+            {
+                EmployeeId = 6,
+                FirstName = "Ahmed",
+                LastName = "Salem",
+                Email = "ahmed@company.com",
+                DepartmentId = 20,
+                JobTitle = "Department Manager",
+                HireDate = DateTime.UtcNow.AddYears(-4),
+                Password = "123456",
+                IsActive = 1,
+                IsManager = 1  // This makes him a Manager
+            }
+        };
+
+        context.Employees.AddRange(employees);
+        await context.SaveChangesAsync();
+    }
+
+    /* DISABLED - Old complex HR data seeding
     private static async Task CreateEmployeesAsync(ApplicationDbContext context)
     {
-        if (!context.Employees.Any())
+        if (!context.VwEomEmployees.Any())
         {
-            var employees = new List<Employee>
+            var employees = new List<VwEomEmployees>
             {
                 // Admin
-                new Employee
+                new VwEomEmployees
                 {
-                    EmployeeId = 1,
+                    EmployeeId = "1",
                     FirstName = "أحمد",
                     LastName = "المدير",
                     Email = "admin@company.com",
@@ -57,7 +137,7 @@ public static class SeedData
                 // Managers
                 new Employee
                 {
-                    EmployeeId = 2,
+                    EmployeeId = "2",
                     FirstName = "سارة",
                     LastName = "محمد",
                     Email = "sara@company.com",
@@ -69,7 +149,7 @@ public static class SeedData
                 },
                 new Employee
                 {
-                    EmployeeId = 3,
+                    EmployeeId = "3",
                     FirstName = "خالد",
                     LastName = "أحمد",
                     Email = "khalid@company.com",
@@ -82,7 +162,7 @@ public static class SeedData
                 // Committee members
                 new Employee
                 {
-                    EmployeeId = 4,
+                    EmployeeId = "4",
                     FirstName = "فاطمة",
                     LastName = "علي",
                     Email = "fatima@company.com",
@@ -94,7 +174,7 @@ public static class SeedData
                 },
                 new Employee
                 {
-                    EmployeeId = 5,
+                    EmployeeId = "5",
                     FirstName = "محمد",
                     LastName = "حسن",
                     Email = "mohammed@company.com",
@@ -107,7 +187,7 @@ public static class SeedData
                 // Regular employees
                 new Employee
                 {
-                    EmployeeId = 6,
+                    EmployeeId = "6",
                     FirstName = "عائشة",
                     LastName = "يوسف",
                     Email = "aisha@company.com",
@@ -119,7 +199,7 @@ public static class SeedData
                 },
                 new Employee
                 {
-                    EmployeeId = 7,
+                    EmployeeId = "7",
                     FirstName = "عمر",
                     LastName = "إبراهيم",
                     Email = "omar@company.com",
@@ -135,7 +215,9 @@ public static class SeedData
             await context.SaveChangesAsync();
         }
     }
+    */ // End of disabled HR seed methods
 
+    /* DISABLED - HR data should come from actual HR system
     private static async Task CreateManagersAsync(ApplicationDbContext context)
     {
         if (!context.EmployeeManagers.Any())
@@ -145,20 +227,20 @@ public static class SeedData
                 // Sara manages Mohammed and Aisha (IT Department)
                 new EmployeeManager
                 {
-                    EmployeeId = 5, // Mohammed
+                    EmployeeId = "5", // Mohammed
                     ManagerId = 2,  // Sara
                     StartDate = DateTime.Now.AddYears(-1)
                 },
                 new EmployeeManager
                 {
-                    EmployeeId = 6, // Aisha
+                    EmployeeId = "6", // Aisha
                     ManagerId = 2,  // Sara
                     StartDate = DateTime.Now.AddYears(-1)
                 },
                 // Khalid manages Omar (Sales Department)
                 new EmployeeManager
                 {
-                    EmployeeId = 7, // Omar
+                    EmployeeId = "7", // Omar
                     ManagerId = 3,  // Khalid
                     StartDate = DateTime.Now.AddMonths(-8)
                 }
@@ -168,6 +250,7 @@ public static class SeedData
             await context.SaveChangesAsync();
         }
     }
+    */ // End of disabled CreateManagersAsync
 
     private static async Task CreateAwardTypesAsync(ApplicationDbContext context)
     {
@@ -228,13 +311,25 @@ public static class SeedData
             {
                 new CommitteeMember
                 {
+                    EmployeeId = 1, // Admin acts as committee member too for testing
+                    StartDate = DateTime.UtcNow,
+                    IsActive = true
+                },
+                new CommitteeMember
+                {
                     EmployeeId = 4, // Fatima
                     StartDate = DateTime.UtcNow,
                     IsActive = true
                 },
                 new CommitteeMember
                 {
-                    EmployeeId = 5, // Mohammed 
+                    EmployeeId = 5, // Mohammed
+                    StartDate = DateTime.UtcNow,
+                    IsActive = true
+                },
+                new CommitteeMember
+                {
+                    EmployeeId = 6, // Ahmed - dual role (Manager + Committee)
                     StartDate = DateTime.UtcNow,
                     IsActive = true
                 }
@@ -412,6 +507,7 @@ public static class SeedData
         }
     }
 
+    /* DISABLED - Uses old Employee table
     private static async Task UpdateEmployeePasswordsAsync(ApplicationDbContext context)
     {
         // Update existing employees without passwords
@@ -428,6 +524,7 @@ public static class SeedData
             await context.SaveChangesAsync();
         }
     }
+    */ // End of disabled UpdateEmployeePasswordsAsync
 
     private static async Task CreateDepartmentQuotasAsync(ApplicationDbContext context)
     {

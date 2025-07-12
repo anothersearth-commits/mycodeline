@@ -6,7 +6,7 @@ using EOM.Web.Models;
 
 namespace EOM.Web.Controllers;
 
-public class HomeController : Controller
+public class HomeController : BaseController
 {
     private readonly ILogger<HomeController> _logger;
     private readonly ApplicationDbContext _context;
@@ -17,13 +17,19 @@ public class HomeController : Controller
         _context = context;
     }
 
-    public async Task<IActionResult> Index()
+    public async Task<IActionResult> Index(string? activeRole = null)
     {
         // If user is not authenticated, redirect to login
         if (!User.Identity?.IsAuthenticated ?? true)
         {
             return RedirectToAction("Login", "Account");
         }
+
+        // Get role data from base controller
+        bool isManager = User.IsInRole("Manager");
+        bool isCommittee = User.IsInRole("EOM-Committee");
+        bool isDualRole = ViewBag.IsDualRole as bool? ?? false;
+        string currentRole = ViewBag.CurrentRole as string ?? "Committee";
         
         // Get open award cycles for managers (not closed or published)
         var openCycles = await _context.AwardCycles
@@ -36,7 +42,7 @@ public class HomeController : Controller
         ViewBag.OpenCycles = openCycles;
 
         // Get recent cycles for managers to show as cards
-        if (User.IsInRole("Manager"))
+        if (isManager && (currentRole == "Manager" || !isDualRole))
         {
             var employeeId = int.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "0");
             
@@ -66,8 +72,8 @@ public class HomeController : Controller
             .ToListAsync();
         ViewBag.PastCycles = pastCycles;
         
-        // Get additional manager data if they are a manager
-        if (User.IsInRole("Manager"))
+        // Get additional manager data if they are a manager and in manager mode
+        if (isManager && (currentRole == "Manager" || !isDualRole))
         {
             var employeeId = int.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "0");
             var hasNominations = await _context.Nominations
@@ -103,8 +109,8 @@ public class HomeController : Controller
             ViewBag.ManagerPendingScoring = pendingScoring;
         }
 
-        // Get committee member data if they are a committee member
-        if (User.IsInRole("EOM-Committee"))
+        // Get committee member data if they are a committee member and in committee mode
+        if (isCommittee && (currentRole == "Committee" || !isDualRole))
         {
             var employeeId = int.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "0");
             
@@ -185,6 +191,39 @@ public class HomeController : Controller
     public IActionResult Privacy()
     {
         return View();
+    }
+
+    // GET: Home/Leaderboard
+    public async Task<IActionResult> Leaderboard()
+    {
+        // Get the last closed cycle
+        var lastClosedCycle = await _context.AwardCycles
+            .Include(ac => ac.AwardType)
+            .Where(ac => ac.Status == CycleStatus.Closed || ac.Status == CycleStatus.Published)
+            .OrderByDescending(ac => ac.Year)
+            .ThenByDescending(ac => ac.Month)
+            .FirstOrDefaultAsync();
+
+        if (lastClosedCycle == null)
+        {
+            ViewBag.Message = "لا توجد دورات مكتملة لعرض النتائج";
+            return View(new List<Nomination>());
+        }
+
+        // Get all winners from the last closed cycle with their employee data
+        var winners = await _context.Nominations
+            .Include(n => n.Employee)
+            .Include(n => n.AwardCycle)
+            .ThenInclude(ac => ac.AwardType)
+            .Include(n => n.SelectedByCommitteeMember)
+            .Where(n => n.CycleId == lastClosedCycle.CycleId && n.IsWinner)
+            .OrderBy(n => n.Employee.FirstName)
+            .ToListAsync();
+
+        ViewBag.CycleInfo = lastClosedCycle;
+        ViewBag.TotalWinners = winners.Count;
+        
+        return View(winners);
     }
 
     [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]

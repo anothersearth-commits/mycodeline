@@ -2,7 +2,7 @@ namespace EOM.Web.Models;
 
 public class DepartmentQuota
 {
-    public int DepartmentId { get; set; }
+    public long DepartmentId { get; set; }
     
     public int AwardTypeId { get; set; }
     

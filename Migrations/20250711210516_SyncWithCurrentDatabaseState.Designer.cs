@@ -4,6 +4,7 @@ using EOM.Web.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace EOM.Web.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250711210516_SyncWithCurrentDatabaseState")]
+    partial class SyncWithCurrentDatabaseState
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -156,70 +159,53 @@ namespace EOM.Web.Migrations
                 {
                     b.Property<int>("EmployeeId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int")
-                        .HasColumnName("EMPLOYEEID");
+                        .HasColumnType("int");
 
                     MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("EmployeeId"));
 
                     b.Property<string>("ActiveDirectoryId")
-                        .HasColumnType("longtext")
-                        .HasColumnName("ACTIVEDIRECTORYID");
+                        .HasMaxLength(200)
+                        .HasColumnType("varchar(200)");
 
-                    b.Property<long>("DepartmentId")
-                        .HasColumnType("bigint")
-                        .HasColumnName("DEPARTMENTID");
+                    b.Property<int>("DepartmentId")
+                        .HasColumnType("int");
 
                     b.Property<string>("Email")
-                        .HasColumnType("longtext")
-                        .HasColumnName("EMAIL");
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("varchar(200)");
 
                     b.Property<string>("FirstName")
                         .IsRequired()
-                        .HasColumnType("longtext")
-                        .HasColumnName("FIRSTNAME");
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
 
-                    b.Property<DateTime?>("HireDate")
-                        .HasColumnType("datetime(6)")
-                        .HasColumnName("HIREDATE");
+                    b.Property<DateTime>("HireDate")
+                        .HasColumnType("datetime(6)");
 
-                    b.Property<int>("IsActive")
-                        .HasColumnType("int")
-                        .HasColumnName("ISACTIVE");
-
-                    b.Property<int>("IsManager")
-                        .HasColumnType("int")
-                        .HasColumnName("IS_MANAGER");
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("tinyint(1)");
 
                     b.Property<string>("JobTitle")
-                        .HasColumnType("longtext")
-                        .HasColumnName("JOBTITLE");
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
 
                     b.Property<string>("LastName")
                         .IsRequired()
-                        .HasColumnType("longtext")
-                        .HasColumnName("LASTNAME");
-
-                    b.Property<int?>("ManagerId")
-                        .HasColumnType("int")
-                        .HasColumnName("MANAGERID");
-
-                    b.Property<string>("ManagerName")
-                        .HasColumnType("longtext")
-                        .HasColumnName("MANAGERNAME");
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
 
                     b.Property<string>("Password")
-                        .HasColumnType("longtext")
-                        .HasColumnName("PASSWORD");
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
 
                     b.Property<string>("PhoneNumber")
-                        .HasColumnType("longtext")
-                        .HasColumnName("PHONENUMBER");
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)");
 
                     b.HasKey("EmployeeId");
 
-                    b.ToTable("VW_EOM_EMPLOYEES");
-
-                    b.ToView("VW_EOM_EMPLOYEES", (string)null);
+                    b.ToTable("Employees");
                 });
 
             modelBuilder.Entity("EOM.Web.Models.Evaluation", b =>
@@ -379,11 +365,8 @@ namespace EOM.Web.Migrations
             modelBuilder.Entity("EOM.Web.Models.VwEomDepartments", b =>
                 {
                     b.Property<long>("DepartmentId")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("bigint")
                         .HasColumnName("DEPARTMENTID");
-
-                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<long>("DepartmentId"));
 
                     b.Property<string>("Description")
                         .HasColumnType("longtext")
@@ -398,17 +381,13 @@ namespace EOM.Web.Migrations
                         .HasColumnType("longtext")
                         .HasColumnName("NAME");
 
-                    b.HasKey("DepartmentId");
-
                     b.ToTable("VW_EOM_DEPARTMENTS");
+
+                    b.ToView("VW_EOM_DEPARTMENTS", (string)null);
                 });
 
-            modelBuilder.Entity("EOM.Web.Models.VwEomManagers", b =>
+            modelBuilder.Entity("EOM.Web.Models.VwEomEmployees", b =>
                 {
-                    b.Property<string>("ManagerId")
-                        .HasColumnType("varchar(255)")
-                        .HasColumnName("MANAGERID");
-
                     b.Property<string>("ActiveDirectoryId")
                         .HasColumnType("longtext")
                         .HasColumnName("ACTIVEDIRECTORYID");
@@ -417,34 +396,84 @@ namespace EOM.Web.Migrations
                         .HasColumnType("bigint")
                         .HasColumnName("DEPARTMENTID");
 
-                    b.Property<string>("DepartmentName")
-                        .HasColumnType("longtext")
-                        .HasColumnName("DEPARTMENTNAME");
-
                     b.Property<string>("Email")
                         .HasColumnType("longtext")
                         .HasColumnName("EMAIL");
+
+                    b.Property<string>("EmployeeId")
+                        .IsRequired()
+                        .HasColumnType("longtext")
+                        .HasColumnName("EMPLOYEEID");
+
+                    b.Property<string>("FirstName")
+                        .IsRequired()
+                        .HasColumnType("longtext")
+                        .HasColumnName("FIRSTNAME");
+
+                    b.Property<DateTime?>("HireDate")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("HIREDATE");
+
+                    b.Property<int>("IsActive")
+                        .HasColumnType("int")
+                        .HasColumnName("ISACTIVE");
 
                     b.Property<string>("JobTitle")
                         .HasColumnType("longtext")
                         .HasColumnName("JOBTITLE");
 
-                    b.Property<string>("ManagerName")
+                    b.Property<string>("LastName")
                         .IsRequired()
+                        .HasColumnType("longtext")
+                        .HasColumnName("LASTNAME");
+
+                    b.Property<string>("ManagerId")
+                        .HasColumnType("longtext")
+                        .HasColumnName("MANAGERID");
+
+                    b.Property<string>("ManagerName")
                         .HasColumnType("longtext")
                         .HasColumnName("MANAGERNAME");
 
-                    b.Property<string>("ManagerNameAr")
+                    b.Property<string>("Password")
                         .HasColumnType("longtext")
-                        .HasColumnName("MANAGERNAME_AR");
+                        .HasColumnName("PASSWORD");
 
-                    b.Property<string>("Phone")
+                    b.Property<string>("PhoneNumber")
                         .HasColumnType("longtext")
-                        .HasColumnName("PHONE");
+                        .HasColumnName("PHONENUMBER");
 
-                    b.HasKey("ManagerId");
+                    b.ToTable("VW_EOM_EMPLOYEES");
+
+                    b.ToView("VW_EOM_EMPLOYEES", (string)null);
+                });
+
+            modelBuilder.Entity("EOM.Web.Models.VwEomManagers", b =>
+                {
+                    b.Property<long>("DepartmentId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("DEPARTMENTID");
+
+                    b.Property<string>("DepartmentName")
+                        .HasColumnType("longtext")
+                        .HasColumnName("DEPARTMENTNAME");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("tinyint(1)")
+                        .HasColumnName("ISACTIVE");
+
+                    b.Property<string>("ManagerId")
+                        .IsRequired()
+                        .HasColumnType("longtext")
+                        .HasColumnName("MANAGERID");
+
+                    b.Property<string>("ManagerName")
+                        .HasColumnType("longtext")
+                        .HasColumnName("MANAGERNAME");
 
                     b.ToTable("VW_EOM_MANAGERS");
+
+                    b.ToView("VW_EOM_MANAGERS", (string)null);
                 });
 
             modelBuilder.Entity("EOM.Web.Models.AwardCycle", b =>

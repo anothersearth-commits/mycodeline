@@ -3,14 +3,63 @@
 {
     <li class="nav-item">
         @{
+            // Calculate role data directly in the partial view
+            bool isManager = User.IsInRole("Manager");
+            bool isCommittee = User.IsInRole("EOM-Committee");
+            bool isDualRole = isManager && isCommittee;
+            
+            string? activeRoleParam = Context.Request.Query["activeRole"].FirstOrDefault();
+            string? cookieRole = Context.Request.Cookies["UserActiveRole"];
+            string currentRole = "Committee"; // Default
+            
+            if (isDualRole)
+            {
+                // Priority: URL parameter > Cookie > Default
+                currentRole = activeRoleParam ?? cookieRole ?? "Committee";
+                
+                // If activeRole was provided in URL, update the cookie
+                if (!string.IsNullOrEmpty(activeRoleParam))
+                {
+                    Context.Response.Cookies.Append("UserActiveRole", activeRoleParam, new Microsoft.AspNetCore.Http.CookieOptions
+                    {
+                        Expires = DateTimeOffset.UtcNow.AddDays(30),
+                        HttpOnly = true,
+                        SameSite = Microsoft.AspNetCore.Http.SameSiteMode.Lax
+                    });
+                }
+            }
+            else if (isManager)
+            {
+                currentRole = "Manager";
+            }
+            else if (isCommittee)
+            {
+                currentRole = "Committee";
+            }
+            
             string roleLabel = "مستخدم";
-            if (User.IsInRole("EOM-Admin")) { roleLabel = "مسؤول النظام"; }
-            else if (User.IsInRole("Manager")) { roleLabel = "مدير"; }
-            else if (User.IsInRole("EOM-Committee")) { roleLabel = "عضو لجنة"; }
+            if (User.IsInRole("EOM-Admin")) { 
+                roleLabel = "مسؤول النظام"; 
+            }
+            else if (isDualRole) {
+                roleLabel = currentRole == "Manager" ? "مدير" : "عضو لجنة";
+            }
+            else if (User.IsInRole("Manager")) { 
+                roleLabel = "مدير"; 
+            }
+            else if (User.IsInRole("EOM-Committee")) { 
+                roleLabel = "عضو لجنة"; 
+            }
         }
         <span class="nav-link">
             مرحباً @User.Identity?.Name!
             <span class="badge bg-info text-dark ms-2">@roleLabel</span>
+            @if (isDualRole)
+            {
+                <button class="btn btn-sm btn-outline-primary ms-2" onclick="showRoleSwitcher()" title="تبديل الدور">
+                    ⇄ تبديل
+                </button>
+            }
         </span>
     </li>
     <li class="nav-item">

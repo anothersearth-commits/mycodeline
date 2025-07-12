@@ -1,8 +1,9 @@
-@model IEnumerable<EOM.Web.Models.Department>
+@model IEnumerable<EOM.Web.Models.VwEomDepartments>
 
 @{
     ViewData["Title"] = "إدارة حصص الدوائر";
     var awardTypes = ViewBag.AwardTypes as List<EOM.Web.Models.AwardType> ?? new List<EOM.Web.Models.AwardType>();
+    var departmentQuotas = ViewBag.DepartmentQuotas as List<EOM.Web.Models.DepartmentQuota> ?? new List<EOM.Web.Models.DepartmentQuota>();
 }
 
 <div class="glass-fade-in">
@@ -66,7 +67,7 @@
                                 <tbody>
                                     @foreach (var awardType in awardTypes)
                                     {
-                                        var existingQuota = department.DepartmentQuotas.FirstOrDefault(dq => dq.AwardTypeId == awardType.AwardTypeId);
+                                        var existingQuota = departmentQuotas.FirstOrDefault(dq => dq.DepartmentId == department.DepartmentId && dq.AwardTypeId == awardType.AwardTypeId);
                                         <tr>
                                             <td>
                                                 <strong>@awardType.Name</strong>

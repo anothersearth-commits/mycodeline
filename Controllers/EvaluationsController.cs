@@ -7,7 +7,7 @@ using EOM.Web.Models;
 namespace EOM.Web.Controllers;
 
 [Authorize]
-public class EvaluationsController : Controller
+public class EvaluationsController : BaseController
 {
     private readonly ApplicationDbContext _context;
 
@@ -66,10 +66,9 @@ public class EvaluationsController : Controller
 
         // Get nominations that need evaluation by this committee member
         var pendingNominations = await _context.Nominations
-            .Include(n => n.Employee)
-                .ThenInclude(e => e.Department)
             .Include(n => n.AwardCycle)
                 .ThenInclude(ac => ac.AwardType)
+            .Include(n => n.Employee)
             .Where(n => n.AwardCycle.Status == CycleStatus.Evaluating)
             .Where(n => !n.Evaluations.Any(e => e.CommitteeMemberId == committeeMember.Id))
             .OrderBy(n => n.Employee.DepartmentId)
@@ -331,7 +330,6 @@ public class EvaluationsController : Controller
             .Include(ac => ac.AwardType)
             .Include(ac => ac.Nominations)
             .ThenInclude(n => n.Employee)
-            .ThenInclude(e => e.Department)
             .Include(ac => ac.Nominations)
             .ThenInclude(n => n.Manager)
             .Include(ac => ac.Nominations)
