@@ -455,29 +455,6 @@
                                 </form>
                             }
                             
-                            @if (User.IsInRole("EOM-Committee"))
-                            {
-                                @if (isWinner)
-                                {
-                                    <form style="display: inline;" method="post" action="@Url.Action("RemoveWinner", new { id = nomination.NominationId })" id="removeWinnerForm-@nomination.NominationId">
-                                        @Html.AntiForgeryToken()
-                                        <button type="button" onclick="confirmRemoveWinner(@nomination.NominationId, '@nomination.Employee.FirstName @nomination.Employee.LastName')" class="btn-remove-winner">
-                                            <i class="fas fa-trophy-alt"></i>
-                                            إلغاء الفوز
-                                        </button>
-                                    </form>
-                                }
-                                else
-                                {
-                                    <form style="display: inline;" method="post" action="@Url.Action("SelectWinner", new { id = nomination.NominationId })" id="selectWinnerForm-@nomination.NominationId">
-                                        @Html.AntiForgeryToken()
-                                        <button type="button" onclick="confirmSelectWinner(@nomination.NominationId, '@nomination.Employee.FirstName @nomination.Employee.LastName')" class="btn-select-winner">
-                                            <i class="fas fa-trophy"></i>
-                                            اختيار كفائز
-                                        </button>
-                                    </form>
-                                }
-                            }
                         </div>
                         
                         @if (hasManagerScores)
@@ -546,65 +523,4 @@ function confirmDelete(nominationId, employeeName) {
     });
 }
 
-function confirmSelectWinner(nominationId, employeeName) {
-    Swal.fire({
-        title: 'تأكيد اختيار الفائز',
-        text: `هل أنت متأكد من اختيار "${employeeName}" كفائز في هذه الدورة؟`,
-        icon: 'question',
-        showCancelButton: true,
-        confirmButtonColor: '#ffd700',
-        cancelButtonColor: '#6c757d',
-        confirmButtonText: 'نعم، اختر كفائز',
-        cancelButtonText: 'إلغاء',
-        reverseButtons: true
-    }).then((result) => {
-        if (result.isConfirmed) {
-            // Show loading
-            Swal.fire({
-                title: 'جاري الاختيار...',
-                allowOutsideClick: false,
-                didOpen: () => {
-                    Swal.showLoading();
-                }
-            });
-            
-            // Submit the form
-            const form = document.getElementById(`selectWinnerForm-${nominationId}`);
-            if (form) {
-                form.submit();
-            }
-        }
-    });
-}
-
-function confirmRemoveWinner(nominationId, employeeName) {
-    Swal.fire({
-        title: 'تأكيد إلغاء الفوز',
-        text: `هل أنت متأكد من إلغاء فوز "${employeeName}"؟`,
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonColor: '#dc3545',
-        cancelButtonColor: '#6c757d',
-        confirmButtonText: 'نعم، ألغ الفوز',
-        cancelButtonText: 'إلغاء',
-        reverseButtons: true
-    }).then((result) => {
-        if (result.isConfirmed) {
-            // Show loading
-            Swal.fire({
-                title: 'جاري الإلغاء...',
-                allowOutsideClick: false,
-                didOpen: () => {
-                    Swal.showLoading();
-                }
-            });
-            
-            // Submit the form
-            const form = document.getElementById(`removeWinnerForm-${nominationId}`);
-            if (form) {
-                form.submit();
-            }
-        }
-    });
-}
 </script>

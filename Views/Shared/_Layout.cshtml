@@ -76,7 +76,14 @@
         </main>
     </div>
 
-    <!-- Footer removed as requested -->
+    <!-- Developer Footer -->
+    <footer class="developer-footer">
+        <div class="container">
+            <div class="text-end">
+                <small class="text-muted spotlight-footer" id="footerText">برمجة : ماجد عمر الشيزاوي - دائرة تقنية المعلومات</small>
+            </div>
+        </div>
+    </footer>
 }
 else
 {
@@ -188,6 +195,29 @@ else
                 font-family: 'Tajawal', Arial, sans-serif;
             }
         </style>
+        
+        <script>
+            // Footer Spotlight Effect
+            document.addEventListener('DOMContentLoaded', function() {
+                const footerText = document.getElementById('footerText');
+                
+                if (footerText) {
+                    footerText.addEventListener('mousemove', function(e) {
+                        const rect = this.getBoundingClientRect();
+                        const x = ((e.clientX - rect.left) / rect.width) * 100;
+                        const y = ((e.clientY - rect.top) / rect.height) * 100;
+                        
+                        this.style.setProperty('--mouse-x', x + '%');
+                        this.style.setProperty('--mouse-y', y + '%');
+                    });
+                    
+                    footerText.addEventListener('mouseleave', function() {
+                        this.style.setProperty('--mouse-x', '50%');
+                        this.style.setProperty('--mouse-y', '50%');
+                    });
+                }
+            });
+        </script>
     }
     
     @await RenderSectionAsync("Scripts", required: false)
