@@ -5,28 +5,23 @@ namespace EOM.Web.Data;
 
 public static class SeedData
 {
+    // Helper method to get Oracle sequence next value
+    private static async Task<int> GetSequenceNextValue(ApplicationDbContext context, string sequenceName)
+    {
+        using var connection = context.Database.GetDbConnection();
+        await connection.OpenAsync();
+        using var command = connection.CreateCommand();
+        command.CommandText = $"SELECT {sequenceName}.NEXTVAL FROM DUAL";
+        var result = await command.ExecuteScalarAsync();
+        return Convert.ToInt32(result);
+    }
     public static async Task InitializeAsync(IServiceProvider serviceProvider)
     {
         using var context = new ApplicationDbContext(
             serviceProvider.GetRequiredService<DbContextOptions<ApplicationDbContext>>());
 
-        // Create Employee records for CommitteeMember compatibility (sync with HR views)
-        await CreateEmployeeRecordsAsync(context);
-        
-        // Create award types and criteria
+        // Only seed the three tables requested: AwardTypes, Criteria, and SubCriteria
         await CreateAwardTypesAsync(context);
-        
-        // Create sub-criteria if they don't exist
-        await CreateSubCriteriaIfNeededAsync(context);
-        
-        // Create committee members  
-        await CreateCommitteeMembersAsync(context);
-        
-        // Create department quotas
-        await CreateDepartmentQuotasAsync(context);
-        
-        // Create award cycles
-        await CreateAwardCyclesAsync(context);
     }
 
     // Employee data now comes from VW_EOM_EMPLOYEES HR view, no seeding needed
@@ -41,7 +36,7 @@ public static class SeedData
             // Admin (will get "EOM-Admin" role)
             new Employee
             {
-                EmployeeId = 1,
+                EmployeeId = 1,  // Keep explicit IDs for Employee since it's a view and IDs must match HR system
                 FirstName = "Admin",
                 LastName = "User",
                 Email = "admin@company.com",
@@ -256,8 +251,12 @@ public static class SeedData
     {
         if (!context.AwardTypes.Any())
         {
+            // Get next sequence value for Oracle
+            var nextId = await GetSequenceNextValue(context, "SEQ_AWARDTYPE");
+            
             var employeeOfMonth = new AwardType
             {
+                AwardTypeId = nextId,
                 Name = "موظف الشهر",
                 Description = "Employee of the Month Award",
                 IsActive = true
@@ -271,24 +270,28 @@ public static class SeedData
             {
                 new Criterion
                 {
+                    CriterionId = await GetSequenceNextValue(context, "SEQ_CRITERION"),
                     AwardTypeId = employeeOfMonth.AwardTypeId,
                     Name = "الالتزام والانضباط",
                     WeightPercent = 25.0m
                 },
                 new Criterion
                 {
+                    CriterionId = await GetSequenceNextValue(context, "SEQ_CRITERION"),
                     AwardTypeId = employeeOfMonth.AwardTypeId,
                     Name = "جودة الخدمة والإنتاجية",
                     WeightPercent = 30.0m
                 },
                 new Criterion
                 {
+                    CriterionId = await GetSequenceNextValue(context, "SEQ_CRITERION"),
                     AwardTypeId = employeeOfMonth.AwardTypeId,
                     Name = "التعاون والعمل الجماعي",
                     WeightPercent = 25.0m
                 },
                 new Criterion
                 {
+                    CriterionId = await GetSequenceNextValue(context, "SEQ_CRITERION"),
                     AwardTypeId = employeeOfMonth.AwardTypeId,
                     Name = "الأداء العام",
                     WeightPercent = 20.0m
@@ -311,24 +314,28 @@ public static class SeedData
             {
                 new CommitteeMember
                 {
+                    // Don't set Id - let Oracle sequence/trigger handle it
                     EmployeeId = 1, // Admin acts as committee member too for testing
                     StartDate = DateTime.UtcNow,
                     IsActive = true
                 },
                 new CommitteeMember
                 {
+                    // Don't set Id - let Oracle sequence/trigger handle it
                     EmployeeId = 4, // Fatima
                     StartDate = DateTime.UtcNow,
                     IsActive = true
                 },
                 new CommitteeMember
                 {
+                    // Don't set Id - let Oracle sequence/trigger handle it
                     EmployeeId = 5, // Mohammed
                     StartDate = DateTime.UtcNow,
                     IsActive = true
                 },
                 new CommitteeMember
                 {
+                    // Don't set Id - let Oracle sequence/trigger handle it
                     EmployeeId = 6, // Ahmed - dual role (Manager + Committee)
                     StartDate = DateTime.UtcNow,
                     IsActive = true
@@ -348,10 +355,20 @@ public static class SeedData
 
             // الالتزام والانضباط (25%)
             var criterion1 = criteria.First(c => c.Name == "الالتزام والانضباط");
+            
+            // Generate sequence IDs for all 16 SubCriteria at once
+            var subCriteriaIds = new List<int>();
+            for (int i = 0; i < 16; i++)
+            {
+                subCriteriaIds.Add(await GetSequenceNextValue(context, "SEQ_SUBCRITERIA"));
+            }
+            int idIndex = 0;
+            
             subCriteria.AddRange(new[]
             {
                 new SubCriteria
                 {
+                    SubCriteriaId = subCriteriaIds[idIndex++],
                     CriterionId = criterion1.CriterionId,
                     SubCriteriaCode = "1.1",
                     Name = "الالتزام بالحضور والانصراف",
@@ -360,6 +377,7 @@ public static class SeedData
                 },
                 new SubCriteria
                 {
+                    SubCriteriaId = subCriteriaIds[idIndex++],
                     CriterionId = criterion1.CriterionId,
                     SubCriteriaCode = "1.2",
                     Name = "الانضباط في المواعيد",
@@ -368,6 +386,7 @@ public static class SeedData
                 },
                 new SubCriteria
                 {
+                    SubCriteriaId = subCriteriaIds[idIndex++],
                     CriterionId = criterion1.CriterionId,
                     SubCriteriaCode = "1.3",
                     Name = "التمثيل المؤسسي والسلوك المهني",
@@ -376,6 +395,7 @@ public static class SeedData
                 },
                 new SubCriteria
                 {
+                    SubCriteriaId = subCriteriaIds[idIndex++],
                     CriterionId = criterion1.CriterionId,
                     SubCriteriaCode = "1.4",
                     Name = "احترام السياسات وقوانين العمل",
@@ -390,6 +410,7 @@ public static class SeedData
             {
                 new SubCriteria
                 {
+                    SubCriteriaId = subCriteriaIds[idIndex++],
                     CriterionId = criterion2.CriterionId,
                     SubCriteriaCode = "2.1",
                     Name = "دقة تنفيذ المهام ومطابقتها للمتطلبات",
@@ -398,6 +419,7 @@ public static class SeedData
                 },
                 new SubCriteria
                 {
+                    SubCriteriaId = subCriteriaIds[idIndex++],
                     CriterionId = criterion2.CriterionId,
                     SubCriteriaCode = "2.2",
                     Name = "سرعة الإنجاز",
@@ -406,6 +428,7 @@ public static class SeedData
                 },
                 new SubCriteria
                 {
+                    SubCriteriaId = subCriteriaIds[idIndex++],
                     CriterionId = criterion2.CriterionId,
                     SubCriteriaCode = "2.3",
                     Name = "المساهمة في تحقيق أهداف الفريق/المؤسسة",
@@ -420,6 +443,7 @@ public static class SeedData
             {
                 new SubCriteria
                 {
+                    SubCriteriaId = subCriteriaIds[idIndex++],
                     CriterionId = criterion3.CriterionId,
                     SubCriteriaCode = "3.1",
                     Name = "الدعم والمبادرة",
@@ -428,6 +452,7 @@ public static class SeedData
                 },
                 new SubCriteria
                 {
+                    SubCriteriaId = subCriteriaIds[idIndex++],
                     CriterionId = criterion3.CriterionId,
                     SubCriteriaCode = "3.2",
                     Name = "العمل بروح الفريق",
@@ -436,6 +461,7 @@ public static class SeedData
                 },
                 new SubCriteria
                 {
+                    SubCriteriaId = subCriteriaIds[idIndex++],
                     CriterionId = criterion3.CriterionId,
                     SubCriteriaCode = "3.3",
                     Name = "التواصل الإيجابي",
@@ -444,6 +470,7 @@ public static class SeedData
                 },
                 new SubCriteria
                 {
+                    SubCriteriaId = subCriteriaIds[idIndex++],
                     CriterionId = criterion3.CriterionId,
                     SubCriteriaCode = "3.4",
                     Name = "تبادل الخبرات ونقل المعرفة",
@@ -458,6 +485,7 @@ public static class SeedData
             {
                 new SubCriteria
                 {
+                    SubCriteriaId = subCriteriaIds[idIndex++],
                     CriterionId = criterion4.CriterionId,
                     SubCriteriaCode = "4.1",
                     Name = "تحمل المسؤولية",
@@ -466,6 +494,7 @@ public static class SeedData
                 },
                 new SubCriteria
                 {
+                    SubCriteriaId = subCriteriaIds[idIndex++],
                     CriterionId = criterion4.CriterionId,
                     SubCriteriaCode = "4.2",
                     Name = "التعامل المهني مع المواقف الصعبة",
@@ -474,6 +503,7 @@ public static class SeedData
                 },
                 new SubCriteria
                 {
+                    SubCriteriaId = subCriteriaIds[idIndex++],
                     CriterionId = criterion4.CriterionId,
                     SubCriteriaCode = "4.3",
                     Name = "القدرة على اتخاذ القرار",
@@ -482,6 +512,7 @@ public static class SeedData
                 },
                 new SubCriteria
                 {
+                    SubCriteriaId = subCriteriaIds[idIndex++],
                     CriterionId = criterion4.CriterionId,
                     SubCriteriaCode = "4.4",
                     Name = "رأي المسؤول المباشر",

@@ -20,7 +20,8 @@ public class DepartmentQuotasController : Controller
     // GET: DepartmentQuotas
     public async Task<IActionResult> Index()
     {
-        var departments = await _context.VwEomDepartments
+        // Query the VW_EOM_DEPARTMENTS view using EF Core
+        var departments = await _context.Departments
             .Where(d => d.IsActive == 1)
             .OrderBy(d => d.Name)
             .ToListAsync();

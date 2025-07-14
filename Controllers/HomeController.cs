@@ -116,7 +116,7 @@ public class HomeController : BaseController
             
             // Check if user is active committee member
             var committeeMember = await _context.CommitteeMembers
-                .FirstOrDefaultAsync(cm => cm.EmployeeId == employeeId && cm.IsActive);
+                .FirstOrDefaultAsync(cm => cm.EmployeeId == employeeId && cm.IsActive == true);
                 
             if (committeeMember != null)
             {

@@ -3,6 +3,7 @@ using System;
 using EOM.Web.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Oracle.EntityFrameworkCore.Metadata;
 
@@ -11,9 +12,11 @@ using Oracle.EntityFrameworkCore.Metadata;
 namespace EOM.Web.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250714045047_Oracle10gFinalCompatible")]
+    partial class Oracle10gFinalCompatible
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -26,8 +29,9 @@ namespace EOM.Web.Migrations
                 {
                     b.Property<int>("CycleId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("NUMBER(10)")
-                        .HasDefaultValueSql("SEQ_AWARDCYCLE.NEXTVAL");
+                        .HasColumnType("NUMBER(10)");
+
+                    OraclePropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("CycleId"));
 
                     b.Property<int>("AwardTypeId")
                         .HasColumnType("NUMBER(10)");
@@ -59,8 +63,9 @@ namespace EOM.Web.Migrations
                 {
                     b.Property<int>("AwardTypeId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("NUMBER(10)")
-                        .HasDefaultValueSql("SEQ_AWARDTYPE.NEXTVAL");
+                        .HasColumnType("NUMBER(10)");
+
+                    OraclePropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("AwardTypeId"));
 
                     b.Property<string>("Description")
                         .HasColumnType("NVARCHAR2(500)");
@@ -81,8 +86,9 @@ namespace EOM.Web.Migrations
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("NUMBER(10)")
-                        .HasDefaultValueSql("SEQ_COMMITTEE.NEXTVAL");
+                        .HasColumnType("NUMBER(10)");
+
+                    OraclePropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<int>("EmployeeId")
                         .HasColumnType("NUMBER(10)");
@@ -108,8 +114,9 @@ namespace EOM.Web.Migrations
                 {
                     b.Property<int>("CriterionId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("NUMBER(10)")
-                        .HasDefaultValueSql("SEQ_CRITERION.NEXTVAL");
+                        .HasColumnType("NUMBER(10)");
+
+                    OraclePropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("CriterionId"));
 
                     b.Property<int>("AwardTypeId")
                         .HasColumnType("NUMBER(10)");
@@ -220,8 +227,9 @@ namespace EOM.Web.Migrations
                 {
                     b.Property<int>("EvaluationId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("NUMBER(10)")
-                        .HasDefaultValueSql("SEQ_EVALUATION.NEXTVAL");
+                        .HasColumnType("NUMBER(10)");
+
+                    OraclePropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("EvaluationId"));
 
                     b.Property<int>("CommitteeMemberId")
                         .HasColumnType("NUMBER(10)");
@@ -301,8 +309,9 @@ namespace EOM.Web.Migrations
                 {
                     b.Property<int>("NominationId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("NUMBER(10)")
-                        .HasDefaultValueSql("SEQ_NOMINATION.NEXTVAL");
+                        .HasColumnType("NUMBER(10)");
+
+                    OraclePropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("NominationId"));
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("TIMESTAMP(7)");
@@ -349,8 +358,9 @@ namespace EOM.Web.Migrations
                 {
                     b.Property<int>("SubCriteriaId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("NUMBER(10)")
-                        .HasDefaultValueSql("SEQ_SUBCRITERIA.NEXTVAL");
+                        .HasColumnType("NUMBER(10)");
+
+                    OraclePropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("SubCriteriaId"));
 
                     b.Property<int>("CriterionId")
                         .HasColumnType("NUMBER(10)");

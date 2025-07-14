@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 using EOM.Web.Data;
+using EOM.Web.Models;
 
 namespace EOM.Web.Controllers;
 
@@ -36,9 +37,18 @@ public class AccountController : Controller
             return View();
         }
 
-        // Find employee by ID and verify password using Employee model (mapped to HR view)
-        var employee = await _context.Employees
-            .FirstOrDefaultAsync(e => e.EmployeeId == empId && e.IsActive == 1);
+        // Find employee by ID and verify password using EF Core
+        Employee? employee = null;
+        try
+        {
+            employee = await _context.Employees
+                .FirstOrDefaultAsync(e => e.EmployeeId == empId && e.IsActive == 1);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error executing employee lookup: {ex.Message}");
+            return View();
+        }
 
         Console.WriteLine($"Employee found: {employee?.FirstName}, Password in DB: {employee?.Password}");
 
@@ -48,7 +58,7 @@ public class AccountController : Controller
             var claims = new List<Claim>
             {
                 new Claim(ClaimTypes.NameIdentifier, employee.EmployeeId.ToString()),
-                new Claim(ClaimTypes.Name, $"{employee.FirstName} {employee.LastName}"),
+                new Claim(ClaimTypes.Name, $"{employee.FirstName ?? ""} {employee.LastName ?? ""}"),
                 new Claim(ClaimTypes.Email, employee.Email ?? "")
             };
 
@@ -65,9 +75,17 @@ public class AccountController : Controller
                 claims.Add(new Claim(ClaimTypes.Role, "Manager"));
             }
 
-            // Check if user is a committee member (string ID match)
-            var committeeMember = await _context.CommitteeMembers
-                .FirstOrDefaultAsync(cm => cm.EmployeeId == employee.EmployeeId && cm.IsActive);
+            // Check if user is a committee member using EF Core
+            CommitteeMember? committeeMember = null;
+            try
+            {
+                committeeMember = await _context.CommitteeMembers
+                    .FirstOrDefaultAsync(cm => cm.EmployeeId == employee.EmployeeId && cm.IsActive == true);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error executing committee member lookup: {ex.Message}");
+            }
             if (committeeMember != null)
             {
                 claims.Add(new Claim(ClaimTypes.Role, "EOM-Committee"));

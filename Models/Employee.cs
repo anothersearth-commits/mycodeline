@@ -4,7 +4,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 namespace EOM.Web.Models;
 
 // Employee model now maps to VW_EOM_EMPLOYEES view instead of Employees table
-[Table("VW_EOM_EMPLOYEES")]
+// [Table] removed - using .ToView() configuration in DbContext instead
 public class Employee
 {
     [Key]
@@ -15,7 +15,7 @@ public class Employee
     public string FirstName { get; set; } = string.Empty;
     
     [Column("LASTNAME")]
-    public string LastName { get; set; } = string.Empty;
+    public string? LastName { get; set; }
     
     [Column("EMAIL")]
     public string? Email { get; set; }
