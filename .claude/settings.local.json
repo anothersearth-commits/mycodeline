@@ -1,0 +1,31 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(dotnet restore:*)",
+      "Bash(dotnet --list-sdks)",
+      "Bash(dotnet build)",
+      "Bash(dotnet build:*)",
+      "Bash(dotnet run)",
+      "Bash(timeout:*)",
+      "Bash(dotnet add package:*)",
+      "Bash(del simple-oracle-test.cs)",
+      "Bash(rm:*)",
+      "Bash(taskkill:*)",
+      "Bash(kill:*)",
+      "Bash(powershell:*)",
+      "Bash(mkdir:*)",
+      "Bash(cp:*)",
+      "Bash(dotnet ef migrations add:*)",
+      "Bash(dotnet tool:*)",
+      "Bash(mv:*)",
+      "Bash(dotnet clean:*)",
+      "Bash(dotnet ef database update:*)",
+      "Bash(dotnet ef migrations:*)",
+      "Bash(tasklist:*)",
+      "Bash(cmd /c:*)",
+      "Bash(dotnet run:*)",
+      "Bash(git add:*)"
+    ],
+    "deny": []
+  }
+}
