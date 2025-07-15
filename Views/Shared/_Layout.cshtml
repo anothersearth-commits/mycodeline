@@ -50,12 +50,12 @@
                             <li class="nav-item">
                                 <a class="nav-link text-dark" asp-area="" asp-controller="Evaluations" asp-action="Index">التقييمات</a>
                             </li>
+                        }
+                        @if (User.IsInRole("EOM-Admin"))
+                        {
                             <li class="nav-item">
                                 <a class="nav-link text-dark" asp-area="" asp-controller="DepartmentQuotas" asp-action="Index">حصص الدوائر</a>
                             </li>
-                        }
-                        @if (User.IsInRole("EOM-Admin") || User.IsInRole("EOM-Committee"))
-                        {
                             <li class="nav-item">
                                 <a class="nav-link text-dark" asp-area="" asp-controller="AwardCycles" asp-action="Index">إدارة الدورات</a>
                             </li>

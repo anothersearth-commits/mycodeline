@@ -104,6 +104,19 @@ public class NominationsController : BaseController
             .Include(dq => dq.AwardType)
             .FirstOrDefaultAsync(dq => dq.DepartmentId == currentEmployee.DepartmentId && dq.AwardTypeId == selectedCycle.AwardTypeId);
 
+        // Check if department quota exists - if not, don't allow nominations
+        if (departmentQuota == null)
+        {
+            ViewBag.Message = $"لا توجد حصة ترشيح مُعرّفة لدائرتك في نوع الجائزة '{selectedCycle.AwardType.Name}'. يرجى مراجعة اللجنة.";
+            ViewData["CycleId"] = new SelectList(activeCycles, "CycleId", "AwardType.Name", cycleId);
+            ViewBag.HideCycleSelect = activeCycles.Count == 1 || cycleId.HasValue;
+            ViewData["DepartmentEmployees"] = new List<Employee>(); // Empty list
+            ViewData["DepartmentQuota"] = null;
+            ViewData["ExistingNominations"] = 0;
+            ViewData["CanNominate"] = false;
+            return View();
+        }
+
         // Get already nominated employees in this cycle
         var nominatedEmployeeIds = await _context.Nominations
             .Where(n => n.CycleId == selectedCycleId)
@@ -174,7 +187,12 @@ public class NominationsController : BaseController
         var departmentQuota = await _context.DepartmentQuotas
             .FirstOrDefaultAsync(dq => dq.DepartmentId == currentEmployee.DepartmentId && dq.AwardTypeId == (_context.AwardCycles.Where(c=>c.CycleId==nomination.CycleId).Select(c=>c.AwardTypeId).FirstOrDefault()));
         
-        if (departmentQuota != null && departmentQuota.MaxNominations > 0)
+        // Prevent nomination if no department quota exists
+        if (departmentQuota == null)
+        {
+            ModelState.AddModelError("", "لا توجد حصة ترشيح مُعرّفة لقسمك في هذا النوع من الجوائز. يرجى مراجعة الإدارة.");
+        }
+        else if (departmentQuota.MaxNominations > 0)
         {
             var existingNominations = await _context.Nominations
                 .CountAsync(n => n.ManagerId == currentEmployeeId && n.CycleId == nomination.CycleId);

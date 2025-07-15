@@ -173,16 +173,43 @@ public class HomeController : BaseController
                 ViewBag.RecentActivity = recentActivity;
 
                 // Get the latest cycle (most recent by year/month) for committee review
+                // Note: Excluding Employee include due to VW_EOM_EMPLOYEES database link issues
                 var latestCycle = await _context.AwardCycles
                     .Include(ac => ac.AwardType)
                     .Include(ac => ac.Nominations)
-                    .ThenInclude(n => n.Employee)
                     .OrderByDescending(ac => ac.Year)
                     .ThenByDescending(ac => ac.Month)
                     .FirstOrDefaultAsync();
                 
                 ViewBag.LatestCycle = latestCycle;
             }
+        }
+        
+        // Get admin statistics if user is admin
+        if (User.IsInRole("EOM-Admin"))
+        {
+            // Get active nominations count
+            var activeNominations = await _context.Nominations
+                .Where(n => openCycles.Select(c => c.CycleId).Contains(n.CycleId))
+                .CountAsync();
+            ViewBag.ActiveNominationsCount = activeNominations;
+
+            // Get completed evaluations count  
+            var completedEvaluations = await _context.Evaluations
+                .Where(e => openCycles.Select(c => c.CycleId).Contains(e.Nomination.CycleId))
+                .CountAsync();
+            ViewBag.CompletedEvaluationsCount = completedEvaluations;
+
+            // Get participating departments count
+            var participatingDepartments = await _context.Nominations
+                .Where(n => openCycles.Select(c => c.CycleId).Contains(n.CycleId))
+                .Select(n => n.Employee.DepartmentId)
+                .Distinct()
+                .CountAsync();
+            ViewBag.ParticipatingDepartmentsCount = participatingDepartments;
+
+            // Get active cycles count
+            ViewBag.ActiveCyclesCount = openCycles.Count;
         }
         
         return View();

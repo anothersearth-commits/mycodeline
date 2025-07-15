@@ -8,7 +8,7 @@ using System.Linq;
 
 namespace EOM.Web.Controllers;
 
-[Authorize(Roles = "EOM-Admin,EOM-Committee")]
+[Authorize(Roles = "EOM-Admin")]
 public class AwardCyclesController : BaseController
 {
     private readonly ApplicationDbContext _context;
@@ -313,7 +313,6 @@ public class AwardCyclesController : BaseController
     // POST: AwardCycles/ReopenForEvaluation/5
     [HttpPost]
     [ValidateAntiForgeryToken]
-    [Authorize(Roles = "EOM-Admin")]
     public async Task<IActionResult> ReopenForEvaluation(int id)
     {
         var cycle = await _context.AwardCycles.FindAsync(id);
@@ -387,6 +386,7 @@ public class AwardCyclesController : BaseController
         var vm = new NominationRankingViewModel
         {
             CycleId = id,
+            AwardType = cycle.AwardType,
             RankedNominations = ranked
         };
 
@@ -419,10 +419,29 @@ public class AwardCyclesController : BaseController
             return RedirectToAction("Details", new { id = id });
         }
 
+        // Get the cycle with award type to check winner count
+        var cycle = await _context.AwardCycles
+            .Include(c => c.AwardType)
+            .FirstOrDefaultAsync(c => c.CycleId == id);
+        
+        if (cycle == null)
+        {
+            return NotFound();
+        }
+
+        var requiredWinnerCount = cycle.AwardType.WinnerCount;
+        
         // Validate that at least one winner is selected
         if (nominationIds == null || nominationIds.Length == 0)
         {
             TempData["Error"] = "يجب اختيار فائز واحد على الأقل.";
+            return RedirectToAction("SelectWinner", new { id = id });
+        }
+
+        // Validate that the correct number of winners is selected
+        if (nominationIds.Length != requiredWinnerCount)
+        {
+            TempData["Error"] = $"يجب اختيار {requiredWinnerCount} فائز بالضبط حسب نوع الجائزة.";
             return RedirectToAction("SelectWinner", new { id = id });
         }
 
@@ -450,11 +469,7 @@ public class AwardCyclesController : BaseController
         }
 
         // Mark cycle completed
-        var cycle = await _context.AwardCycles.FindAsync(id);
-        if (cycle != null)
-        {
-            cycle.Status = CycleStatus.Published;
-        }
+        cycle.Status = CycleStatus.Published;
 
         await _context.SaveChangesAsync();
 

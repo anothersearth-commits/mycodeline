@@ -1,10 +1,14 @@
 @model EOM.Web.Models.NominationRankingViewModel
 @{
     ViewData["Title"] = "اختيار الفائزين";
+    var winnerCount = Model.AwardType?.WinnerCount ?? 1;
 }
 
 <div class="page-header glass-fade-in mb-4">
     <h1 class="m-0">اختيار الفائزين - الدورة رقم @Model.CycleId</h1>
+    <div class="alert alert-info">
+        <strong>عدد الفائزين المطلوب:</strong> @winnerCount من أصل @Model.RankedNominations.Count مرشحين
+    </div>
 </div>
 
 <form asp-action="SelectWinner" method="post">
@@ -34,7 +38,7 @@
                             </a>
                         </td>
                         <td class="text-center">
-                            <input type="checkbox" name="nominationIds" value="@item.Nomination.NominationId" @(i==0?"checked":"") class="large-checkbox" />
+                            <input type="checkbox" name="nominationIds" value="@item.Nomination.NominationId" @(i < winnerCount ? "checked" : "") class="large-checkbox" />
                         </td>
                     </tr>
                 }
@@ -43,8 +47,8 @@
     </div>
 
     <div class="d-grid">
-        <button type="submit" class="btn btn-success btn-lg">
-            تأكيد الفائزين
+        <button type="submit" class="btn btn-success btn-lg" id="confirmButton">
+            تأكيد الفائزين (<span id="selectedCount">@winnerCount</span>/@winnerCount)
         </button>
     </div>
 </form>
@@ -62,4 +66,71 @@
     transform: scale(1.6);
     transition: transform 0.2s ease;
 }
+
+.winner-row {
+    background-color: rgba(40, 167, 69, 0.1);
+    border-left: 4px solid #28a745;
+}
+
+.non-winner-row {
+    background-color: rgba(0, 0, 0, 0.02);
+}
 </style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const maxWinners = @winnerCount;
+    const checkboxes = document.querySelectorAll('input[name="nominationIds"]');
+    const selectedCountSpan = document.getElementById('selectedCount');
+    const confirmButton = document.getElementById('confirmButton');
+    
+    function updateUI() {
+        const checkedCount = document.querySelectorAll('input[name="nominationIds"]:checked').length;
+        selectedCountSpan.textContent = checkedCount;
+        
+        // Update button state
+        if (checkedCount === maxWinners) {
+            confirmButton.classList.remove('btn-warning');
+            confirmButton.classList.add('btn-success');
+            confirmButton.disabled = false;
+        } else if (checkedCount > maxWinners) {
+            confirmButton.classList.remove('btn-success');
+            confirmButton.classList.add('btn-warning');
+            confirmButton.disabled = false;
+        } else {
+            confirmButton.classList.remove('btn-success');
+            confirmButton.classList.add('btn-warning');
+            confirmButton.disabled = false;
+        }
+        
+        // Update row styling
+        checkboxes.forEach((checkbox, index) => {
+            const row = checkbox.closest('tr');
+            if (checkbox.checked) {
+                row.classList.add('winner-row');
+                row.classList.remove('non-winner-row');
+            } else {
+                row.classList.remove('winner-row');
+                row.classList.add('non-winner-row');
+            }
+        });
+    }
+    
+    checkboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            const checkedCount = document.querySelectorAll('input[name="nominationIds"]:checked').length;
+            
+            // If we've exceeded the max, uncheck this checkbox
+            if (checkedCount > maxWinners) {
+                this.checked = false;
+                alert(`يمكن اختيار ${maxWinners} فائز فقط`);
+            }
+            
+            updateUI();
+        });
+    });
+    
+    // Initial UI update
+    updateUI();
+});
+</script>

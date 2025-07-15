@@ -20,8 +20,9 @@ public static class SeedData
         using var context = new ApplicationDbContext(
             serviceProvider.GetRequiredService<DbContextOptions<ApplicationDbContext>>());
 
-        // Only seed the three tables requested: AwardTypes, Criteria, and SubCriteria
+        // Seed the three tables: AwardTypes, Criteria, SubCriteria, and CommitteeMembers
         await CreateAwardTypesAsync(context);
+        await CreateCommitteeMembersAsync(context);
     }
 
     // Employee data now comes from VW_EOM_EMPLOYEES HR view, no seeding needed

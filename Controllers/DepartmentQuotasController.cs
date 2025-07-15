@@ -7,7 +7,7 @@ using EOM.Web.Models;
 
 namespace EOM.Web.Controllers;
 
-[Authorize(Roles = "EOM-Committee,EOM-Admin")]
+[Authorize(Roles = "EOM-Admin")]
 public class DepartmentQuotasController : Controller
 {
     private readonly ApplicationDbContext _context;

@@ -14,6 +14,9 @@ public class AwardType
     
     public bool IsActive { get; set; } = true;
     
+    [Required]
+    public int WinnerCount { get; set; } = 1;
+    
     // Navigation properties
     public virtual ICollection<AwardCycle> AwardCycles { get; set; } = new List<AwardCycle>();
     public virtual ICollection<Criterion> Criteria { get; set; } = new List<Criterion>();

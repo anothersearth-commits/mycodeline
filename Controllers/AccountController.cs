@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
+using System.DirectoryServices;
 using EOM.Web.Data;
 using EOM.Web.Models;
 
@@ -25,10 +26,10 @@ public class AccountController : Controller
     }
 
     [HttpPost]
-    public async Task<IActionResult> Login(string employeeNumber, string password, string? returnUrl = null)
+    public async Task<IActionResult> Login(string employeeNumber, string password, string authMethod, string? returnUrl = null)
     {
         // Debug logging
-        Console.WriteLine($"Login attempt - Employee Number: {employeeNumber}, Password: {password}");
+        Console.WriteLine($"Login attempt - Employee Number: {employeeNumber}, Auth Method: {authMethod}");
         
         // Parse employee number to integer
         if (!int.TryParse(employeeNumber, out int empId))
@@ -37,22 +38,41 @@ public class AccountController : Controller
             return View();
         }
 
-        // Find employee by ID and verify password using EF Core
         Employee? employee = null;
+        bool isAuthenticated = false;
+
         try
         {
+            // First, always get the employee record from database
             employee = await _context.Employees
                 .FirstOrDefaultAsync(e => e.EmployeeId == empId && e.IsActive == 1);
+
+            if (employee == null)
+            {
+                ModelState.AddModelError(string.Empty, "رقم الموظف غير موجود أو غير مفعل");
+                return View();
+            }
+
+            // Authenticate based on selected method
+            if (authMethod == "ActiveDirectory")
+            {
+                isAuthenticated = await AuthenticateWithActiveDirectory(empId.ToString(), password);
+                Console.WriteLine($"AD Authentication result: {isAuthenticated}");
+            }
+            else // Database authentication
+            {
+                isAuthenticated = employee.Password == password;
+                Console.WriteLine($"Database Authentication result: {isAuthenticated}");
+            }
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error executing employee lookup: {ex.Message}");
+            Console.WriteLine($"Error during authentication: {ex.Message}");
+            ModelState.AddModelError(string.Empty, "حدث خطأ أثناء المصادقة");
             return View();
         }
 
-        Console.WriteLine($"Employee found: {employee?.FirstName}, Password in DB: {employee?.Password}");
-
-        if (employee != null && employee.Password == password)
+        if (employee != null && isAuthenticated)
         {
             // Create claims for the authenticated user
             var claims = new List<Claim>
@@ -62,8 +82,10 @@ public class AccountController : Controller
                 new Claim(ClaimTypes.Email, employee.Email ?? "")
             };
 
-            // Check if user is admin (employee ID 1)
-            if (employee.EmployeeId == 1)
+            // Check if user is admin using Administrators table
+            var administrator = await _context.Administrators
+                .FirstOrDefaultAsync(a => a.EmployeeId == employee.EmployeeId && a.IsActive == true);
+            if (administrator != null)
             {
                 claims.Add(new Claim(ClaimTypes.Role, "EOM-Admin"));
             }
@@ -114,5 +136,39 @@ public class AccountController : Controller
     {
         await HttpContext.SignOutAsync("Cookies");
         return RedirectToAction("Index", "Home");
+    }
+
+    private async Task<bool> AuthenticateWithActiveDirectory(string employeeId, string password)
+    {
+        try
+        {
+            // Configure LDAP connection to bng.local domain
+            string ldapPath = "LDAP://10.20.48.4:389/DC=bng,DC=local";
+            
+            using (var directoryEntry = new DirectoryEntry(ldapPath, $"{employeeId}@bng.local", password))
+            {
+                // Try to bind to verify credentials
+                using (var searcher = new DirectorySearcher(directoryEntry))
+                {
+                    searcher.Filter = $"(sAMAccountName={employeeId})";
+                    searcher.PropertiesToLoad.Add("sAMAccountName");
+                    searcher.PropertiesToLoad.Add("displayName");
+                    
+                    var result = await Task.Run(() => searcher.FindOne());
+                    
+                    if (result != null)
+                    {
+                        Console.WriteLine($"AD Authentication successful for user: {employeeId}");
+                        return true;
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"AD Authentication failed for {employeeId}: {ex.Message}");
+        }
+        
+        return false;
     }
 }

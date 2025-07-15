@@ -63,27 +63,30 @@
             </div>
         </div>
         
-        <div class="col-lg-4">
-            <div class="card h-100 border-0 shadow-sm position-relative overflow-hidden">
-                <div class="position-absolute top-0 start-0 w-100 h-2" style="background: linear-gradient(90deg, #00d4aa, #00b894);"></div>
-                <div class="card-body text-center p-4">
-                    <div class="mb-3">
-                        <div class="d-inline-flex align-items-center justify-content-center rounded-circle mb-3" 
-                             style="width: 60px; height: 60px; background: linear-gradient(135deg, #00d4aa, #00b894);">
-                            <i class="fas fa-users text-white" style="font-size: 1.5rem;"></i>
+        @if (User.IsInRole("EOM-Admin"))
+        {
+            <div class="col-lg-4">
+                <div class="card h-100 border-0 shadow-sm position-relative overflow-hidden">
+                    <div class="position-absolute top-0 start-0 w-100 h-2" style="background: linear-gradient(90deg, #00d4aa, #00b894);"></div>
+                    <div class="card-body text-center p-4">
+                        <div class="mb-3">
+                            <div class="d-inline-flex align-items-center justify-content-center rounded-circle mb-3" 
+                                 style="width: 60px; height: 60px; background: linear-gradient(135deg, #00d4aa, #00b894);">
+                                <i class="fas fa-users text-white" style="font-size: 1.5rem;"></i>
+                            </div>
+                            <h6 class="text-muted text-uppercase fw-bold mb-0" style="font-size: 0.75rem; letter-spacing: 1px;">درجة اللجنة</h6>
                         </div>
-                        <h6 class="text-muted text-uppercase fw-bold mb-0" style="font-size: 0.75rem; letter-spacing: 1px;">درجة اللجنة</h6>
-                    </div>
-                    <div class="mb-3">
-                        <span class="display-4 fw-bold" style="color: #00d4aa;">@GetCommitteeAverage(Model).ToString("F1")</span>
-                        <span class="h6 text-muted ms-1">/ 100</span>
-                    </div>
-                    <div class="progress" style="height: 8px;">
-                        <div class="progress-bar" style="width: @(GetCommitteeAverage(Model))%; background: linear-gradient(90deg, #00d4aa, #00b894);"></div>
+                        <div class="mb-3">
+                            <span class="display-4 fw-bold" style="color: #00d4aa;">@GetCommitteeAverage(Model).ToString("F1")</span>
+                            <span class="h6 text-muted ms-1">/ 100</span>
+                        </div>
+                        <div class="progress" style="height: 8px;">
+                            <div class="progress-bar" style="width: @(GetCommitteeAverage(Model))%; background: linear-gradient(90deg, #00d4aa, #00b894);"></div>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
+        }
         
         <div class="col-lg-4">
             <div class="card h-100 border-0 shadow-sm position-relative overflow-hidden">
@@ -94,14 +97,32 @@
                              style="width: 60px; height: 60px; background: linear-gradient(135deg, #fdcb6e, #e17055);">
                             <i class="fas fa-trophy text-white" style="font-size: 1.5rem;"></i>
                         </div>
-                        <h6 class="text-muted text-uppercase fw-bold mb-0" style="font-size: 0.75rem; letter-spacing: 1px;">المتوسط النهائي</h6>
+                        <h6 class="text-muted text-uppercase fw-bold mb-0" style="font-size: 0.75rem; letter-spacing: 1px;">
+                            @if (User.IsInRole("EOM-Admin"))
+                            {
+                                @:المتوسط النهائي
+                            }
+                            else
+                            {
+                                @:الدرجة الإجمالية
+                            }
+                        </h6>
                     </div>
                     <div class="mb-3">
-                        <span class="display-4 fw-bold" style="color: #fdcb6e;">@GetFinalAverage(Model).ToString("F1")</span>
+                        <span class="display-4 fw-bold" style="color: #fdcb6e;">
+                            @if (User.IsInRole("EOM-Admin"))
+                            {
+                                @GetFinalAverage(Model).ToString("F1")
+                            }
+                            else
+                            {
+                                @GetManagerScore(Model).ToString("F1")
+                            }
+                        </span>
                         <span class="h6 text-muted ms-1">/ 100</span>
                     </div>
                     <div class="progress" style="height: 8px;">
-                        <div class="progress-bar" style="width: @(GetFinalAverage(Model))%; background: linear-gradient(90deg, #fdcb6e, #e17055);"></div>
+                        <div class="progress-bar" style="width: @(User.IsInRole("EOM-Admin") ? GetFinalAverage(Model) : GetManagerScore(Model))%; background: linear-gradient(90deg, #fdcb6e, #e17055);"></div>
                     </div>
                 </div>
             </div>
@@ -191,75 +212,78 @@
         </div>
     </div>
     
-    <!-- Committee Evaluations Section (Full Width, Collapsible) -->
-    <div class="row">
-        <div class="col-md-12">
-            <div class="card mb-4">
-                <div class="card-header bg-info text-white d-flex justify-content-between align-items-center" 
-                     data-bs-toggle="collapse" 
-                     data-bs-target="#evaluationsCollapse" 
-                     aria-expanded="false" 
-                     aria-controls="evaluationsCollapse"
-                     style="cursor: pointer;">
-                    <span>
-                        <i class="fas fa-chevron-down me-2"></i>
-                        تقييمات اللجنة
-                        @if (Model.Evaluations.Any())
-                        {
-                            <span class="badge bg-dark ms-2">@Model.Evaluations.Count تقييم</span>
-                        }
-                    </span>
-                    @if (Model.Evaluations.Any())
-                    {
-                        <span class="badge bg-dark">متوسط الدرجة: @GetCommitteeAverage(Model).ToString("F1") / 100</span>
-                    }
-                </div>
-                <div class="collapse" id="evaluationsCollapse">
-                    <div class="card-body">
-                        @if (Model.Evaluations.Any())
-                        {
-                            @foreach (var eval in Model.Evaluations)
+    <!-- Committee Evaluations Section (Admin Only) -->
+    @if (User.IsInRole("EOM-Admin"))
+    {
+        <div class="row">
+            <div class="col-md-12">
+                <div class="card mb-4">
+                    <div class="card-header bg-info text-white d-flex justify-content-between align-items-center" 
+                         data-bs-toggle="collapse" 
+                         data-bs-target="#evaluationsCollapse" 
+                         aria-expanded="false" 
+                         aria-controls="evaluationsCollapse"
+                         style="cursor: pointer;">
+                        <span>
+                            <i class="fas fa-chevron-down me-2"></i>
+                            تقييمات اللجنة
+                            @if (Model.Evaluations.Any())
                             {
-                                <div class="mb-4 p-3 border rounded bg-light">
-                                    <div class="row mb-2">
-                                        <div class="col-md-6">
-                                            <strong>عضو اللجنة:</strong> @eval.CommitteeMember?.Employee?.FirstName @eval.CommitteeMember?.Employee?.LastName
-                                        </div>
-                                        <div class="col-md-6">
-                                            <strong>تاريخ التقييم:</strong> @eval.CreatedAt.ToString("dd/MM/yyyy")
-                                        </div>
-                                    </div>
-                                    <table class="table table-sm table-bordered mt-2">
-                                        <thead class="table-secondary">
-                                            <tr>
-                                                <th>المعيار الفرعي</th>
-                                                <th class="text-center">الدرجة</th>
-                                                <th>ملاحظة</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            @foreach (var es in eval.EvaluationScores)
-                                            {
-                                                <tr>
-                                                    <td>@es.SubCriteria?.Name</td>
-                                                    <td class="text-center"><span class="badge" style="background-color: #00d4aa; color: white;">@es.Score</span></td>
-                                                    <td>@es.Note</td>
-                                                </tr>
-                                            }
-                                        </tbody>
-                                    </table>
-                                </div>
+                                <span class="badge bg-dark ms-2">@Model.Evaluations.Count تقييم</span>
                             }
-                        }
-                        else
+                        </span>
+                        @if (Model.Evaluations.Any())
                         {
-                            <div class="alert alert-warning">لا توجد تقييمات لجنة بعد.</div>
+                            <span class="badge bg-dark">متوسط الدرجة: @GetCommitteeAverage(Model).ToString("F1") / 100</span>
                         }
+                    </div>
+                    <div class="collapse" id="evaluationsCollapse">
+                        <div class="card-body">
+                            @if (Model.Evaluations.Any())
+                            {
+                                @foreach (var eval in Model.Evaluations)
+                                {
+                                    <div class="mb-4 p-3 border rounded bg-light">
+                                        <div class="row mb-2">
+                                            <div class="col-md-6">
+                                                <strong>عضو اللجنة:</strong> @eval.CommitteeMember?.Employee?.FirstName @eval.CommitteeMember?.Employee?.LastName
+                                            </div>
+                                            <div class="col-md-6">
+                                                <strong>تاريخ التقييم:</strong> @eval.CreatedAt.ToString("dd/MM/yyyy")
+                                            </div>
+                                        </div>
+                                        <table class="table table-sm table-bordered mt-2">
+                                            <thead class="table-secondary">
+                                                <tr>
+                                                    <th>المعيار الفرعي</th>
+                                                    <th class="text-center">الدرجة</th>
+                                                    <th>ملاحظة</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                @foreach (var es in eval.EvaluationScores)
+                                                {
+                                                    <tr>
+                                                        <td>@es.SubCriteria?.Name</td>
+                                                        <td class="text-center"><span class="badge" style="background-color: #00d4aa; color: white;">@es.Score</span></td>
+                                                        <td>@es.Note</td>
+                                                    </tr>
+                                                }
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                }
+                            }
+                            else
+                            {
+                                <div class="alert alert-warning">لا توجد تقييمات لجنة بعد.</div>
+                            }
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
-    </div>
+    }
 </div>
 
 @functions {

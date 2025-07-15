@@ -25,6 +25,7 @@ public class ApplicationDbContext : DbContext
     public DbSet<Nomination> Nominations { get; set; }
     public DbSet<ManagerScore> ManagerScores { get; set; }
     public DbSet<CommitteeMember> CommitteeMembers { get; set; }
+    public DbSet<Administrator> Administrators { get; set; }
     public DbSet<Evaluation> Evaluations { get; set; }
     public DbSet<EvaluationScore> EvaluationScores { get; set; }
 
@@ -36,7 +37,7 @@ public class ApplicationDbContext : DbContext
 
         // Configure Employee as existing Oracle view (exclude from migrations)
         builder.Entity<Employee>()
-            .ToView("VW_EOM_EMPLOYEES")
+            .ToView("VW_EOM_EMPLOYEES_V")
             .HasKey(e => e.EmployeeId);
             
         // Configure VwEomDepartments as existing Oracle view (exclude from migrations)
@@ -202,6 +203,41 @@ public class ApplicationDbContext : DbContext
             .HasDefaultValueSql("SEQ_COMMITTEE.NEXTVAL")
             .ValueGeneratedOnAdd();
             
+        // Configure CommitteeMember date fields as Oracle DATE instead of TIMESTAMP
+        builder.Entity<CommitteeMember>()
+            .Property(cm => cm.StartDate)
+            .HasColumnType("DATE");
+            
+        builder.Entity<CommitteeMember>()
+            .Property(cm => cm.EndDate)
+            .HasColumnType("DATE");
+            
+        // Configure Administrator entity for Oracle
+        builder.Entity<Administrator>()
+            .ToTable("ADMINISTRATORS")
+            .Property(a => a.AdministratorId)
+            .HasColumnName("ADMINISTRATORID")
+            .HasColumnType("NUMBER(10)")
+            .HasDefaultValueSql("SEQ_ADMINISTRATOR.NEXTVAL")
+            .ValueGeneratedOnAdd();
+            
+        builder.Entity<Administrator>()
+            .Property(a => a.EmployeeId)
+            .HasColumnName("EMPLOYEEID")
+            .HasColumnType("NUMBER(10)");
+            
+        builder.Entity<Administrator>()
+            .Property(a => a.IsActive)
+            .HasColumnName("ISACTIVE")
+            .HasColumnType("NUMBER(1)");
+            
+        // Configure Administrator foreign key relationship
+        builder.Entity<Administrator>()
+            .HasOne(a => a.Employee)
+            .WithMany()
+            .HasForeignKey(a => a.EmployeeId)
+            .HasConstraintName("FK_Administrator_Employee");
+            
         // Ensure Arabic text support with NVARCHAR2
         builder.Entity<AwardType>()
             .Property(at => at.Name)
@@ -308,6 +344,10 @@ public class ApplicationDbContext : DbContext
         builder.Entity<CommitteeMember>()
             .HasIndex(cm => cm.EmployeeId)
             .HasDatabaseName("IX_Committee_Employee");
+            
+        builder.Entity<Administrator>()
+            .HasIndex(a => a.EmployeeId)
+            .HasDatabaseName("IX_ADMINISTRATOR_EMPLOYEE");
             
         builder.Entity<Nomination>()
             .HasIndex(n => n.SelectedByCommitteeMemberId)
