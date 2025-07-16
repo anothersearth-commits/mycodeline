@@ -253,6 +253,38 @@ public class HomeController : BaseController
         return View(winners);
     }
 
+    [HttpGet]
+    public IActionResult WinnerPhoto(string adUser)
+    {
+        if (string.IsNullOrEmpty(adUser))
+            return File("~/img/default-user.png", "image/png");
+
+        try
+        {
+            string ldapPath = "LDAP://10.20.48.4:389/DC=bng,DC=local";
+            using (var entry = new System.DirectoryServices.DirectoryEntry(ldapPath))
+            using (var searcher = new System.DirectoryServices.DirectorySearcher(entry))
+            {
+                searcher.Filter = $"(sAMAccountName={adUser})";
+                searcher.PropertiesToLoad.Add("thumbnailPhoto");
+                var result = searcher.FindOne();
+                if (result != null && result.Properties.Contains("thumbnailPhoto"))
+                {
+                    byte[] photoBytes = result.Properties["thumbnailPhoto"][0] as byte[];
+                    if (photoBytes != null && photoBytes.Length > 0)
+                    {
+                        return File(photoBytes, "image/jpeg");
+                    }
+                }
+            }
+        }
+        catch
+        {
+            // Optionally log error
+        }
+        return File("~/img/default-user.png", "image/png");
+    }
+
     [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
     public IActionResult Error()
     {

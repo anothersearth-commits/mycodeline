@@ -12,8 +12,8 @@
         }
         @if ((User.IsInRole("EOM-Admin") || User.IsInRole("EOM-Committee")) && !hasActiveCycle)
         {
-            <a href="@Url.Action("Create")" class="btn btn-primary">
-                ➕ دورة جديدة
+            <a href="@Url.Action("Create")" class="btn-modern btn-primary-modern">
+                <i class="fas fa-plus me-2"></i>دورة جديدة
             </a>
         }
         else if (hasActiveCycle)
@@ -91,16 +91,16 @@
                                                 @if (cycle.Status == CycleStatus.Pending)
                                                 {
                                                     <form method="post" asp-action="OpenNomination" asp-route-id="@cycle.CycleId" style="display: inline;">
-                                                        <button type="submit" class="btn btn-success btn-sm">
-                                                            ▶️ فتح الترشيح
+                                                        <button type="submit" class="btn-modern btn-success-modern btn-sm-modern">
+                                                            <i class="fas fa-play me-1"></i>فتح الترشيح
                                                         </button>
                                                     </form>
                                                 }
                                                 else if (cycle.Status == CycleStatus.Nomination)
                                                 {
                                                     <form method="post" asp-action="CloseNomination" asp-route-id="@cycle.CycleId" style="display: inline;">
-                                                        <button type="submit" class="btn btn-warning btn-sm">
-                                                            ⏸️ إغلاق الترشيح
+                                                        <button type="submit" class="btn-modern btn-warning-modern btn-sm-modern">
+                                                            <i class="fas fa-pause me-1"></i>إغلاق الترشيح
                                                         </button>
                                                     </form>
                                                 }
@@ -111,14 +111,14 @@
                                                     
                                                     if (canSelectWinner)
                                                     {
-                                                        <a href="@Url.Action("SelectWinner", new { id = cycle.CycleId })" class="btn btn-warning btn-sm">
-                                                            🏆 اختيار الفائزين
+                                                        <a href="@Url.Action("SelectWinner", new { id = cycle.CycleId })" class="btn-modern btn-warning-modern btn-sm-modern">
+                                                            <i class="fas fa-trophy me-1"></i>اختيار الفائزين
                                                         </a>
                                                     }
                                                     else
                                                     {
-                                                        <button class="btn btn-secondary btn-sm" disabled title="يجب إكمال جميع التقييمات أولاً">
-                                                            🏆 اختيار الفائزين
+                                                        <button class="btn-modern btn-secondary-modern btn-sm-modern" disabled title="يجب إكمال جميع التقييمات أولاً">
+                                                            <i class="fas fa-trophy me-1"></i>اختيار الفائزين
                                                         </button>
                                                         <small class="text-muted d-block">يجب إكمال جميع التقييمات</small>
                                                     }
@@ -126,8 +126,8 @@
                                                 else if (cycle.Status == CycleStatus.Published)
                                                 {
                                                     <form method="post" asp-action="CloseCycle" asp-route-id="@cycle.CycleId" style="display: inline;">
-                                                        <button type="submit" class="btn btn-danger btn-sm">
-                                                            ⏹️ إغلاق الدورة
+                                                        <button type="submit" class="btn-modern btn-danger-modern btn-sm-modern">
+                                                            <i class="fas fa-stop me-1"></i>إغلاق الدورة
                                                         </button>
                                                     </form>
                                                 }
@@ -139,8 +139,8 @@
                                                     if (!hasWinner && User.IsInRole("EOM-Admin"))
                                                     {
                                                         <form method="post" asp-action="ReopenForEvaluation" asp-route-id="@cycle.CycleId" style="display: inline;">
-                                                            <button type="submit" class="btn btn-warning btn-sm" title="إعادة فتح للتقييم واختيار الفائز">
-                                                                🔄 إعادة فتح للتقييم
+                                                            <button type="submit" class="btn-modern btn-warning-modern btn-sm-modern" title="إعادة فتح للتقييم واختيار الفائز">
+                                                                <i class="fas fa-redo me-1"></i>إعادة فتح للتقييم
                                                             </button>
                                                         </form>
                                                     }
@@ -151,14 +151,14 @@
                                                 }
                                             }
                                             
-                                            <a href="@Url.Action("Details", new { id = cycle.CycleId })" class="btn btn-info btn-sm">
-                                                👁️ تفاصيل
+                                            <a href="@Url.Action("Details", new { id = cycle.CycleId })" class="btn-modern btn-info-modern btn-sm-modern">
+                                                <i class="fas fa-eye me-1"></i>تفاصيل
                                             </a>
                                             
                                             @if (User.IsInRole("EOM-Admin"))
                                             {
-                                                <a href="@Url.Action("Edit", new { id = cycle.CycleId })" class="btn btn-primary btn-sm">
-                                                    ✏️ تعديل
+                                                <a href="@Url.Action("Edit", new { id = cycle.CycleId })" class="btn-modern btn-primary-modern btn-sm-modern">
+                                                    <i class="fas fa-edit me-1"></i>تعديل
                                                 </a>
                                             }
                                         </div>
@@ -191,6 +191,7 @@
     margin-bottom: 2rem;
 }
 
+/* Enhanced Modern Badges */
 .badge {
     padding: 0.5rem 1rem;
     border-radius: 12px;
@@ -221,7 +222,153 @@
     background: linear-gradient(135deg, rgba(107, 114, 128, 0.8), rgba(75, 85, 99, 0.8)) !important;
 }
 
-.btn-sm {
+/* Modern Button Base */
+.btn-modern {
+    border: none;
+    border-radius: 12px;
+    font-weight: 600;
+    padding: 0.65rem 1.2rem;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    backdrop-filter: blur(10px);
+    cursor: pointer;
+    min-width: 140px;
+    text-align: center;
+    white-space: nowrap;
+}
+
+.btn-modern:hover {
+    transform: translateY(-2px);
+    text-decoration: none;
+}
+
+.btn-modern:active {
+    transform: translateY(0px);
+}
+
+.btn-modern::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: left 0.5s ease;
+}
+
+.btn-modern:hover::before {
+    left: 100%;
+}
+
+/* Small Modern Buttons */
+.btn-sm-modern {
+    padding: 0.4rem 0.8rem;
+    font-size: 0.85rem;
+    border-radius: 8px;
     margin: 0 2px;
+    min-width: 120px;
+    text-align: center;
+    white-space: nowrap;
+}
+
+/* Modern Button Colors */
+.btn-primary-modern {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+}
+
+.btn-primary-modern:hover {
+    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+    color: white;
+}
+
+.btn-success-modern {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: white;
+    box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+}
+
+.btn-success-modern:hover {
+    box-shadow: 0 8px 25px rgba(16, 185, 129, 0.4);
+    color: white;
+}
+
+.btn-warning-modern {
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    color: white;
+    box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3);
+}
+
+.btn-warning-modern:hover {
+    box-shadow: 0 8px 25px rgba(245, 158, 11, 0.4);
+    color: white;
+}
+
+.btn-danger-modern {
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+    color: white;
+    box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3);
+}
+
+.btn-danger-modern:hover {
+    box-shadow: 0 8px 25px rgba(239, 68, 68, 0.4);
+    color: white;
+}
+
+.btn-info-modern {
+    background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);
+    color: white;
+    box-shadow: 0 4px 15px rgba(6, 182, 212, 0.3);
+}
+
+.btn-info-modern:hover {
+    box-shadow: 0 8px 25px rgba(6, 182, 212, 0.4);
+    color: white;
+}
+
+.btn-secondary-modern {
+    background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%);
+    color: white;
+    box-shadow: 0 4px 15px rgba(107, 114, 128, 0.3);
+}
+
+.btn-secondary-modern:hover {
+    box-shadow: 0 8px 25px rgba(107, 114, 128, 0.4);
+    color: white;
+}
+
+/* Disabled State */
+.btn-modern:disabled,
+.btn-modern[disabled] {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none !important;
+    box-shadow: none !important;
+}
+
+.btn-modern:disabled::before,
+.btn-modern[disabled]::before {
+    display: none;
+}
+
+/* Responsive */
+@@media (max-width: 768px) {
+    .btn-modern {
+        padding: 0.5rem 1rem;
+        font-size: 0.9rem;
+    }
+    
+    .btn-sm-modern {
+        padding: 0.35rem 0.7rem;
+        font-size: 0.8rem;
+    }
 }
 </style>

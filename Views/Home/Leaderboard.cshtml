@@ -1,6 +1,6 @@
 @model IEnumerable<EOM.Web.Models.Nomination>
 @{
-    ViewData["Title"] = "قاعة الشرف";
+    ViewData["Title"] = "الفائزون";
     var cycleInfo = ViewBag.CycleInfo as EOM.Web.Models.AwardCycle;
     var totalWinners = ViewBag.TotalWinners as int? ?? 0;
 }
@@ -209,16 +209,36 @@ body, .leaderboard-bg {
         <div class="winners-grid">
             @foreach (var winner in Model)
             {
+                var adUser = winner.Employee?.ActiveDirectoryId;
+                var winnerId = $"winner-img-{winner.NominationId}";
                 <div class="winner-card">
-                    <div class="winner-avatar"><i class="fas fa-user"></i></div>
+                    <div class="winner-avatar">
+                        <img id="@winnerId" data-aduser="@adUser" src="/img/default-user.png" alt="صورة الفائز" class="rounded-circle" style="width: 70px; height: 70px; object-fit: cover;" />
+                    </div>
                     <div class="winner-badge"><i class="fas fa-star"></i> فائز</div>
                     <div class="winner-name">@winner.Employee?.FirstName</div>
                     @* <div class="winner-job"><i class="fas fa-briefcase me-1"></i>@winner.Employee?.JobTitle</div> *@
                 </div>
-                
             }
         </div>
 
  
     }
 </div>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+$(document).ready(function() {
+    $('.winner-avatar img[data-aduser]').each(function() {
+        var $img = $(this);
+        var adUser = $img.data('aduser');
+        if (adUser) {
+            var url = '/Home/WinnerPhoto?adUser=' + encodeURIComponent(adUser);
+            // Preload image, then set src if successful
+            var image = new Image();
+            image.onload = function() { $img.attr('src', url); };
+            image.onerror = function() { $img.attr('src', '/img/default-user.png'); };
+            image.src = url;
+        }
+    });
+});
+</script>

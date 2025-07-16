@@ -38,7 +38,11 @@
                             </a>
                         </td>
                         <td class="text-center">
-                            <input type="checkbox" name="nominationIds" value="@item.Nomination.NominationId" @(i < winnerCount ? "checked" : "") class="large-checkbox" />
+                            <input type="checkbox" name="nominationIds" value="@item.Nomination.NominationId" @(i < winnerCount ? "checked" : "") class="large-checkbox" disabled />
+                            @if (i < winnerCount)
+                            {
+                                <input type="hidden" name="nominationIds" value="@item.Nomination.NominationId" />
+                            }
                         </td>
                     </tr>
                 }

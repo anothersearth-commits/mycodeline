@@ -1,10 +1,88 @@
 ﻿/* Please see documentation at https://learn.microsoft.com/aspnet/core/client-side/bundling-and-minification
 for details on configuring this project to bundle and minify static web assets. */
 
+/* Enhanced Navbar Brand Text */
 a.navbar-brand {
   white-space: normal;
   text-align: center;
   word-break: break-all;
+  padding: 0.5rem 1rem;
+}
+
+.enhanced-text {
+  font-size: 1.3rem;
+  font-weight: 700;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-decoration: none !important;
+  transition: all 0.3s ease;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.enhanced-text:hover {
+  transform: scale(1.05);
+  filter: brightness(1.1);
+}
+
+/* Enhanced Navbar Links */
+.enhanced-nav-link {
+  color: #64748b !important;
+  font-weight: 500;
+  padding: 0.75rem 1rem !important;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+  margin: 0 0.25rem;
+}
+
+.enhanced-nav-link i {
+  color: #667eea;
+  transition: all 0.3s ease;
+}
+
+.enhanced-nav-link:hover {
+  color: #667eea !important;
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1));
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+}
+
+.enhanced-nav-link:hover i {
+  color: #5a67d8;
+  transform: scale(1.1);
+}
+
+.enhanced-nav-link::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(102, 126, 234, 0.1), transparent);
+  transition: left 0.5s ease;
+}
+
+.enhanced-nav-link:hover::before {
+  left: 100%;
+}
+
+/* Active state */
+.enhanced-nav-link.active {
+  color: #667eea !important;
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.15), rgba(118, 75, 162, 0.15));
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.15);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .enhanced-nav-link {
+    margin: 0.25rem 0;
+    border-radius: 6px;
+  }
 }
 
 a {
