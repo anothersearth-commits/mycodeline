@@ -49,4 +49,7 @@ public class Employee
     
     [Column("IS_MANAGER")]
     public int IsManager { get; set; } = 0;
+    
+    // Navigation property to department
+    public virtual VwEomDepartments? Department { get; set; }
 }

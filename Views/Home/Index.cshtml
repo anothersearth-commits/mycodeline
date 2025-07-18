@@ -666,51 +666,75 @@
             var totalNominations = currentCycle.Nominations?.Count ?? 0;
             var evaluatedNominations = currentCycle.Nominations?.Where(n => n.Evaluations.Any()).Count() ?? 0;
             
-            <div class="row g-4">
-                <div class="col-12">
-                    <div class="glass-card">
-                        <div class="card-header">
-                            <h3 class="mb-0">
-                                <i class="fas fa-trophy text-warning me-2"></i>
-                                الدورة الحالية: @currentCycle.AwardType?.Name - @currentCycle.Month/@currentCycle.Year
-                            </h3>
-                        </div>
-                        <div class="card-body">
-                            <div class="row g-3">
-                                <div class="col-md-4">
-                                    <div class="stat-card">
-                                        <div class="stat-number">@totalNominations</div>
-                                        <div class="stat-label">إجمالي الترشيحات</div>
-                                    </div>
-                                </div>
-                                <div class="col-md-4">
-                                    <div class="stat-card">
-                                        <div class="stat-number">@evaluatedNominations</div>
-                                        <div class="stat-label">التقييمات المكتملة</div>
-                                    </div>
-                                </div>
-                                <div class="col-md-4">
-                                    <div class="stat-card">
-                                        <div class="stat-number">@(totalNominations - evaluatedNominations)</div>
-                                        <div class="stat-label">في انتظار التقييم</div>
+            <div class="admin-stats-section">
+                <div class="stats-header">
+                    <h4 class="mb-0">
+                        <i class="fas fa-trophy text-warning me-2"></i>
+                        الدورة الحالية: @currentCycle.AwardType?.Name - @currentCycle.Month/@currentCycle.Year
+                    </h4>
+                    <div class="stats-subtitle">متابعة تقدم التقييمات والإحصائيات</div>
+                </div>
+                <div class="stats-container">
+                    <div class="row g-4">
+                        <div class="col-md-4">
+                            <div class="paper-stack-card nominations-stack">
+                                <div class="paper-stack">
+                                    <div class="paper paper-1"></div>
+                                    <div class="paper paper-2"></div>
+                                    <div class="paper paper-3"></div>
+                                    <div class="paper paper-main">
+                                        <div class="stat-content">
+                                            <div class="stat-number">@totalNominations</div>
+                                            <div class="stat-label">إجمالي الترشيحات</div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-                            
-                            @if (totalNominations > 0)
-                            {
-                                <div class="mt-4">
-                                    <div class="progress-label mb-2">
-                                        <span>تقدم التقييمات</span>
-                                        <span class="text-muted">@Math.Round((double)evaluatedNominations / totalNominations * 100, 1)%</span>
-                                    </div>
-                                    <div class="progress">
-                                        <div class="progress-bar" role="progressbar" style="width: @(Math.Round((double)evaluatedNominations / totalNominations * 100, 1))%" aria-valuenow="@evaluatedNominations" aria-valuemin="0" aria-valuemax="@totalNominations"></div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="paper-stack-card evaluations-stack">
+                                <div class="paper-stack">
+                                    <div class="paper paper-1"></div>
+                                    <div class="paper paper-2"></div>
+                                    <div class="paper paper-3"></div>
+                                    <div class="paper paper-main">
+                                        <div class="stat-content">
+                                            <div class="stat-number">@evaluatedNominations</div>
+                                            <div class="stat-label">التقييمات المكتملة</div>
+                                        </div>
                                     </div>
                                 </div>
-                            }
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="paper-stack-card departments-stack">
+                                <div class="paper-stack">
+                                    <div class="paper paper-1"></div>
+                                    <div class="paper paper-2"></div>
+                                    <div class="paper paper-3"></div>
+                                    <div class="paper paper-main">
+                                        <div class="stat-content">
+                                            <div class="stat-number">@(totalNominations - evaluatedNominations)</div>
+                                            <div class="stat-label">في انتظار التقييم</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
+                    
+                    @if (totalNominations > 0)
+                    {
+                        <div class="mt-4">
+                            <div class="progress-label mb-2">
+                                <span>تقدم التقييمات</span>
+                                <span class="text-muted">@Math.Round((double)evaluatedNominations / totalNominations * 100, 1)%</span>
+                            </div>
+                            <div class="progress">
+                                <div class="progress-bar" role="progressbar" style="width: @(Math.Round((double)evaluatedNominations / totalNominations * 100, 1))%" aria-valuenow="@evaluatedNominations" aria-valuemin="0" aria-valuemax="@totalNominations"></div>
+                            </div>
+                        </div>
+                    }
                 </div>
             </div>
         }
@@ -732,37 +756,177 @@
     {
         <div class="row mt-5">
             <div class="col-12">
-                <div class="glass-card">
-                    <div class="card-header">
+                <div class="admin-stats-section">
+                    <div class="stats-header">
                         <h4 class="mb-0">إحصائيات النظام</h4>
+                        <div class="stats-subtitle">نظرة عامة على أداء النظام</div>
                     </div>
-                    <div class="card-body">
-                        <div class="row g-3">
+                    <div class="stats-container">
+                        <div class="row g-4">
                             <div class="col-md-3">
-                                <div class="stat-card">
-                                    <div class="stat-number">@(ViewBag.ActiveNominationsCount ?? 0)</div>
-                                    <div class="stat-label">الترشيحات النشطة</div>
+                                <div class="paper-stack-card nominations-stack">
+                                    <div class="paper-stack">
+                                        <div class="paper paper-1"></div>
+                                        <div class="paper paper-2"></div>
+                                        <div class="paper paper-3"></div>
+                                        <div class="paper paper-main">
+                                            <div class="stat-content">
+                                                <div class="stat-number">@(ViewBag.ActiveNominationsCount ?? 0)</div>
+                                                <div class="stat-label">الترشيحات النشطة</div>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                             <div class="col-md-3">
-                                <div class="stat-card">
-                                    <div class="stat-number">@(ViewBag.CompletedEvaluationsCount ?? 0)</div>
-                                    <div class="stat-label">التقييمات المكتملة</div>
+                                <div class="paper-stack-card evaluations-stack">
+                                    <div class="paper-stack">
+                                        <div class="paper paper-1"></div>
+                                        <div class="paper paper-2"></div>
+                                        <div class="paper paper-3"></div>
+                                        <div class="paper paper-main">
+                                            <div class="stat-content">
+                                                <div class="stat-number">@(ViewBag.CompletedEvaluationsCount ?? 0)</div>
+                                                <div class="stat-label">التقييمات المكتملة</div>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                             <div class="col-md-3">
-                                <div class="stat-card">
-                                    <div class="stat-number">@(ViewBag.ParticipatingDepartmentsCount ?? 0)</div>
-                                    <div class="stat-label">الأقسام المشاركة</div>
+                                <div class="paper-stack-card departments-stack">
+                                    <div class="paper-stack">
+                                        <div class="paper paper-1"></div>
+                                        <div class="paper paper-2"></div>
+                                        <div class="paper paper-3"></div>
+                                        <div class="paper paper-main">
+                                            <div class="stat-content">
+                                                <div class="stat-number">@(ViewBag.ParticipatingDepartmentsCount ?? 0)</div>
+                                                <div class="stat-label">الدوائر المشاركة</div>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                             <div class="col-md-3">
-                                <div class="stat-card">
-                                    <div class="stat-number">@(ViewBag.ActiveCyclesCount ?? 0)</div>
-                                    <div class="stat-label">الدورات النشطة</div>
+                                <div class="paper-stack-card cycles-stack">
+                                    <div class="paper-stack">
+                                        <div class="paper paper-1"></div>
+                                        <div class="paper paper-2"></div>
+                                        <div class="paper paper-3"></div>
+                                        <div class="paper paper-main">
+                                            <div class="stat-content">
+                                                <div class="stat-number">@(ViewBag.ActiveCyclesCount ?? 0)</div>
+                                                <div class="stat-label">الدورات النشطة</div>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- Committee Members Progress Section -->
+    @{
+        var committeeMembers = ViewBag.CommitteeMembers as List<dynamic> ?? new List<dynamic>();
+        var lastOpenCycle = ViewBag.LastOpenCycleAwardType1 as EOM.Web.Models.AwardCycle;
+        var debugInfo = $"Committee members: {committeeMembers.Count}, Cycle: {lastOpenCycle?.CycleId ?? 0}";
+    }
+    
+ 
+    
+    @if ((User.IsInRole("EOM-Admin") || User.IsInRole("EOM-Committee")) && (committeeMembers.Any() || lastOpenCycle != null))
+    {
+        <div class="row mt-5">
+            <div class="col-12">
+                <div class="committee-progress-section">
+                    <div class="section-header-committee">
+                        <div class="header-content-committee">
+                            <div class="header-icon-wrapper-committee">
+                                <img src="~/img/cooperation.png" alt="Committee Members" class="header-icon-img-committee" />
+                            </div>
+                            <div class="header-text-committee">
+                                <h3> أعضاء اللجنة</h3>
+                                @if (lastOpenCycle != null)
+                                {
+                                    <p>دورة @lastOpenCycle.AwardType?.Name - @lastOpenCycle.Month/@lastOpenCycle.Year</p>
+                                }
+                                else
+                                {
+                                    <p>آخر دورة مفتوحة لموظف الشهر</p>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                    <div class="committee-members-grid">
+                        @foreach (var member in committeeMembers)
+                        {
+                            var memberProgressPercentage = member.ProgressPercentage ?? 0;
+                            var memberCompletedCount = member.CompletedEvaluations ?? 0;
+                            var memberTotalCount = member.TotalEvaluations ?? 0;
+                            <div class="committee-member-card">
+                                <div class="member-header">
+                                    <div class="member-avatar">
+                                        @if (!string.IsNullOrEmpty(member.ActiveDirectoryId))
+                                        {
+                                            <img src="@Url.Action("WinnerPhoto", "Home", new { adUser = member.ActiveDirectoryId })" 
+                                                 alt="@member.FirstName @member.LastName" 
+                                                 class="member-photo" 
+                                                 onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
+                                            <div class="member-fallback-icon" style="display: none;">
+                                                <i class="fas fa-user-tie"></i>
+                                            </div>
+                                        }
+                                        else
+                                        {
+                                            <i class="fas fa-user-tie"></i>
+                                        }
+                                    </div>
+                                    <div class="member-info">
+                                        <h5 class="member-name">@member.FirstName @member.LastName</h5>
+                                        <span class="member-role">عضو لجنة التقييم</span>
+                                    </div>
+                                </div>
+                                <div class="progress-section">
+                                    <div class="progress-header-member">
+                                        <span class="progress-label">تقدم التقييم</span>
+                                        <span class="progress-percentage">@memberProgressPercentage%</span>
+                                    </div>
+                                    <div class="progress-bar-wrapper">
+                                        <div class="progress-bar-member" style="width: @memberProgressPercentage%"></div>
+                                    </div>
+                                    <div class="progress-stats">
+                                        <span class="stat">@memberCompletedCount مكتملة</span>
+                                        <span class="stat">@memberTotalCount إجمالي</span>
+                                    </div>
+                                </div>
+                                @if (memberProgressPercentage == 100)
+                                {
+                                    <div class="completion-badge">
+                                        <i class="fas fa-check-circle"></i>
+                                        <span>مكتمل</span>
+                                    </div>
+                                }
+                                else if (memberProgressPercentage > 0)
+                                {
+                                    <div class="in-progress-badge">
+                                        <i class="fas fa-clock"></i>
+                                        <span>قيد التقييم</span>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <div class="pending-badge">
+                                        <i class="fas fa-exclamation-triangle"></i>
+                                        <span>لم يبدأ</span>
+                                    </div>
+                                }
+                            </div>
+                        }
                     </div>
                 </div>
             </div>
@@ -1824,6 +1988,552 @@
         gap: 1rem;
     }
 }
+
+/* Paper Stack Effect for Admin Stats */
+.admin-stats-section {
+    background: linear-gradient(135deg, #fff 0%, #fff 100%);
+    border-radius: 24px;
+    padding: 2.5rem;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+    position: relative;
+    overflow: hidden;
+}
+
+.admin-stats-section::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #667eea, #764ba2, #f093fb, #f5576c);
+    border-radius: 24px 24px 0 0;
+}
+
+.stats-header {
+    text-align: center;
+    margin-bottom: 3rem;
+    position: relative;
+    z-index: 2;
+}
+
+.stats-header h4 {
+    font-size: 2rem;
+    font-weight: 800;
+    color: #1e293b;
+    margin-bottom: 0.5rem;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.stats-subtitle {
+    color: #64748b;
+    font-size: 1.1rem;
+    font-weight: 500;
+}
+
+.stats-container {
+    position: relative;
+    z-index: 2;
+}
+
+.paper-stack-card {
+    perspective: 1000px;
+    height: 200px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.paper-stack {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    transform-style: preserve-3d;
+    transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.paper-stack-card:hover .paper-stack {
+    transform: rotateY(-15deg) rotateX(10deg) translateZ(20px);
+}
+
+.paper {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    border-radius: 16px;
+    transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.paper-1 {
+    background: linear-gradient(135deg, #f1f5f9, #e2e8f0);
+    transform: translateZ(-12px) rotateY(-2deg) rotateX(1deg);
+    border: 1px solid #cbd5e0;
+}
+
+.paper-2 {
+    background: linear-gradient(135deg, #f8fafc, #f1f5f9);
+    transform: translateZ(-6px) rotateY(-1deg) rotateX(0.5deg);
+    border: 1px solid #e2e8f0;
+}
+
+.paper-3 {
+    background: linear-gradient(135deg, #ffffff, #f8fafc);
+    transform: translateZ(-2px) rotateY(-0.5deg);
+    border: 1px solid #f1f5f9;
+}
+
+.paper-main {
+    background: linear-gradient(135deg, #ffffff, #f8fafc);
+    transform: translateZ(0);
+    border: 2px solid #e2e8f0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+/* Hover effects for each stack */
+.paper-stack-card:hover .paper-1 {
+    transform: translateZ(-24px) rotateY(-8deg) rotateX(4deg) translateX(-10px) translateY(-5px);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+}
+
+.paper-stack-card:hover .paper-2 {
+    transform: translateZ(-12px) rotateY(-4deg) rotateX(2deg) translateX(-5px) translateY(-2px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+}
+
+.paper-stack-card:hover .paper-3 {
+    transform: translateZ(-4px) rotateY(-2deg) rotateX(1deg) translateX(-2px) translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.paper-stack-card:hover .paper-main {
+    transform: translateZ(10px) rotateY(-1deg) rotateX(0.5deg);
+    box-shadow: 0 12px 35px rgba(0, 0, 0, 0.2);
+    border-color: #667eea;
+}
+
+/* Content styling */
+.stat-content {
+    text-align: center;
+    padding: 1.5rem;
+    width: 100%;
+}
+
+.stat-content .stat-number {
+    font-size: 3rem;
+    font-weight: 900;
+    color: #1e293b;
+    line-height: 1;
+    margin-bottom: 0.5rem;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+}
+
+.stat-content .stat-label {
+    font-size: 1rem;
+    color: #64748b;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    transition: all 0.3s ease;
+}
+
+/* Individual stack color themes - Gradient Backgrounds on Hover */
+.nominations-stack .paper-main {
+    border-color: #667eea;
+    background: linear-gradient(135deg, #ffffff, #f8fafc);
+}
+
+.nominations-stack:hover .paper-main {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    transform: translateZ(10px) rotateY(-1deg) rotateX(0.5deg);
+    box-shadow: 0 12px 35px rgba(102, 126, 234, 0.3);
+}
+
+.nominations-stack .stat-content .stat-number,
+.nominations-stack .stat-content .stat-label {
+    color: #1e293b;
+}
+
+.nominations-stack:hover .stat-content .stat-number,
+.nominations-stack:hover .stat-content .stat-label {
+    color: white;
+}
+
+.evaluations-stack .paper-main {
+    border-color: #4ecdc4;
+    background: linear-gradient(135deg, #ffffff, #f8fafc);
+}
+
+.evaluations-stack:hover .paper-main {
+    background: linear-gradient(135deg, #4ecdc4 0%, #44a08d 100%);
+    transform: translateZ(10px) rotateY(-1deg) rotateX(0.5deg);
+    box-shadow: 0 12px 35px rgba(78, 205, 196, 0.3);
+}
+
+.evaluations-stack .stat-content .stat-number,
+.evaluations-stack .stat-content .stat-label {
+    color: #1e293b;
+}
+
+.evaluations-stack:hover .stat-content .stat-number,
+.evaluations-stack:hover .stat-content .stat-label {
+    color: white;
+}
+
+.departments-stack .paper-main {
+    border-color: #f093fb;
+    background: linear-gradient(135deg, #ffffff, #f8fafc);
+}
+
+.departments-stack:hover .paper-main {
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    transform: translateZ(10px) rotateY(-1deg) rotateX(0.5deg);
+    box-shadow: 0 12px 35px rgba(240, 147, 251, 0.3);
+}
+
+.departments-stack .stat-content .stat-number,
+.departments-stack .stat-content .stat-label {
+    color: #1e293b;
+}
+
+.departments-stack:hover .stat-content .stat-number,
+.departments-stack:hover .stat-content .stat-label {
+    color: white;
+}
+
+.cycles-stack .paper-main {
+    border-color: #ffd89b;
+    background: linear-gradient(135deg, #ffffff, #f8fafc);
+}
+
+.cycles-stack:hover .paper-main {
+    background: linear-gradient(135deg, #ffd89b 0%, #19547b 100%);
+    transform: translateZ(10px) rotateY(-1deg) rotateX(0.5deg);
+    box-shadow: 0 12px 35px rgba(255, 216, 155, 0.3);
+}
+
+.cycles-stack .stat-content .stat-number,
+.cycles-stack .stat-content .stat-label {
+    color: #1e293b;
+}
+
+.cycles-stack:hover .stat-content .stat-number,
+.cycles-stack:hover .stat-content .stat-label {
+    color: white;
+}
+
+/* Paper texture effect */
+.paper::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-image: 
+        linear-gradient(90deg, transparent 0%, transparent 40%, rgba(0,0,0,0.02) 50%, transparent 60%, transparent 100%),
+        linear-gradient(0deg, transparent 0%, transparent 40%, rgba(0,0,0,0.02) 50%, transparent 60%, transparent 100%);
+    background-size: 20px 20px, 20px 20px;
+    border-radius: 16px;
+    pointer-events: none;
+}
+
+/* Responsive adjustments for paper stack */
+@@media (max-width: 768px) {
+    .admin-stats-section {
+        padding: 1.5rem;
+    }
+    
+    .stats-header h4 {
+        font-size: 1.5rem;
+    }
+    
+    .paper-stack-card {
+        height: 150px;
+        margin-bottom: 1rem;
+    }
+    
+    .stat-content .stat-number {
+        font-size: 2rem;
+    }
+    
+    .stat-content .stat-label {
+        font-size: 0.8rem;
+    }
+    
+    .paper-stack-card:hover .paper-stack {
+        transform: rotateY(-10deg) rotateX(5deg) translateZ(10px);
+    }
+}
+
+/* Committee Members Progress Section */
+.committee-progress-section {
+    background: linear-gradient(145deg, #ffffff, #f8fafc);
+    border-radius: 20px;
+    padding: 2.5rem;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(10px);
+    position: relative;
+    overflow: hidden;
+}
+
+.committee-progress-section::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #667eea, #764ba2);
+    border-radius: 20px 20px 0 0;
+}
+
+.section-header-committee {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 2.5rem;
+    position: relative;
+    z-index: 2;
+}
+
+.header-content-committee {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+}
+
+.header-icon-wrapper-committee {
+    width: 70px;
+    height: 70px;
+    background: linear-gradient(145deg, #f8fafc, #e2e8f0);
+    border-radius: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.8);
+}
+
+.header-icon-img-committee {
+    width: 40px;
+    height: 40px;
+    object-fit: contain;
+    filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.1));
+}
+
+.header-text-committee h3 {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0 0 0.5rem;
+    line-height: 1.3;
+    text-align: center;
+}
+
+.header-text-committee p {
+    color: #64748b;
+    margin: 0;
+    font-size: 1rem;
+    line-height: 1.5;
+    text-align: center;
+}
+
+.committee-members-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1.5rem;
+    position: relative;
+    z-index: 2;
+}
+
+.committee-member-card {
+    background: linear-gradient(145deg, #ffffff, #f8fafc);
+    border-radius: 16px;
+    padding: 1.5rem;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.8);
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.committee-member-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.12);
+    border-color: rgba(102, 126, 234, 0.3);
+}
+
+.member-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    padding-right: 6rem;
+}
+
+.member-avatar {
+    width: 50px;
+    height: 50px;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.2rem;
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+    overflow: hidden;
+}
+
+.member-photo {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
+}
+
+.member-fallback-icon {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    border-radius: 50%;
+    color: white;
+    font-size: 1.2rem;
+}
+
+.member-info {
+    flex: 1;
+}
+
+.member-name {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #1e293b;
+    margin: 0 0 0.25rem;
+    line-height: 1.3;
+}
+
+.member-role {
+    color: #64748b;
+    font-size: 0.85rem;
+    font-weight: 500;
+}
+
+.progress-section {
+    margin-bottom: 1rem;
+}
+
+.progress-header-member {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.75rem;
+}
+
+.progress-label {
+    font-weight: 600;
+    color: #64748b;
+    font-size: 0.9rem;
+}
+
+.progress-percentage {
+    font-weight: 700;
+    color: #667eea;
+    font-size: 1.1rem;
+}
+
+.progress-bar-wrapper {
+    height: 6px;
+    background: #f1f5f9;
+    border-radius: 8px;
+    overflow: hidden;
+    margin-bottom: 0.75rem;
+}
+
+.progress-bar-member {
+    height: 100%;
+    background: linear-gradient(90deg, #667eea, #764ba2);
+    transition: width 0.6s ease;
+    border-radius: 8px;
+}
+
+.progress-stats {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.progress-stats .stat {
+    font-size: 0.85rem;
+    color: #64748b;
+    font-weight: 500;
+}
+
+.completion-badge,
+.in-progress-badge,
+.pending-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+}
+
+.completion-badge {
+    background: linear-gradient(135deg, #27ae60, #229954);
+    color: white;
+    box-shadow: 0 2px 8px rgba(39, 174, 96, 0.3);
+}
+
+.in-progress-badge {
+    background: linear-gradient(135deg, #f39c12, #e67e22);
+    color: white;
+    box-shadow: 0 2px 8px rgba(243, 156, 18, 0.3);
+}
+
+.pending-badge {
+    background: linear-gradient(135deg, #e74c3c, #c0392b);
+    color: white;
+    box-shadow: 0 2px 8px rgba(231, 76, 60, 0.3);
+}
+
+@@media (max-width: 768px) {
+    .committee-progress-section {
+        padding: 1.5rem;
+    }
+    
+    .header-content-committee {
+        flex-direction: column;
+        gap: 1rem;
+        text-align: center;
+    }
+    
+    .committee-members-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+    
+    .member-header {
+        padding-top: 2.5rem;
+    }
+}
+
+
 </style>
 
 @section Scripts {

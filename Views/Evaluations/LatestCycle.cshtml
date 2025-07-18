@@ -73,7 +73,7 @@
                                             </div>
                                         </div>
                                     </td>
-                                    <td>قسم @nomination.Employee?.DepartmentId</td>
+                                    <td>@(nomination.Employee?.Department?.Name ?? "")</td>
                                     <td>@nomination.Manager?.FirstName @nomination.Manager?.LastName</td>
                                     <td>@nomination.CreatedAt.ToString("dd/MM/yyyy")</td>
                                     <td>

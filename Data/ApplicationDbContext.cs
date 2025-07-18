@@ -44,6 +44,13 @@ public class ApplicationDbContext : DbContext
         builder.Entity<VwEomDepartments>()
             .ToView("VW_EOM_DEPARTMENTS")
             .HasKey(d => d.DepartmentId);
+            
+        // Configure Employee to Department relationship
+        builder.Entity<Employee>()
+            .HasOne(e => e.Department)
+            .WithMany()
+            .HasForeignKey(e => e.DepartmentId)
+            .HasPrincipalKey(d => d.DepartmentId);
 
         // Configure composite keys
         builder.Entity<DepartmentQuota>()

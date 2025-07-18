@@ -22,7 +22,7 @@ else
 {
     // Quick stats
     var total = Model.Count();
-    var departmentsCount = Model.Select(n => n.Employee?.DepartmentId ?? 0).Distinct().Count();
+    var departmentsCount = Model.Select(n => n.Employee?.Department?.Name ?? "").Distinct().Count();
 
     <div class="row mb-4">
         <div class="col-6 col-md-3">

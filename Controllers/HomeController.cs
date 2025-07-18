@@ -211,6 +211,102 @@ public class HomeController : BaseController
             // Get active cycles count
             ViewBag.ActiveCyclesCount = openCycles.Count;
         }
+
+        // Get committee members progress for last open cycle with AwardType ID 1
+        var lastOpenCycleAwardType1 = await _context.AwardCycles
+            .Include(ac => ac.AwardType)
+            .Include(ac => ac.Nominations)
+            .Where(ac => ac.AwardTypeId == 1 && (ac.Status == CycleStatus.Nomination || ac.Status == CycleStatus.Evaluating))
+            .OrderByDescending(ac => ac.Year)
+            .ThenByDescending(ac => ac.Month)
+            .FirstOrDefaultAsync();
+
+        ViewBag.LastOpenCycleAwardType1 = lastOpenCycleAwardType1;
+
+        // Debug: Log what we found
+        _logger.LogInformation($"Found cycle for AwardType 1: {lastOpenCycleAwardType1?.CycleId} - {lastOpenCycleAwardType1?.AwardType?.Name} - {lastOpenCycleAwardType1?.Status}");
+
+        // Always get committee members for debugging, even if no cycle
+        var allCommitteeMembers = await _context.CommitteeMembers
+            .Include(cm => cm.Employee)
+            .Where(cm => cm.IsActive == true)
+            .ToListAsync();
+
+        _logger.LogInformation($"Found {allCommitteeMembers.Count} active committee members");
+
+        if (lastOpenCycleAwardType1 != null)
+        {
+            var cycleId = lastOpenCycleAwardType1.CycleId;
+            var totalNominations = lastOpenCycleAwardType1.Nominations.Count();
+            
+            _logger.LogInformation($"Cycle {cycleId} has {totalNominations} nominations");
+
+            // Get all active committee members first
+            var activeCommitteeMembers = await _context.CommitteeMembers
+                .Include(cm => cm.Employee)
+                .Where(cm => cm.IsActive == true)
+                .ToListAsync();
+
+            _logger.LogInformation($"Found {activeCommitteeMembers.Count} active committee members for progress calculation");
+
+            // Calculate progress for each member
+            var committeeMembers = new List<dynamic>();
+            foreach (var member in activeCommitteeMembers)
+            {
+                var completedEvaluations = await _context.Evaluations
+                    .Where(e => e.CommitteeMemberId == member.Id && 
+                               e.Nomination.CycleId == cycleId)
+                    .CountAsync();
+
+                var progressPercentage = totalNominations > 0 ? (completedEvaluations * 100) / totalNominations : 0;
+
+                var memberData = new
+                {
+                    Id = member.Id,
+                    FirstName = member.Employee?.FirstName ?? "Unknown",
+                    LastName = member.Employee?.LastName ?? "Member",
+                    ActiveDirectoryId = member.Employee?.ActiveDirectoryId,
+                    TotalEvaluations = totalNominations,
+                    CompletedEvaluations = completedEvaluations,
+                    ProgressPercentage = progressPercentage
+                };
+
+                committeeMembers.Add(memberData);
+                _logger.LogInformation($"Member {memberData.FirstName} {memberData.LastName}: {completedEvaluations}/{totalNominations} ({progressPercentage}%)");
+            }
+
+            _logger.LogInformation($"Committee members with progress: {committeeMembers.Count}");
+            
+            ViewBag.CommitteeMembers = committeeMembers;
+        }
+        else
+        {
+            // Check if there are any cycles with AwardType 1 at all
+            var anyCycleAwardType1 = await _context.AwardCycles
+                .Where(ac => ac.AwardTypeId == 1)
+                .CountAsync();
+            
+            _logger.LogInformation($"Total cycles with AwardType 1: {anyCycleAwardType1}");
+            
+            // Check what award types exist
+            var awardTypes = await _context.AwardTypes.ToListAsync();
+            _logger.LogInformation($"Available AwardTypes: {string.Join(", ", awardTypes.Select(at => $"{at.AwardTypeId}: {at.Name}"))}");
+            
+            // Still show committee members even without an active cycle
+            var committeeMembers = allCommitteeMembers.Select(member => new
+            {
+                Id = member.Id,
+                FirstName = member.Employee?.FirstName ?? "Unknown",
+                LastName = member.Employee?.LastName ?? "Member",
+                ActiveDirectoryId = member.Employee?.ActiveDirectoryId,
+                TotalEvaluations = 0,
+                CompletedEvaluations = 0,
+                ProgressPercentage = 0
+            }).ToList();
+            
+            ViewBag.CommitteeMembers = committeeMembers;
+            _logger.LogInformation($"Set committee members without cycle: {committeeMembers.Count}");
+        }
         
         return View();
     }

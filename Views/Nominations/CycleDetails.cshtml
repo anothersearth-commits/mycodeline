@@ -126,6 +126,17 @@
         font-size: 0.9rem;
     }
     
+    .employee-department {
+        color: #495057;
+        font-size: 0.85rem;
+        margin-top: 0.25rem;
+    }
+    
+    .employee-department i {
+        margin-left: 0.25rem;
+        color: #6c757d;
+    }
+    
     .scoring-status {
         display: flex;
         align-items: center;
@@ -415,6 +426,10 @@
                                 @nomination.Employee.FirstName @nomination.Employee.LastName
                             </div>
                             <div class="employee-title">@nomination.Employee.JobTitle</div>
+                            <div class="employee-department">
+                                <i class="fas fa-building"></i>
+                                @(nomination.Employee.Department?.Name ?? "")
+                            </div>
                         </div>
                         
                         <div class="scoring-status @(hasCommitteeEvaluations ? "status-completed" : (hasManagerScores ? "status-evaluation" : "status-pending"))">

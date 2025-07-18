@@ -199,22 +199,22 @@
                             {
                                 <tr>
                                     <td>
-                                        @nomination.Employee.FirstName @nomination.Employee.LastName
+                                        @nomination.Employee.FirstName
                                         @if (nomination.IsWinner)
                                         {
                                             <span class="badge bg-success ms-2">🏆 وسام الفائز</span>
                                         }
                                     </td>
                                     <td>@nomination.Employee.JobTitle</td>
-                                    <td>قسم @nomination.Employee.DepartmentId</td>
-                                    <td>@nomination.Manager.FirstName @nomination.Manager.LastName</td>
+                                    <td>@(nomination.Employee.Department?.Name ?? "")</td>
+                                    <td>@nomination.Manager.FirstName</td>
                                     <td>@nomination.CreatedAt.ToString("dd/MM/yyyy")</td>
                                     <td>
                                         <span class="badge badge-info">@nomination.Evaluations.Count</span>
                                     </td>
                                     <td>
                                         <a href="@Url.Action("Details", "Nominations", new { id = nomination.NominationId })" class="btn btn-sm btn-info">
-                                            👁️ تفاصيل
+                                             تفاصيل
                                         </a>
                                     </td>
                                 </tr>

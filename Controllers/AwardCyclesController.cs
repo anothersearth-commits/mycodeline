@@ -72,6 +72,7 @@ public class AwardCyclesController : BaseController
             .Include(a => a.AwardType)
             .Include(a => a.Nominations)
                 .ThenInclude(n => n.Employee)
+                .ThenInclude(e => e.Department)
             .Include(a => a.Nominations)
                 .ThenInclude(n => n.Manager)
             .Include(a => a.Nominations)

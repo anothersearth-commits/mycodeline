@@ -551,6 +551,7 @@ public class NominationsController : BaseController
             .Include(ac => ac.AwardType)
             .Include(ac => ac.Nominations.Where(n => n.ManagerId == currentEmployeeId))
             .ThenInclude(n => n.Employee)
+            .ThenInclude(e => e.Department)
             .Include(ac => ac.Nominations.Where(n => n.ManagerId == currentEmployeeId))
             .ThenInclude(n => n.ManagerScores)
             .ThenInclude(ms => ms.SubCriteria)
