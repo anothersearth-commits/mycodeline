@@ -343,12 +343,6 @@
                                 <div class="mini-nominations-info">
                                     <div class="mini-count-number">@cycle.Nominations.Count()</div>
                                     <div class="mini-count-label">ترشيحاتك</div>
-                                    @if (cycle.Nominations.Any())
-                                    {
-                                        <div class="mini-evaluation-info">
-                                            @cycle.Nominations.Count(n => n.Evaluations != null && n.Evaluations.Any()) مُقيّمة من اللجنة
-                                        </div>
-                                    }
                                 </div>
                                 
                                 <button class="mini-view-details-btn" onclick="event.stopPropagation(); location.href='@Url.Action("CycleDetails", "Nominations", new { id = cycle.CycleId })'">
@@ -863,7 +857,7 @@
                         </div>
                     </div>
                     <div class="committee-members-grid">
-                        @foreach (var member in committeeMembers)
+                        @foreach (var member in committeeMembers.OrderBy(m => m.Id))
                         {
                             var memberProgressPercentage = member.ProgressPercentage ?? 0;
                             var memberCompletedCount = member.CompletedEvaluations ?? 0;
@@ -888,7 +882,7 @@
                                     </div>
                                     <div class="member-info">
                                         <h5 class="member-name">@member.FirstName @member.LastName</h5>
-                                        <span class="member-role">عضو لجنة التقييم</span>
+                                        <span class="member-role">@(member.Id == 1 ? "رئيس لجنة التقييم" : "عضو لجنة التقييم")</span>
                                     </div>
                                 </div>
                                 <div class="progress-section">

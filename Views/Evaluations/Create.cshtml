@@ -308,33 +308,39 @@
     </script>
     <div class="collapse" id="managerEvalCollapse">
         <div class="card-body">
-            @if (Model.Nomination?.ManagerScores != null && Model.Nomination.ManagerScores.Any())
+            @if (User.IsInRole("EOM-Admin"))
             {
-                <table class="table table-bordered">
-                    <thead>
-                        <tr>
-                            <th>المعيار الفرعي</th>
-                            <th>الدرجة</th>
-                            <th>ملاحظة</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach (var ms in Model.Nomination.ManagerScores)
-                        {
+                if (Model.Nomination?.ManagerScores != null && Model.Nomination.ManagerScores.Any())
+                {
+                    <table class="table table-bordered">
+                        <thead>
                             <tr>
-                                <td>@ms.SubCriteria?.Name</td>
-                                <td>@ms.Score</td>
-                                <td>@ms.Note</td>
+                                <th>المعيار الفرعي</th>
+                                <th>الدرجة</th>
+                                <th>ملاحظة</th>
                             </tr>
-                        }
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody>
+                            @foreach (var ms in Model.Nomination.ManagerScores)
+                            {
+                                <tr>
+                                    <td>@ms.SubCriteria?.Name</td>
+                                    <td>@ms.Score</td>
+                                    <td>@ms.Note</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+                else
+                {
+                    <div class="alert alert-warning">لا يوجد تقييم مدير بعد.</div>
+                }
             }
             else
             {
-                <div class="alert alert-warning">لا يوجد تقييم مدير بعد.</div>
+                <div class="alert alert-info">ملاحظات المدير ستظهر بجانب كل معيار فرعي في نموذج التقييم.</div>
             }
-
             <hr />
             <div>
                 <b>مرفق المدير:</b>
@@ -381,8 +387,14 @@
                     @foreach (var sub in criterion.SubCriteria.OrderBy(sc=>sc.SubCriteriaCode))
                     {
                         var es = Model.EvaluationScores.FirstOrDefault(s=>s.SubCriteriaId==sub.SubCriteriaId) ?? new EOM.Web.Models.EvaluationScore{SubCriteriaId=sub.SubCriteriaId};
+                        var managerScore = Model.Nomination?.ManagerScores?.FirstOrDefault(ms => ms.SubCriteriaId == sub.SubCriteriaId);
                         <tr>
-                            <td>@sub.SubCriteriaCode - @sub.Name</td>
+                            <td>@sub.SubCriteriaCode - @sub.Name
+                                @if (!User.IsInRole("EOM-Admin") && !string.IsNullOrWhiteSpace(managerScore?.Note))
+                                {
+                                    <div class="manager-note small text-info mt-1"><i class="fas fa-sticky-note"></i> <b>ملاحظة المدير:</b> @managerScore.Note</div>
+                                }
+                            </td>
                             <td>
                                 <input type="hidden" name="EvaluationScores[@idx].SubCriteriaId" value="@sub.SubCriteriaId" />
                                 <select class="form-select text-center score-input" name="EvaluationScores[@idx].Score" required>

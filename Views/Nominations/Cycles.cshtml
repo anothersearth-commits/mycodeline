@@ -263,14 +263,6 @@
                                 <div class="count-number">@cycle.Nominations.Count()</div>
                                 <div class="count-label">ترشيحاتك</div>
                             </div>
-                            @if (cycle.Nominations.Any())
-                            {
-                                <div class="text-end">
-                                    <small class="text-muted">
-                                        @cycle.Nominations.Count(n => n.Evaluations != null && n.Evaluations.Any()) مُقيّمة من اللجنة
-                                    </small>
-                                </div>
-                            }
                         </div>
                     </div>
                     

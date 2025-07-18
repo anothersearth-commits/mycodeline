@@ -350,10 +350,6 @@
                     <span class="meta-value">@Model.Nominations.Count()</span>
                 </div>
                 
-                <div class="meta-item">
-                    <span class="meta-label">المُقيّمة من اللجنة</span>
-                    <span class="meta-value">@Model.Nominations.Count(n => n.Evaluations != null && n.Evaluations.Any())</span>
-                </div>
                 
                 <div class="meta-item">
                     <span class="meta-label">الفائزون</span>

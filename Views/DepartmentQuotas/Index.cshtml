@@ -132,7 +132,7 @@ function updateMaxNominations(select) {
     formData.append('__RequestVerificationToken', document.querySelector('input[name="__RequestVerificationToken"]').value);
     
     // Send AJAX request
-    fetch('/DepartmentQuotas/UpdateQuota', {
+    fetch('@Url.Action("UpdateQuota", "DepartmentQuotas")', {
         method: 'POST',
         body: formData
     })
