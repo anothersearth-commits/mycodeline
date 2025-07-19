@@ -463,7 +463,7 @@ public class NominationsController : BaseController
     // POST: Nominations/SelectWinner/5
     [HttpPost]
     [ValidateAntiForgeryToken]
-    [Authorize(Roles = "EOM-Committee")]
+    [Authorize(Roles = "EOM-Committee,EOM-Committee-Lead")]
     public async Task<IActionResult> SelectWinner(int id)
     {
         var nomination = await _context.Nominations
@@ -492,7 +492,7 @@ public class NominationsController : BaseController
     // POST: Nominations/RemoveWinner/5
     [HttpPost]
     [ValidateAntiForgeryToken]
-    [Authorize(Roles = "EOM-Committee")]
+    [Authorize(Roles = "EOM-Committee,EOM-Committee-Lead")]
     public async Task<IActionResult> RemoveWinner(int id)
     {
         var nomination = await _context.Nominations

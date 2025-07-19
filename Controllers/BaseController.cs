@@ -5,6 +5,11 @@ namespace EOM.Web.Controllers;
 
 public class BaseController : Controller
 {
+    // Helper methods for committee role checking
+    protected bool IsCommitteeMember => User.IsInRole("EOM-Committee");
+    protected bool IsCommitteeLead => User.IsInRole("EOM-Committee-Lead");
+    protected bool IsCommitteeOrLead => IsCommitteeMember || IsCommitteeLead;
+
     public override void OnActionExecuting(ActionExecutingContext context)
     {
         if (User.Identity?.IsAuthenticated == true)
@@ -12,7 +17,8 @@ public class BaseController : Controller
             // Role switcher logic for dual-role users
             bool isManager = User.IsInRole("Manager");
             bool isCommittee = User.IsInRole("EOM-Committee");
-            bool isDualRole = isManager && isCommittee;
+            bool isCommitteeLead = User.IsInRole("EOM-Committee-Lead");
+            bool isDualRole = isManager && (isCommittee || isCommitteeLead);
             
             string? activeRoleParam = HttpContext.Request.Query["activeRole"].FirstOrDefault();
             string? cookieRole = HttpContext.Request.Cookies["UserActiveRole"];
@@ -39,7 +45,7 @@ public class BaseController : Controller
             {
                 currentRole = "Manager";
             }
-            else if (isCommittee)
+            else if (isCommittee || isCommitteeLead)
             {
                 currentRole = "Committee";
             }

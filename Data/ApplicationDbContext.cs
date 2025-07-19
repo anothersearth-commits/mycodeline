@@ -28,6 +28,11 @@ public class ApplicationDbContext : DbContext
     public DbSet<Administrator> Administrators { get; set; }
     public DbSet<Evaluation> Evaluations { get; set; }
     public DbSet<EvaluationScore> EvaluationScores { get; set; }
+    
+    // AI Objectives & Messaging Tables
+    public DbSet<ObjectiveCycle> ObjectiveCycles { get; set; }
+    public DbSet<Objective> Objectives { get; set; }
+    public DbSet<AiGeneratedMessage> AiGeneratedMessages { get; set; }
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -360,6 +365,246 @@ public class ApplicationDbContext : DbContext
             .HasIndex(n => n.SelectedByCommitteeMemberId)
             .HasDatabaseName("IX_Nomination_SelCommittee");
 
+        // Configure AI Objectives & Messaging entities
+        ConfigureAiObjectivesEntities(builder);
+
         // Employee model now maps to VW_EOM_EMPLOYEES view instead of physical table
+    }
+
+    private void ConfigureAiObjectivesEntities(ModelBuilder builder)
+    {
+        // ObjectiveCycles configuration
+        builder.Entity<ObjectiveCycle>()
+            .ToTable("OBJECTIVECYCLES")
+            .HasKey(oc => oc.ObjectiveCycleId);
+
+        builder.Entity<ObjectiveCycle>()
+            .Property(oc => oc.ObjectiveCycleId)
+            .HasColumnName("OBJECTIVECYCLEID")
+            .HasColumnType("NUMBER(10)")
+            .HasDefaultValueSql("SEQ_OBJECTIVECYCLE.NEXTVAL")
+            .ValueGeneratedOnAdd();
+
+        builder.Entity<ObjectiveCycle>()
+            .Property(oc => oc.Year)
+            .HasColumnName("YEAR")
+            .HasColumnType("NUMBER(10)");
+
+        builder.Entity<ObjectiveCycle>()
+            .Property(oc => oc.Half)
+            .HasColumnName("HALF")
+            .HasColumnType("NUMBER(10)");
+
+        builder.Entity<ObjectiveCycle>()
+            .Property(oc => oc.IsActive)
+            .HasColumnName("ISACTIVE")
+            .HasColumnType("NUMBER(10)");
+
+        builder.Entity<ObjectiveCycle>()
+            .Property(oc => oc.StartDate)
+            .HasColumnName("STARTDATE")
+            .HasColumnType("DATE");
+
+        builder.Entity<ObjectiveCycle>()
+            .Property(oc => oc.EndDate)
+            .HasColumnName("ENDDATE")
+            .HasColumnType("DATE");
+
+        builder.Entity<ObjectiveCycle>()
+            .Property(oc => oc.CreatedAt)
+            .HasColumnName("CREATEDAT")
+            .HasColumnType("TIMESTAMP");
+
+        builder.Entity<ObjectiveCycle>()
+            .Property(oc => oc.UpdatedAt)
+            .HasColumnName("UPDATEDAT")
+            .HasColumnType("TIMESTAMP");
+
+        // Unique constraint on Year and Half
+        builder.Entity<ObjectiveCycle>()
+            .HasIndex(oc => new { oc.Year, oc.Half })
+            .IsUnique()
+            .HasDatabaseName("UQ_OBJECTIVECYCLE_YEAR_HALF");
+
+        // Objectives configuration
+        builder.Entity<Objective>()
+            .ToTable("OBJECTIVES")
+            .HasKey(o => o.ObjectiveId);
+
+        builder.Entity<Objective>()
+            .Property(o => o.ObjectiveId)
+            .HasColumnName("OBJECTIVEID")
+            .HasColumnType("NUMBER(19)")
+            .HasDefaultValueSql("SEQ_OBJECTIVE.NEXTVAL")
+            .ValueGeneratedOnAdd();
+
+        builder.Entity<Objective>()
+            .Property(o => o.ObjectiveCycleId)
+            .HasColumnName("OBJECTIVECYCLEID")
+            .HasColumnType("NUMBER(10)");
+
+        builder.Entity<Objective>()
+            .Property(o => o.EmployeeId)
+            .HasColumnName("EMPLOYEEID")
+            .HasColumnType("NUMBER(10)");
+
+        builder.Entity<Objective>()
+            .Property(o => o.MainGoalId)
+            .HasColumnName("MAIN_GOAL_ID")
+            .HasColumnType("NUMBER(10)");
+
+        builder.Entity<Objective>()
+            .Property(o => o.ObjectiveTitle)
+            .HasColumnName("OBJECTIVETITLE")
+            .HasColumnType("NVARCHAR2(500)");
+
+        builder.Entity<Objective>()
+            .Property(o => o.Classification)
+            .HasColumnName("CLASSIFICATION")
+            .HasColumnType("NVARCHAR2(200)");
+
+        builder.Entity<Objective>()
+            .Property(o => o.ResultDescription)
+            .HasColumnName("RESULTDESCRIPTION")
+            .HasColumnType("NCLOB");
+
+        builder.Entity<Objective>()
+            .Property(o => o.WeightScore)
+            .HasColumnName("WEIGHTSCORE")
+            .HasColumnType("NUMBER(8,2)");
+
+        builder.Entity<Objective>()
+            .Property(o => o.ThresholdExceeds)
+            .HasColumnName("THRESHOLDEXCEEDS")
+            .HasColumnType("NUMBER(8,2)");
+
+        builder.Entity<Objective>()
+            .Property(o => o.ThresholdMeets)
+            .HasColumnName("THRESHOLDMEETS")
+            .HasColumnType("NUMBER(8,2)");
+
+        builder.Entity<Objective>()
+            .Property(o => o.ThresholdBelow)
+            .HasColumnName("THRESHOLDBELOW")
+            .HasColumnType("NUMBER(8,2)");
+
+        builder.Entity<Objective>()
+            .Property(o => o.ActualScore)
+            .HasColumnName("ACTUALSCORE")
+            .HasColumnType("NUMBER(8,2)");
+
+        builder.Entity<Objective>()
+            .Property(o => o.HighLevelGoal)
+            .HasColumnName("HIGHLEVELGOAL")
+            .HasColumnType("NVARCHAR2(500)");
+
+        builder.Entity<Objective>()
+            .Property(o => o.Category)
+            .HasColumnName("CATEGORY")
+            .HasColumnType("NVARCHAR2(100)");
+
+        builder.Entity<Objective>()
+            .Property(o => o.CreatedAt)
+            .HasColumnName("CREATEDAT")
+            .HasColumnType("TIMESTAMP");
+
+        builder.Entity<Objective>()
+            .Property(o => o.UpdatedAt)
+            .HasColumnName("UPDATEDAT")
+            .HasColumnType("TIMESTAMP");
+
+        // Objective relationships
+        builder.Entity<Objective>()
+            .HasOne(o => o.ObjectiveCycle)
+            .WithMany(oc => oc.Objectives)
+            .HasForeignKey(o => o.ObjectiveCycleId)
+            .HasConstraintName("FK_OBJECTIVE_CYCLE");
+
+        // Objective indexes
+        builder.Entity<Objective>()
+            .HasIndex(o => new { o.EmployeeId, o.ObjectiveCycleId })
+            .HasDatabaseName("IX_OBJECTIVE_EMP_CYCLE");
+
+        builder.Entity<Objective>()
+            .HasIndex(o => o.ObjectiveCycleId)
+            .HasDatabaseName("IX_OBJECTIVE_CYCLE");
+
+        builder.Entity<Objective>()
+            .HasIndex(o => o.MainGoalId)
+            .HasDatabaseName("IX_OBJECTIVE_MAIN_GOAL");
+
+        // AiGeneratedMessages configuration
+        builder.Entity<AiGeneratedMessage>()
+            .ToTable("AIGENERATEDMESSAGES")
+            .HasKey(am => am.AiMessageId);
+
+        builder.Entity<AiGeneratedMessage>()
+            .Property(am => am.AiMessageId)
+            .HasColumnName("AIMESSAGEID")
+            .HasColumnType("NUMBER(19)")
+            .HasDefaultValueSql("SEQ_AIMESSAGE.NEXTVAL")
+            .ValueGeneratedOnAdd();
+
+        builder.Entity<AiGeneratedMessage>()
+            .Property(am => am.ObjectiveId)
+            .HasColumnName("OBJECTIVEID")
+            .HasColumnType("NUMBER(19)");
+
+        builder.Entity<AiGeneratedMessage>()
+            .Property(am => am.EmployeeId)
+            .HasColumnName("EMPLOYEEID")
+            .HasColumnType("NUMBER(10)");
+
+        builder.Entity<AiGeneratedMessage>()
+            .Property(am => am.ObjectiveCycleId)
+            .HasColumnName("OBJECTIVECYCLEID")
+            .HasColumnType("NUMBER(10)");
+
+        builder.Entity<AiGeneratedMessage>()
+            .Property(am => am.MessageBody)
+            .HasColumnName("MESSAGEBODY")
+            .HasColumnType("NCLOB");
+
+        builder.Entity<AiGeneratedMessage>()
+            .Property(am => am.AdviceBody)
+            .HasColumnName("ADVICEBODY")
+            .HasColumnType("NCLOB");
+
+        builder.Entity<AiGeneratedMessage>()
+            .Property(am => am.StyleTag)
+            .HasColumnName("STYLETAG")
+            .HasColumnType("NVARCHAR2(50)");
+
+        builder.Entity<AiGeneratedMessage>()
+            .Property(am => am.ModelName)
+            .HasColumnName("MODELNAME")
+            .HasColumnType("NVARCHAR2(50)");
+
+        builder.Entity<AiGeneratedMessage>()
+            .Property(am => am.GeneratedAt)
+            .HasColumnName("GENERATEDAT")
+            .HasColumnType("TIMESTAMP");
+
+        builder.Entity<AiGeneratedMessage>()
+            .Property(am => am.IsActive)
+            .HasColumnName("ISACTIVE")
+            .HasColumnType("NUMBER(1)");
+
+        // AiGeneratedMessage relationships
+        builder.Entity<AiGeneratedMessage>()
+            .HasOne(am => am.Objective)
+            .WithMany(o => o.AiGeneratedMessages)
+            .HasForeignKey(am => am.ObjectiveId)
+            .HasConstraintName("FK_AIMESSAGE_OBJECTIVE")
+            .OnDelete(DeleteBehavior.Cascade);
+
+        // AiGeneratedMessage indexes
+        builder.Entity<AiGeneratedMessage>()
+            .HasIndex(am => new { am.EmployeeId, am.ObjectiveCycleId, am.IsActive })
+            .HasDatabaseName("IX_AIMSG_EMP_CYCLE_ACTIVE");
+
+        builder.Entity<AiGeneratedMessage>()
+            .HasIndex(am => new { am.ObjectiveId, am.IsActive })
+            .HasDatabaseName("IX_AIMSG_OBJ_ACTIVE");
     }
 }

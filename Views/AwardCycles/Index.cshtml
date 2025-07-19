@@ -10,7 +10,7 @@
         @{
             var hasActiveCycle = Model.Any(c => c.Status == CycleStatus.Nomination || c.Status == CycleStatus.Evaluating);
         }
-        @if ((User.IsInRole("EOM-Admin") || User.IsInRole("EOM-Committee")) && !hasActiveCycle)
+        @if ((User.IsInRole("EOM-Admin") || User.IsInRole("EOM-Committee-Lead")) && !hasActiveCycle)
         {
             <a href="@Url.Action("Create")" class="btn-modern btn-primary-modern">
                 <i class="fas fa-plus me-2"></i>دورة جديدة
@@ -86,7 +86,7 @@
                                     </td>
                                     <td>
                                         <div class="d-flex flex-wrap gap-2">
-                                            @if (User.IsInRole("EOM-Committee") || User.IsInRole("EOM-Admin"))
+                                            @if (User.IsInRole("EOM-Committee") || User.IsInRole("EOM-Admin") || User.IsInRole("EOM-Committee-Lead"))
                                             {
                                                 @if (cycle.Status == CycleStatus.Pending)
                                                 {
@@ -136,7 +136,7 @@
                                                     // Check if cycle has a winner
                                                     var hasWinner = cycle.Nominations?.Any(n => n.IsWinner) ?? false;
                                                     
-                                                    if (!hasWinner && User.IsInRole("EOM-Admin"))
+                                                    if (!hasWinner && (User.IsInRole("EOM-Admin") || User.IsInRole("EOM-Committee-Lead")))
                                                     {
                                                         <form method="post" asp-action="ReopenForEvaluation" asp-route-id="@cycle.CycleId" style="display: inline;">
                                                             <button type="submit" class="btn-modern btn-warning-modern btn-sm-modern" title="إعادة فتح للتقييم واختيار الفائز">
@@ -155,7 +155,7 @@
                                                 <i class="fas fa-eye me-1"></i>تفاصيل
                                             </a>
                                             
-                                            @if (User.IsInRole("EOM-Admin"))
+                                            @if (User.IsInRole("EOM-Admin") || User.IsInRole("EOM-Committee-Lead"))
                                             {
                                                 <a href="@Url.Action("Edit", new { id = cycle.CycleId })" class="btn-modern btn-primary-modern btn-sm-modern">
                                                     <i class="fas fa-edit me-1"></i>تعديل

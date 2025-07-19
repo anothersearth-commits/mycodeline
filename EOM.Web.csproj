@@ -14,6 +14,7 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
+    <PackageReference Include="OpenAI" Version="2.1.0" />
     <PackageReference Include="Oracle.EntityFrameworkCore" Version="8.21.180" />
     <PackageReference Include="System.DirectoryServices" Version="8.0.0" />
   </ItemGroup>

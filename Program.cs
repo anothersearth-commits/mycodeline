@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using EOM.Web.Data;
+using EOM.Web.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -22,6 +23,10 @@ builder.Services.AddAuthentication("Cookies")
     });
 
 builder.Services.AddAuthorization();
+
+// Register AI services
+builder.Services.AddScoped<IOpenAiService, OpenAiService>();
+builder.Services.AddScoped<IAiMessageService, AiMessageService>();
 
 builder.Services.AddControllersWithViews();
 

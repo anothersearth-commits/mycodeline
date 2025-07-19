@@ -1,0 +1,312 @@
+@{
+    ViewData["Title"] = "الصفحة الرئيسية";
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="welcome-header">
+                <h1>مرحباً بك في نظام موظف الشهر</h1>
+                <p class="lead">منصة شاملة لإدارة الترشيحات والتقييمات والجوائز</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- AI Message Widget - Full width on mobile, half width on desktop -->
+        <div class="col-12 col-lg-6">
+            @await Html.PartialAsync("_AiMessageWidget")
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="col-12 col-lg-6">
+            <div class="quick-actions-card">
+                <h4>الإجراءات السريعة</h4>
+                <div class="actions-grid">
+                    @if (User.IsInRole("Manager") || User.IsInRole("EOM-Admin"))
+                    {
+                        <a href="@Url.Action("Cycles", "Nominations")" class="action-item">
+                            <i class="fas fa-plus-circle"></i>
+                            <span>ترشيح جديد</span>
+                        </a>
+                    }
+                    
+                    @if (User.IsInRole("EOM-Committee") || User.IsInRole("EOM-Admin"))
+                    {
+                        <a href="@Url.Action("Index", "Evaluations")" class="action-item">
+                            <i class="fas fa-star"></i>
+                            <span>تقييم المرشحين</span>
+                        </a>
+                    }
+                    
+                    <a href="@Url.Action("Index", "AwardCycles")" class="action-item">
+                        <i class="fas fa-trophy"></i>
+                        <span>الدورات والجوائز</span>
+                    </a>
+                    
+                    <a href="/AiObjectives/MyMessages" class="action-item">
+                        <i class="fas fa-robot"></i>
+                        <span>رسائلي الذكية</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-4">
+        <!-- Statistics Cards -->
+        <div class="col-12 col-md-6 col-lg-3">
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-users"></i>
+                </div>
+                <div class="stat-content">
+                    <h3 id="total-nominations">-</h3>
+                    <p>إجمالي الترشيحات</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-md-6 col-lg-3">
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <div class="stat-content">
+                    <h3 id="evaluated-nominations">-</h3>
+                    <p>المُقيّمة</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-md-6 col-lg-3">
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-trophy"></i>
+                </div>
+                <div class="stat-content">
+                    <h3 id="winners-count">-</h3>
+                    <p>الفائزون</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-md-6 col-lg-3">
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-robot"></i>
+                </div>
+                <div class="stat-content">
+                    <h3 id="ai-messages-count">-</h3>
+                    <p>الرسائل الذكية</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @if (User.IsInRole("EOM-Admin"))
+    {
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="admin-panel">
+                    <h4>لوحة الإدارة</h4>
+                    <div class="admin-actions">
+                        <a href="@Url.Action("Index", "AwardTypes")" class="btn btn-primary">
+                            <i class="fas fa-cog"></i> إدارة أنواع الجوائز
+                        </a>
+                        <a href="@Url.Action("Index", "CommitteeMembers")" class="btn btn-info">
+                            <i class="fas fa-users-cog"></i> إدارة أعضاء اللجنة
+                        </a>
+                        <a href="/AiObjectives/Statistics" class="btn btn-success">
+                            <i class="fas fa-chart-bar"></i> إحصائيات الذكاء الاصطناعي
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+<style>
+    .welcome-header {
+        text-align: center;
+        margin-bottom: 2rem;
+        padding: 2rem 0;
+        background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+        border-radius: 16px;
+        margin-bottom: 2rem;
+    }
+
+    .welcome-header h1 {
+        color: #2c3e50;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+    }
+
+    .welcome-header .lead {
+        color: #6c757d;
+        margin-bottom: 0;
+    }
+
+    .quick-actions-card {
+        background: white;
+        border-radius: 16px;
+        padding: 2rem;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        height: 100%;
+    }
+
+    .quick-actions-card h4 {
+        color: #2c3e50;
+        margin-bottom: 1.5rem;
+        font-weight: 700;
+    }
+
+    .actions-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 1rem;
+    }
+
+    .action-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 1.5rem;
+        background: #f8f9fa;
+        border-radius: 12px;
+        text-decoration: none;
+        color: #495057;
+        transition: all 0.3s ease;
+        border: 1px solid #dee2e6;
+    }
+
+    .action-item:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(0,0,0,0.1);
+        color: #0d6efd;
+        text-decoration: none;
+    }
+
+    .action-item i {
+        font-size: 2rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .action-item span {
+        font-size: 0.9rem;
+        font-weight: 600;
+        text-align: center;
+    }
+
+    .stat-card {
+        background: white;
+        border-radius: 16px;
+        padding: 1.5rem;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        margin-bottom: 1rem;
+        display: flex;
+        align-items: center;
+        transition: transform 0.3s ease;
+    }
+
+    .stat-card:hover {
+        transform: translateY(-2px);
+    }
+
+    .stat-icon {
+        font-size: 2.5rem;
+        color: #0d6efd;
+        margin-left: 1rem;
+    }
+
+    .stat-content h3 {
+        font-size: 2rem;
+        font-weight: 700;
+        color: #2c3e50;
+        margin-bottom: 0.25rem;
+    }
+
+    .stat-content p {
+        color: #6c757d;
+        margin-bottom: 0;
+        font-size: 0.9rem;
+    }
+
+    .admin-panel {
+        background: white;
+        border-radius: 16px;
+        padding: 2rem;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    }
+
+    .admin-panel h4 {
+        color: #2c3e50;
+        margin-bottom: 1.5rem;
+        font-weight: 700;
+    }
+
+    .admin-actions {
+        display: flex;
+        gap: 1rem;
+        flex-wrap: wrap;
+    }
+
+    .admin-actions .btn {
+        flex: 1;
+        min-width: 200px;
+        padding: 0.75rem 1.5rem;
+        border-radius: 8px;
+        font-weight: 600;
+    }
+
+    @@media (max-width: 768px) {
+        .actions-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+        
+        .admin-actions {
+            flex-direction: column;
+        }
+        
+        .admin-actions .btn {
+            min-width: auto;
+        }
+    }
+</style>
+
+<script>
+$(document).ready(function() {
+    // Load statistics
+    loadDashboardStatistics();
+});
+
+function loadDashboardStatistics() {
+    // Load general statistics
+    $.ajax({
+        url: '/api/Dashboard/statistics',
+        type: 'GET',
+        success: function(data) {
+            $('#total-nominations').text(data.totalNominations || 0);
+            $('#evaluated-nominations').text(data.evaluatedNominations || 0);
+            $('#winners-count').text(data.winnersCount || 0);
+        },
+        error: function() {
+            console.log('Could not load general statistics');
+        }
+    });
+
+    // Load AI statistics
+    $.ajax({
+        url: '/api/AiObjectives/statistics',
+        type: 'GET',
+        success: function(data) {
+            $('#ai-messages-count').text(data.generatedMessages || 0);
+        },
+        error: function() {
+            console.log('Could not load AI statistics');
+            $('#ai-messages-count').text('0');
+        }
+    });
+}
+</script>

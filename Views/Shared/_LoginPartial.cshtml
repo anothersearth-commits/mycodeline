@@ -5,7 +5,7 @@
         @{
             // Calculate role data directly in the partial view
             bool isManager = User.IsInRole("Manager");
-            bool isCommittee = User.IsInRole("EOM-Committee");
+            bool isCommittee = User.IsInRole("EOM-Committee") || User.IsInRole("EOM-Committee-Lead");
             bool isDualRole = isManager && isCommittee;
             
             string? activeRoleParam = Context.Request.Query["activeRole"].FirstOrDefault();
@@ -47,7 +47,7 @@
             else if (User.IsInRole("Manager")) { 
                 roleLabel = "مدير"; 
             }
-            else if (User.IsInRole("EOM-Committee")) { 
+            else if (User.IsInRole("EOM-Committee") || User.IsInRole("EOM-Committee-Lead")) { 
                 roleLabel = "عضو لجنة"; 
             }
         }

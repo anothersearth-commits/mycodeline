@@ -25,7 +25,9 @@
       "Bash(cmd /c:*)",
       "Bash(dotnet run:*)",
       "Bash(git add:*)",
-      "Bash(dotnet publish --configuration Release --output \"C:\\Publish\\EOM\")"
+      "Bash(dotnet publish --configuration Release --output \"C:\\Publish\\EOM\")",
+      "Bash(tail:*)",
+      "Bash(find:*)"
     ],
     "deny": []
   }

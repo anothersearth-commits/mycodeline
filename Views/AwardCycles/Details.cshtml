@@ -116,7 +116,7 @@
                 </div>
             </div>
 
-            @if (User.IsInRole("EOM-Committee") || User.IsInRole("EOM-Admin"))
+            @if (User.IsInRole("EOM-Committee") || User.IsInRole("EOM-Admin") || User.IsInRole("EOM-Committee-Lead"))
             {
                 <div class="card mt-4">
                     <div class="card-header">

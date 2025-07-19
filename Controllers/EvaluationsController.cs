@@ -6,7 +6,7 @@ using EOM.Web.Models;
 
 namespace EOM.Web.Controllers;
 
-[Authorize]
+[Authorize(Roles = "EOM-Committee,EOM-Committee-Lead")]
 public class EvaluationsController : BaseController
 {
     private readonly ApplicationDbContext _context;
@@ -323,7 +323,7 @@ public class EvaluationsController : BaseController
     }
 
     // GET: Evaluations/LatestCycle
-    [Authorize(Roles = "EOM-Committee")]
+    [Authorize(Roles = "EOM-Committee,EOM-Committee-Lead")]
     public async Task<IActionResult> LatestCycle()
     {
         // Get the latest cycle (most recent by year/month)

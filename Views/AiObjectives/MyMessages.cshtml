@@ -1,0 +1,487 @@
+@{
+    ViewData["Title"] = "رسائلي الذكية";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<style>
+    .messages-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 16px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        text-align: center;
+    }
+
+    .messages-header h1 {
+        font-size: 2.5rem;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+    }
+
+    .messages-header p {
+        opacity: 0.9;
+        font-size: 1.1rem;
+    }
+
+    .messages-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .message-card {
+        background: white;
+        border-radius: 16px;
+        padding: 1.5rem;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        border: 1px solid #dee2e6;
+        transition: all 0.3s ease;
+        position: relative;
+    }
+
+    .message-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+    }
+
+    .message-header {
+        display: flex;
+        align-items: center;
+        margin-bottom: 1rem;
+        padding-bottom: 1rem;
+        border-bottom: 1px solid #dee2e6;
+    }
+
+    .message-icon {
+        font-size: 1.5rem;
+        margin-left: 0.75rem;
+        color: #667eea;
+    }
+
+    .message-meta {
+        flex: 1;
+    }
+
+    .message-time {
+        font-size: 0.8rem;
+        color: #6c757d;
+        margin-bottom: 0.25rem;
+    }
+
+    .message-objective {
+        font-size: 0.9rem;
+        color: #495057;
+        font-weight: 600;
+        margin-bottom: 0.25rem;
+    }
+
+    .message-goal {
+        font-size: 0.75rem;
+        color: #6c757d;
+        background: #f8f9fa;
+        padding: 0.25rem 0.5rem;
+        border-radius: 12px;
+        display: inline-block;
+    }
+
+    .message-body {
+        margin-bottom: 1rem;
+        text-align: right;
+        direction: rtl;
+    }
+
+    .message-text {
+        font-size: 1.1rem;
+        line-height: 1.6;
+        color: #2c3e50;
+        margin-bottom: 1rem;
+        padding: 1rem;
+        background: #f8f9fa;
+        border-radius: 8px;
+        border-right: 4px solid #667eea;
+    }
+
+    .advice-text {
+        font-size: 1rem;
+        line-height: 1.5;
+        color: #495057;
+        padding: 1rem;
+        background: #e3f2fd;
+        border-radius: 8px;
+        border-right: 4px solid #2196f3;
+    }
+
+    .advice-text::before {
+        content: "💡 ";
+        font-size: 1.2rem;
+        margin-left: 0.5rem;
+    }
+
+    .message-actions {
+        display: flex;
+        gap: 0.5rem;
+        justify-content: flex-end;
+    }
+
+    .btn-message-action {
+        background: #f8f9fa;
+        border: 1px solid #dee2e6;
+        color: #495057;
+        padding: 0.5rem 1rem;
+        border-radius: 8px;
+        font-size: 0.8rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .btn-message-action:hover {
+        background: #e9ecef;
+        transform: translateY(-1px);
+    }
+
+    .btn-message-action.btn-primary {
+        background: #0d6efd;
+        border-color: #0d6efd;
+        color: white;
+    }
+
+    .btn-message-action.btn-primary:hover {
+        background: #0b5ed7;
+        border-color: #0a58ca;
+    }
+
+    .messages-loading {
+        text-align: center;
+        padding: 3rem;
+        color: #6c757d;
+    }
+
+    .messages-loading .spinner {
+        display: inline-block;
+        width: 40px;
+        height: 40px;
+        border: 3px solid #f3f3f3;
+        border-radius: 50%;
+        border-top-color: #667eea;
+        animation: spin 1s ease-in-out infinite;
+        margin-bottom: 1rem;
+    }
+
+    @@keyframes spin {
+        to { transform: rotate(360deg); }
+    }
+
+    .empty-messages {
+        text-align: center;
+        padding: 3rem;
+        color: #6c757d;
+    }
+
+    .empty-messages i {
+        font-size: 4rem;
+        margin-bottom: 1rem;
+        opacity: 0.3;
+    }
+
+    .filters-bar {
+        background: white;
+        border-radius: 16px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    }
+
+    .filters-bar h4 {
+        margin-bottom: 1rem;
+        color: #2c3e50;
+    }
+
+    .filters-row {
+        display: flex;
+        gap: 1rem;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+
+    .filter-group {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .filter-group select,
+    .filter-group input {
+        padding: 0.5rem;
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        font-size: 0.9rem;
+    }
+
+    @@media (max-width: 768px) {
+        .messages-grid {
+            grid-template-columns: 1fr;
+        }
+        
+        .filters-row {
+            flex-direction: column;
+            align-items: stretch;
+        }
+        
+        .filter-group {
+            justify-content: space-between;
+        }
+    }
+</style>
+
+<div class="messages-header">
+    <h1>🤖 رسائلي الذكية</h1>
+    <p>جميع الرسائل التحفيزية المُولّدة بالذكاء الاصطناعي لأهدافك</p>
+</div>
+
+<div class="filters-bar">
+    <h4>تصفية الرسائل</h4>
+    <div class="filters-row">
+        <div class="filter-group">
+            <label>الهدف الرئيسي:</label>
+            <select id="mainGoalFilter">
+                <option value="">جميع الأهداف</option>
+            </select>
+        </div>
+        <div class="filter-group">
+            <label>نوع الرسالة:</label>
+            <select id="styleFilter">
+                <option value="">جميع الأنواع</option>
+                <option value="Formal">رسمي</option>
+                <option value="Inspirational">تحفيزي</option>
+                <option value="Encouraging">مشجع</option>
+            </select>
+        </div>
+        <div class="filter-group">
+            <label>من تاريخ:</label>
+            <input type="date" id="dateFromFilter">
+        </div>
+        <div class="filter-group">
+            <label>إلى تاريخ:</label>
+            <input type="date" id="dateToFilter">
+        </div>
+        <div class="filter-group">
+            <button onclick="applyFilters()" class="btn btn-primary">تطبيق</button>
+            <button onclick="clearFilters()" class="btn btn-secondary">مسح</button>
+        </div>
+    </div>
+</div>
+
+<div id="messages-loading" class="messages-loading">
+    <div class="spinner"></div>
+    <p>جاري تحميل رسائلك الذكية...</p>
+</div>
+
+<div id="empty-messages" class="empty-messages" style="display: none;">
+    <i class="fas fa-robot"></i>
+    <h3>لا توجد رسائل ذكية بعد</h3>
+    <p>عد إلى الصفحة الرئيسية لتوليد رسالة ذكية جديدة</p>
+    <a href="/" class="btn btn-primary mt-3">
+        <i class="fas fa-home"></i> العودة للصفحة الرئيسية
+    </a>
+</div>
+
+<div id="messages-container" class="messages-grid" style="display: none;">
+    <!-- Messages will be loaded here -->
+</div>
+
+<div class="text-center mt-4">
+    <a href="/" class="btn btn-outline-primary">
+        <i class="fas fa-home"></i> العودة للصفحة الرئيسية
+    </a>
+    <button onclick="generateNewMessage()" class="btn btn-success">
+        <i class="fas fa-plus"></i> توليد رسالة جديدة
+    </button>
+</div>
+
+<script>
+let allMessages = [];
+let filteredMessages = [];
+
+$(document).ready(function() {
+    loadAllMessages();
+});
+
+function loadAllMessages() {
+    $('#messages-loading').show();
+    $('#empty-messages').hide();
+    $('#messages-container').hide();
+
+    $.ajax({
+        url: '/api/AiObjectives/my-messages',
+        type: 'GET',
+        success: function(data) {
+            allMessages = data;
+            filteredMessages = data;
+            
+            if (data.length === 0) {
+                $('#messages-loading').hide();
+                $('#empty-messages').show();
+            } else {
+                populateFilters();
+                displayMessages(data);
+                $('#messages-loading').hide();
+                $('#messages-container').show();
+            }
+        },
+        error: function(xhr, status, error) {
+            console.error('Error loading messages:', error);
+            $('#messages-loading').hide();
+            $('#empty-messages').show();
+        }
+    });
+}
+
+function displayMessages(messages) {
+    const container = $('#messages-container');
+    container.empty();
+
+    messages.forEach(function(message) {
+        const messageCard = createMessageCard(message);
+        container.append(messageCard);
+    });
+}
+
+function createMessageCard(message) {
+    const timeAgo = getTimeAgo(new Date(message.generated));
+    
+    return `
+        <div class="message-card">
+            <div class="message-header">
+                <div class="message-icon">🤖</div>
+                <div class="message-meta">
+                    <div class="message-time">${timeAgo}</div>
+                    <div class="message-objective">${message.objectiveTitle}</div>
+                    ${message.mainGoal ? `<div class="message-goal">${message.mainGoal}</div>` : ''}
+                </div>
+            </div>
+            
+            <div class="message-body">
+                <div class="message-text">${message.message}</div>
+                <div class="advice-text">${message.advice}</div>
+            </div>
+            
+            <div class="message-actions">
+                <button onclick="shareMessage(${message.id})" class="btn-message-action">
+                    <i class="fas fa-share"></i> مشاركة
+                </button>
+                <button onclick="regenerateMessage(${message.id})" class="btn-message-action btn-primary">
+                    <i class="fas fa-sync-alt"></i> إعادة توليد
+                </button>
+            </div>
+        </div>
+    `;
+}
+
+function populateFilters() {
+    const mainGoals = [...new Set(allMessages.map(m => m.mainGoal).filter(Boolean))];
+    const mainGoalFilter = $('#mainGoalFilter');
+    
+    mainGoalFilter.empty().append('<option value="">جميع الأهداف</option>');
+    mainGoals.forEach(goal => {
+        mainGoalFilter.append(`<option value="${goal}">${goal}</option>`);
+    });
+}
+
+function applyFilters() {
+    const mainGoalFilter = $('#mainGoalFilter').val();
+    const styleFilter = $('#styleFilter').val();
+    const dateFromFilter = $('#dateFromFilter').val();
+    const dateToFilter = $('#dateToFilter').val();
+
+    filteredMessages = allMessages.filter(message => {
+        let match = true;
+
+        if (mainGoalFilter && message.mainGoal !== mainGoalFilter) {
+            match = false;
+        }
+
+        if (styleFilter && message.style !== styleFilter) {
+            match = false;
+        }
+
+        if (dateFromFilter) {
+            const messageDate = new Date(message.generated);
+            const fromDate = new Date(dateFromFilter);
+            if (messageDate < fromDate) {
+                match = false;
+            }
+        }
+
+        if (dateToFilter) {
+            const messageDate = new Date(message.generated);
+            const toDate = new Date(dateToFilter);
+            if (messageDate > toDate) {
+                match = false;
+            }
+        }
+
+        return match;
+    });
+
+    displayMessages(filteredMessages);
+}
+
+function clearFilters() {
+    $('#mainGoalFilter').val('');
+    $('#styleFilter').val('');
+    $('#dateFromFilter').val('');
+    $('#dateToFilter').val('');
+    
+    filteredMessages = allMessages;
+    displayMessages(filteredMessages);
+}
+
+function regenerateMessage(messageId) {
+    // This would need the objective ID, which we'd need to include in the data
+    console.log('Regenerating message:', messageId);
+    // Implementation would go here
+}
+
+function shareMessage(messageId) {
+    const message = allMessages.find(m => m.id === messageId);
+    if (message) {
+        const shareText = `${message.message}\n\n${message.advice}`;
+        
+        if (navigator.share) {
+            navigator.share({
+                title: 'رسالة تحفيزية ذكية',
+                text: shareText
+            });
+        } else {
+            // Fallback: copy to clipboard
+            navigator.clipboard.writeText(shareText).then(() => {
+                alert('تم نسخ الرسالة إلى الحافظة');
+            });
+        }
+    }
+}
+
+function generateNewMessage() {
+    window.location.href = '/';
+}
+
+function getTimeAgo(date) {
+    const now = new Date();
+    const diffInSeconds = Math.floor((now - date) / 1000);
+    
+    if (diffInSeconds < 60) {
+        return 'الآن';
+    } else if (diffInSeconds < 3600) {
+        const minutes = Math.floor(diffInSeconds / 60);
+        return `منذ ${minutes} دقيقة`;
+    } else if (diffInSeconds < 86400) {
+        const hours = Math.floor(diffInSeconds / 3600);
+        return `منذ ${hours} ساعة`;
+    } else {
+        const days = Math.floor(diffInSeconds / 86400);
+        return `منذ ${days} يوم`;
+    }
+}
+</script>

@@ -1,0 +1,427 @@
+@model EOM.Web.Models.Evaluation
+@using System.Text.Json
+@{
+    ViewData["Title"] = "تعديل تقييم المرشح";
+    var idx = 0;
+}
+
+<h2 class="mb-4 text-center">تعديل تقييم المرشح</h2>
+
+<style>
+    .total-score-card{position:sticky;top:1rem;z-index:1020;background-color:#fff;box-shadow:0 0.5rem 1rem rgba(0,0,0,.1);} 
+    
+    .criterion-total {
+        transition: all 0.3s ease;
+    }
+    
+    .criterion-total.updated {
+        animation: scoreUpdate 0.5s ease;
+    }
+    
+    @@keyframes scoreUpdate {
+        0% {
+            transform: scale(1);
+            color: #007bff;
+        }
+        50% {
+            transform: scale(1.2);
+            color: #28a745;
+        }
+        100% {
+            transform: scale(1);
+            color: #007bff;
+        }
+    }
+    
+    .total-value {
+        font-weight: bold;
+        color: #007bff;
+    }
+    
+    .max-value {
+        color: #6c757d;
+    }
+    
+    /* Hide validation summary when empty */
+    .validation-summary-valid {
+        display: none !important;
+    }
+    
+    /* Submit button enhancements */
+    #submitBtn {
+        overflow: hidden;
+        transition: all 0.3s ease;
+    }
+    
+    #submitBtn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(40, 167, 69, 0.4);
+    }
+    
+    #submitBtnScore {
+        transition: all 0.3s ease;
+        font-weight: bold;
+    }
+    
+    /* Maximum score celebration effects */
+    .max-score-celebration {
+        animation: celebrate 1s ease-in-out;
+        background: linear-gradient(45deg, #ffd700, #ffeb3b, #fff59d, #ffd700) !important;
+        border-color: #ffc107 !important;
+        color: #1a1a1a !important;
+        box-shadow: 0 0 25px rgba(255, 193, 7, 0.8), 0 0 50px rgba(255, 235, 59, 0.4) !important;
+    }
+    
+    .max-score-row {
+        animation: perfectScore 0.8s ease-in-out;
+        background: linear-gradient(90deg, rgba(255, 215, 0, 0.15), rgba(255, 235, 59, 0.25), rgba(255, 245, 157, 0.15));
+        border-left: 5px solid #ffc107;
+        box-shadow: 0 2px 10px rgba(255, 193, 7, 0.3);
+    }
+    
+    .low-score-row {
+        animation: lowScore 0.8s ease-in-out;
+        background: linear-gradient(90deg, rgba(244, 67, 54, 0.15), rgba(255, 87, 34, 0.25), rgba(255, 152, 0, 0.15));
+        border-left: 5px solid #f44336;
+        box-shadow: 0 2px 10px rgba(244, 67, 54, 0.3);
+    }
+    
+    @@keyframes celebrate {
+        0%, 100% { transform: scale(1); }
+        25% { transform: scale(1.05) rotate(1deg); }
+        50% { transform: scale(1.1) rotate(-1deg); }
+        75% { transform: scale(1.05) rotate(1deg); }
+    }
+    
+    @@keyframes perfectScore {
+        0% { transform: scale(1); background-position: 0% 50%; }
+        50% { transform: scale(1.02); background-position: 100% 50%; }
+        100% { transform: scale(1); background-position: 0% 50%; }
+    }
+    
+    @@keyframes lowScore {
+        0% { transform: scale(1); background-position: 0% 50%; }
+        50% { transform: scale(1.01); background-position: 100% 50%; }
+        100% { transform: scale(1); background-position: 0% 50%; }
+    }
+</style>
+
+<!-- Info + total card -->
+<div class="card mb-4">
+    <div class="card-body row align-items-center">
+        <div class="col-md-8">
+            <h4 class="mb-1">@Model.Nomination?.Employee?.FirstName @Model.Nomination?.Employee?.LastName</h4>
+            <p class="mb-1 text-muted">@Model.Nomination?.Employee?.JobTitle</p>
+            <small class="text-muted">نوع الجائزة: @Model.Nomination?.AwardCycle?.AwardType?.Name | دورة @Model.Nomination?.AwardCycle?.Month/@Model.Nomination?.AwardCycle?.Year</small>
+        </div>
+        <div class="col-md-4 text-md-end mt-3 mt-md-0">
+            <span class="text-muted">إجمالي الدرجة</span>
+            <div id="totalScore" style="font-size:2rem;font-weight:700;color:#2563eb">0 / 100</div>
+        </div>
+    </div>
+</div>
+
+<h4 class="mb-2 text-primary">مراجعة تقييم المدير والمرفق</h4>
+<!-- Manager's evaluation and file for committee review (collapsible, collapsed by default) -->
+<div class="card mb-4">
+    <div class="card-header bg-info text-dark d-flex justify-content-between align-items-center manager-header-hover" style="cursor:pointer" data-bs-toggle="collapse" data-bs-target="#managerEvalCollapse" aria-expanded="false" aria-controls="managerEvalCollapse" title="انقر هنا لعرض تقييم المدير والمرفق">
+        <span class="fw-bold">
+            <i class="fas fa-chevron-down me-2 chevron-indicator" style="font-size:1.3em; vertical-align:middle;"></i>
+            تقييم المدير <span class="small">(انقر هنا لعرض التفاصيل والمرفق)</span>
+        </span>
+    </div>
+    <style>
+        .chevron-indicator {
+            transition: transform 0.3s;
+            display: inline-block;
+        }
+        .card-header[aria-expanded="true"] .chevron-indicator {
+            transform: rotate(180deg);
+        }
+        .manager-header-hover {
+            background: #e3f0fa !important;
+            color: #0b3557 !important;
+        }
+        .manager-header-hover:hover {
+            background: #b6e0fe !important;
+            color: #0b3557 !important;
+            filter: brightness(1.08);
+            box-shadow: 0 2px 8px rgba(13,110,253,0.10);
+        }
+    </style>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            var header = document.querySelector('[data-bs-target="#managerEvalCollapse"]');
+            var chevron = header.querySelector('.chevron-indicator');
+            var collapse = document.getElementById('managerEvalCollapse');
+            collapse.addEventListener('show.bs.collapse', function () {
+                chevron.classList.add('rotate');
+            });
+            collapse.addEventListener('hide.bs.collapse', function () {
+                chevron.classList.remove('rotate');
+            });
+        });
+    </script>
+    <div class="collapse" id="managerEvalCollapse">
+        <div class="card-body">
+            @if (User.IsInRole("EOM-Admin"))
+            {
+                if (Model.Nomination?.ManagerScores != null && Model.Nomination.ManagerScores.Any())
+                {
+                    <table class="table table-bordered">
+                        <thead>
+                            <tr>
+                                <th>المعيار الفرعي</th>
+                                <th>الدرجة</th>
+                                <th>ملاحظة</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var ms in Model.Nomination.ManagerScores)
+                            {
+                                <tr>
+                                    <td>@ms.SubCriteria?.Name</td>
+                                    <td>@ms.Score</td>
+                                    <td>@ms.Note</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+                else
+                {
+                    <div class="alert alert-warning">لا يوجد تقييم مدير بعد.</div>
+                }
+            }
+            else
+            {
+                <div class="alert alert-info">ملاحظات المدير ستظهر بجانب كل معيار فرعي في نموذج التقييم.</div>
+            }
+            <hr />
+            <div>
+                <b>مرفق المدير:</b>
+                @if (!string.IsNullOrEmpty(Model.Nomination?.SupportingDocPath))
+                {
+                    <a href="@Url.Content("~" + Model.Nomination.SupportingDocPath)" target="_blank" class="btn btn-outline-primary">
+                        <i class="fas fa-file-pdf"></i> عرض الملف المرفق
+                    </a>
+                }
+                else
+                {
+                    <span class="text-muted">لا يوجد ملف مرفق من المدير.</span>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<form asp-action="Edit" method="post">
+    <input type="hidden" asp-for="EvaluationId" />
+    <input type="hidden" asp-for="NominationId" />
+    <input type="hidden" asp-for="CommitteeMemberId" />
+    <input type="hidden" asp-for="CreatedAt" />
+    <div asp-validation-summary="All" class="alert alert-danger" style="display: none;"></div>
+
+    @foreach (var criterion in Model.Nomination.AwardCycle.AwardType.Criteria.OrderBy(c=>c.CriterionId))
+    {
+        <div class="card mb-4" data-criterion-weight="@criterion.WeightPercent">
+            <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                <strong>@criterion.Name</strong>
+                <span class="badge bg-info text-dark">الوزن: @criterion.WeightPercent%</span>
+            </div>
+            <div class="card-body p-0">
+                <table class="table mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>المعيار الفرعي</th>
+                            <th style="width:180px">
+                                الدرجة
+                                <span class="criterion-total ms-2" data-criterion-id="@criterion.CriterionId" style="color: #007bff; font-weight: bold;">
+                                    (<span class="total-value">0</span>/<span class="max-value">0</span>)
+                                </span>
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    @foreach (var sub in criterion.SubCriteria.OrderBy(sc=>sc.SubCriteriaCode))
+                    {
+                        var es = Model.EvaluationScores.FirstOrDefault(s=>s.SubCriteriaId==sub.SubCriteriaId) ?? new EOM.Web.Models.EvaluationScore{SubCriteriaId=sub.SubCriteriaId};
+                        var managerScore = Model.Nomination?.ManagerScores?.FirstOrDefault(ms => ms.SubCriteriaId == sub.SubCriteriaId);
+                        <tr>
+                            <td>@sub.SubCriteriaCode - @sub.Name
+                                @if (!User.IsInRole("EOM-Admin") && !string.IsNullOrWhiteSpace(managerScore?.Note))
+                                {
+                                    <div class="manager-note small text-info mt-1"><i class="fas fa-sticky-note"></i> <b>ملاحظة المدير:</b> @managerScore.Note</div>
+                                }
+                            </td>
+                            <td>
+                                <input type="hidden" name="EvaluationScores[@idx].SubCriteriaId" value="@sub.SubCriteriaId" />
+                                <input type="hidden" name="EvaluationScores[@idx].EvaluationId" value="@Model.EvaluationId" />
+                                <select class="form-select text-center score-input" name="EvaluationScores[@idx].Score" required>
+                                    <option value="">اختر الدرجة</option>
+                                    @for (int i = 0; i <= sub.MaxScore; i++)
+                                    {
+                                        if (es.Score == i)
+                                        {
+                                            <option value="@i" selected>@i</option>
+                                        }
+                                        else
+                                        {
+                                            <option value="@i">@i</option>
+                                        }
+                                    }
+                                </select>
+                            </td>
+                        </tr>
+                        idx++;
+                    }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
+
+    <div class="d-grid mt-4">
+        <button type="submit" class="btn btn-success btn-lg position-relative" id="submitBtn">
+            <span id="submitBtnText">حفظ التعديل</span>
+            <span class="badge bg-light text-dark ms-2" id="submitBtnScore">0/100</span>
+        </button>
+    </div>
+</form>
+
+<div class="mt-3">
+    <a asp-action="Index" class="btn btn-secondary">العودة إلى قائمة التقييمات</a>
+</div>
+
+@section Scripts{
+    <script>
+        document.addEventListener('DOMContentLoaded', function(){
+            const selects = document.querySelectorAll('.score-input');
+            const totalEl = document.getElementById('totalScore');
+            const submitBtn = document.getElementById('submitBtn');
+            const submitBtnScore = document.getElementById('submitBtnScore');
+
+            function updateCriterionTotal(card) {
+                const criterionTotalEl = card.querySelector('.criterion-total');
+                if (!criterionTotalEl) return;
+                
+                let criterionTotal = 0, criterionMax = 0;
+                
+                card.querySelectorAll('.score-input').forEach(sel => {
+                    const v = parseFloat(sel.value) || 0;
+                    // Get max score from the select options
+                    const options = sel.querySelectorAll('option');
+                    let maxValue = 0;
+                    options.forEach(opt => {
+                        if (opt.value !== '') {
+                            maxValue = Math.max(maxValue, parseFloat(opt.value));
+                        }
+                    });
+                    criterionTotal += v;
+                    criterionMax += maxValue;
+                });
+                
+                // Update the criterion total display
+                const totalValueEl = criterionTotalEl.querySelector('.total-value');
+                const maxValueEl = criterionTotalEl.querySelector('.max-value');
+                
+                if (totalValueEl) totalValueEl.textContent = criterionTotal;
+                if (maxValueEl) maxValueEl.textContent = criterionMax;
+                
+                // Add animation class
+                criterionTotalEl.classList.add('updated');
+                setTimeout(() => {
+                    criterionTotalEl.classList.remove('updated');
+                }, 500);
+            }
+
+            function recalc(){
+                let totalWeighted=0;
+                let perfectScore = true;
+                const criterionCards=document.querySelectorAll('[data-criterion-weight]');
+                
+                criterionCards.forEach(card=>{
+                    const weight=parseFloat(card.dataset.criterionWeight)||0;
+                    let criterionTotal=0, criterionMax=0;
+                    card.querySelectorAll('.score-input').forEach(sel=>{
+                        const v=parseFloat(sel.value)||0;
+                        // Get max score from the select options
+                        const options = sel.querySelectorAll('option');
+                        let maxValue = 0;
+                        options.forEach(opt => {
+                            if (opt.value !== '') {
+                                maxValue = Math.max(maxValue, parseFloat(opt.value));
+                            }
+                        });
+                        criterionTotal+=v;
+                        criterionMax+=maxValue;
+                        
+                        // Check if this is perfect
+                        if (v !== maxValue || maxValue === 0) {
+                            perfectScore = false;
+                        }
+                    });
+                    if(criterionMax>0){
+                        const normalized=criterionTotal/criterionMax;
+                        totalWeighted+=normalized*weight;
+                    }
+                });
+                
+                // Update main total score
+                totalEl.textContent=`${totalWeighted.toFixed(2)} / 100`;
+                
+                // Update submit button score
+                submitBtnScore.textContent = `${totalWeighted.toFixed(1)}/100`;
+                
+                // Add celebration to submit button if perfect score
+                if (perfectScore && totalWeighted === 100) {
+                    submitBtn.classList.add('max-score-celebration');
+                    submitBtnScore.style.background = '#1a1a1a';
+                    submitBtnScore.style.color = '#ffd700';
+                    submitBtnScore.style.fontWeight = 'bold';
+                    submitBtnScore.style.textShadow = '0 0 5px rgba(255, 215, 0, 0.8)';
+                    document.getElementById('submitBtnText').textContent = '🌟 حفظ التعديل المثالي 🌟';
+                } else {
+                    submitBtn.classList.remove('max-score-celebration');
+                    submitBtnScore.style.background = '';
+                    submitBtnScore.style.color = '';
+                    submitBtnScore.style.fontWeight = '';
+                    submitBtnScore.style.textShadow = '';
+                    document.getElementById('submitBtnText').textContent = 'حفظ التعديل';
+                }
+                
+                // Update submit button color based on completion
+                if (totalWeighted >= 90) {
+                    submitBtn.className = 'btn btn-success btn-lg position-relative';
+                } else if (totalWeighted >= 70) {
+                    submitBtn.className = 'btn btn-warning btn-lg position-relative';
+                } else if (totalWeighted > 0) {
+                    submitBtn.className = 'btn btn-info btn-lg position-relative';
+                } else {
+                    submitBtn.className = 'btn btn-secondary btn-lg position-relative';
+                }
+            }
+            
+            function initializeCriterionTotals() {
+                const criterionCards = document.querySelectorAll('[data-criterion-weight]');
+                criterionCards.forEach(card => {
+                    updateCriterionTotal(card);
+                });
+            }
+            
+            selects.forEach(s=>s.addEventListener('change',(e)=>{
+                const card = e.target.closest('[data-criterion-weight]');
+                if (card) {
+                    updateCriterionTotal(card);
+                }
+                
+                recalc();
+            }));
+            
+            // Initialize on page load
+            initializeCriterionTotals();
+            recalc();
+        });
+    </script>
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

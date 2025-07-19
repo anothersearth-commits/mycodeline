@@ -8,7 +8,7 @@ using System.Linq;
 
 namespace EOM.Web.Controllers;
 
-[Authorize(Roles = "EOM-Admin")]
+[Authorize(Roles = "EOM-Admin,EOM-Committee-Lead")]
 public class AwardCyclesController : BaseController
 {
     private readonly ApplicationDbContext _context;

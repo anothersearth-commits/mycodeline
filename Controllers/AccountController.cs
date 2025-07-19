@@ -111,6 +111,12 @@ public class AccountController : Controller
             if (committeeMember != null)
             {
                 claims.Add(new Claim(ClaimTypes.Role, "EOM-Committee"));
+                
+                // Add Committee Lead role for employee ID = 1
+                if (employee.EmployeeId == 9584497)
+                {
+                    claims.Add(new Claim(ClaimTypes.Role, "EOM-Committee-Lead"));
+                }
             }
 
             var claimsIdentity = new ClaimsIdentity(claims, "Cookies");
