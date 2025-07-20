@@ -155,6 +155,7 @@ public class NominationsController : BaseController
     [HttpPost]
     [ValidateAntiForgeryToken]
     [Authorize(Roles = "Manager,EOM-Admin")]
+    [RequestSizeLimit(50 * 1024 * 1024)] // 50 MB
     public async Task<IActionResult> Create([Bind("CycleId,EmployeeId,SupportingDocPath")] Nomination nomination)
     {
         var currentEmployeeId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
@@ -300,6 +301,7 @@ public class NominationsController : BaseController
     [HttpPost]
     [ValidateAntiForgeryToken]
     [Authorize(Roles = "Manager,EOM-Admin")]
+    [RequestSizeLimit(50 * 1024 * 1024)] // 50 MB
     public async Task<IActionResult> Score(int id, List<ManagerScore> managerScores, IFormFile? supportingDoc)
     {
         var nomination = await _context.Nominations
@@ -334,7 +336,9 @@ public class NominationsController : BaseController
                     // Clean up old file if it exists
                     if (!string.IsNullOrEmpty(nomination.SupportingDocPath))
                     {
-                        var oldFilePath = Path.Combine(_webHostEnvironment.WebRootPath, nomination.SupportingDocPath.TrimStart('/'));
+                        // Extract filename from the stored path
+                        var oldFileName = Path.GetFileName(nomination.SupportingDocPath);
+                        var oldFilePath = Path.Combine(@"C:\EOM\uploads", oldFileName);
                         if (System.IO.File.Exists(oldFilePath))
                         {
                             System.IO.File.Delete(oldFilePath);
@@ -343,7 +347,7 @@ public class NominationsController : BaseController
 
                     // Generate unique filename and create directory
                     var fileName = $"{Guid.NewGuid()}{Path.GetExtension(supportingDoc.FileName)}";
-                    var uploadsFolder = Path.Combine(_webHostEnvironment.WebRootPath, "uploads", "nominations");
+                    var uploadsFolder = @"C:\EOM\uploads";
                     Directory.CreateDirectory(uploadsFolder);
                     var filePath = Path.Combine(uploadsFolder, fileName);
 
@@ -353,8 +357,8 @@ public class NominationsController : BaseController
                         await supportingDoc.CopyToAsync(fileStream);
                     }
                     
-                    // Update nomination with new file path
-                    nomination.SupportingDocPath = $"/uploads/nominations/{fileName}";
+                    // Update nomination with new file path (store just the filename)
+                    nomination.SupportingDocPath = fileName;
                 }
                 catch (Exception ex)
                 {

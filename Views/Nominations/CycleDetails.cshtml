@@ -449,7 +449,7 @@
                             
                             @if (hasFile)
                             {
-                                <a href="@nomination.SupportingDocPath" target="_blank" class="btn-file">
+                                <a href="@Url.Action("Supporting", "Files", new { fileName = nomination.SupportingDocPath })" target="_blank" class="btn-file">
                                     <i class="fas fa-download"></i>
                                     عرض الملف
                                 </a>

@@ -152,7 +152,7 @@
                 <div class="card-body">
                     @if (!string.IsNullOrEmpty(Model.SupportingDocPath))
                     {
-                        <a href="@Url.Content("~" + Model.SupportingDocPath)" target="_blank" class="btn btn-outline-primary">
+                        <a href="@Url.Action("Supporting", "Files", new { fileName = Model.SupportingDocPath })" target="_blank" class="btn btn-outline-primary">
                             <i class="fas fa-file-pdf"></i> عرض الملف المرفق
                         </a>
                     }

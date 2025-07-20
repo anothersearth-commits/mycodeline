@@ -20,19 +20,88 @@
     .employee-card {
         border: 1px solid #dee2e6;
         border-radius: .5rem;
-        padding: 1rem;
-        cursor: pointer;
         background: #fff;
         transition: .2s ease-in-out;
+        overflow: hidden;
     }
 
-    .employee-card:hover {
+    .employee-info {
+        padding: 1rem;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .employee-info:hover {
         background: #f8f9fa;
     }
 
     .employee-card.selected {
         border-color: #0d6efd;
+    }
+
+    .employee-card.selected .employee-info {
         background: #e7f1ff;
+    }
+
+    .employee-avatar {
+        flex-shrink: 0;
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        overflow: hidden;
+        background: #f8f9fa;
+        border: 2px solid #dee2e6;
+    }
+
+    .employee-avatar img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .employee-fallback-icon {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #6c757d;
+        font-size: 1.5rem;
+    }
+
+    .employee-details {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .employee-name {
+        font-weight: 600;
+        margin-bottom: 0.25rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .employee-id {
+        font-size: 0.875rem;
+        color: #6c757d;
+    }
+
+    .nominate-btn {
+        width: 100%;
+        padding: 0.75rem;
+        background: #28a745;
+        color: white;
+        border: none;
+        font-weight: 600;
+        transition: background-color 0.2s;
+        cursor: pointer;
+    }
+
+    .nominate-btn:hover {
+        background: #218838;
     }
 </style>
 
@@ -141,16 +210,37 @@
                                 <div class="employee-grid" id="employeeGrid">
                                     @foreach (var employee in employees)
                                     {
-                                        <label class="employee-card" for="employee_@employee.EmployeeId">
-                                            <input type="radio" 
-                                                   id="employee_@employee.EmployeeId"
-                                                   name="EmployeeId" 
-                                                   value="@employee.EmployeeId" 
-                                                   required />
-                                            <div class="employee-name">@employee.FirstName @employee.LastName</div>
-                                            @* <div class="employee-title">@employee.JobTitle</div> *@
-                                            <div class="employee-id">رقم الموظف: @employee.EmployeeId</div>
-                                        </label>
+                                        <div class="employee-card" data-employee-id="@employee.EmployeeId">
+                                            <div class="employee-info" onclick="selectEmployee(@employee.EmployeeId)">
+                                                <div class="employee-avatar">
+                                                    @{
+                                                        // Try ActiveDirectoryId first, then EmployeeId as fallback
+                                                        string adUser = !string.IsNullOrEmpty(employee.ActiveDirectoryId) 
+                                                            ? employee.ActiveDirectoryId 
+                                                            : employee.EmployeeId.ToString();
+                                                    }
+                                                    <img src="@Url.Action("WinnerPhoto", "Home", new { adUser = adUser })" 
+                                                         alt="@employee.FirstName @employee.LastName"
+                                                         onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
+                                                    <div class="employee-fallback-icon" style="display: none;">
+                                                        <i class="fas fa-user"></i>
+                                                    </div>
+                                                </div>
+                                                <div class="employee-details">
+                                                    <div class="employee-name">@employee.FirstName @employee.LastName</div>
+                                                    <div class="employee-id">رقم الموظف: @employee.EmployeeId</div>
+                                                </div>
+                                                <input type="radio" 
+                                                       id="employee_@employee.EmployeeId"
+                                                       name="EmployeeId" 
+                                                       value="@employee.EmployeeId" 
+                                                       required 
+                                                       style="display: none;" />
+                                            </div>
+                                            <button type="submit" class="nominate-btn" id="nominate_@employee.EmployeeId" style="display: none;">
+                                                ترشيح @employee.FirstName
+                                            </button>
+                                        </div>
                                     }
                                 </div>
                             }
@@ -166,10 +256,6 @@
                     </div>
 
                     <!-- سيتم رفع المستندات الداعمة لاحقاً أثناء مرحلة التقييم -->
-
-                    <button type="submit" class="submit-btn">
-                        ترشيح الموظف والانتقال للتقييم
-                    </button>
                 </form>
             </div>
         }
@@ -177,22 +263,33 @@
 </div>
 
 <script>
-    // Add interactivity for employee selection
-    document.querySelectorAll('.employee-card').forEach(card => {
-        card.addEventListener('click', function() {
-            // Remove selected class from all cards
-            document.querySelectorAll('.employee-card').forEach(c => c.classList.remove('selected'));
-            
-            // Add selected class to clicked card
-            this.classList.add('selected');
+    // Employee selection function
+    function selectEmployee(employeeId) {
+        // Remove selected class from all cards and hide all nominate buttons
+        document.querySelectorAll('.employee-card').forEach(card => {
+            card.classList.remove('selected');
+            const btn = card.querySelector('.nominate-btn');
+            if (btn) btn.style.display = 'none';
+        });
+        
+        // Add selected class to clicked card
+        const selectedCard = document.querySelector(`[data-employee-id="${employeeId}"]`);
+        if (selectedCard) {
+            selectedCard.classList.add('selected');
             
             // Check the radio button
-            const radio = this.querySelector('input[type="radio"]');
+            const radio = selectedCard.querySelector('input[type="radio"]');
             if (radio) {
                 radio.checked = true;
             }
-        });
-    });
+            
+            // Show the nominate button for this card
+            const nominateBtn = selectedCard.querySelector('.nominate-btn');
+            if (nominateBtn) {
+                nominateBtn.style.display = 'block';
+            }
+        }
+    }
 
     // live search filter
     const empSearch = document.getElementById('employeeSearch');

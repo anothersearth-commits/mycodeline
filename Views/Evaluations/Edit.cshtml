@@ -202,7 +202,7 @@
                 <b>مرفق المدير:</b>
                 @if (!string.IsNullOrEmpty(Model.Nomination?.SupportingDocPath))
                 {
-                    <a href="@Url.Content("~" + Model.Nomination.SupportingDocPath)" target="_blank" class="btn btn-outline-primary">
+                    <a href="@Url.Action("Supporting", "Files", new { fileName = Model.Nomination.SupportingDocPath })" target="_blank" class="btn btn-outline-primary">
                         <i class="fas fa-file-pdf"></i> عرض الملف المرفق
                     </a>
                 }

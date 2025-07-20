@@ -151,8 +151,8 @@
                 {
                     <div class="mt-2">
                         <span>المستند الحالي: </span>
-                        <a href="@Url.Content("~" + Model.SupportingDocPath)" target="_blank">
-                            <i class="fas fa-file-pdf"></i> @System.IO.Path.GetFileName(Model.SupportingDocPath)
+                        <a href="@Url.Action("Supporting", "Files", new { fileName = Model.SupportingDocPath })" target="_blank">
+                            <i class="fas fa-file-pdf"></i> @Model.SupportingDocPath
                         </a>
                     </div>
                 }
