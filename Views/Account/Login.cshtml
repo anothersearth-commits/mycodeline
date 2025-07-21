@@ -13,7 +13,16 @@
     .branding-section{background:#f8fafc;flex:1 0 50%;display:none;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding:2rem;}
     @@media(min-width:768px){.branding-section{display:flex;}}
 
-    .branding-section h2{font-weight:800;color:#2563eb;font-size:1.75rem;margin-bottom:1rem;}
+    .branding-section h2{
+        font-weight:800;
+        font-size:1.75rem;
+        margin-bottom:1rem;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        display: block;
+    }
     .branding-section p{color:#64748b;font-size:1rem;max-width:300px;}
 
     /* Form panel */
@@ -39,7 +48,7 @@
         <!-- Branding / illustration side (desktop only) -->
         <div class="branding-section">
             <img src="~/img/bngLogoTrans.png" alt="شعار محافظة شمال الباطنة" class="logo-image mb-3" />
-            <h2>نظام موظف الشهر</h2>
+            <h2>منصة اثر</h2>
         </div>
 
         <!-- Form side -->
@@ -58,12 +67,12 @@
                                 🌐 Active Directory
                             </label>
                         </div>
-                        <div class="form-check">
+                        @* <div class="form-check">
                             <input class="form-check-input" type="radio" name="authMethod" id="authMethodDB" value="Database" disabled>
                             <label class="form-check-label" for="authMethodDB">
                                 🛡️ قاعدة البيانات
                             </label>
-                        </div>
+                        </div> *@
                     </div>
                 </div>
 

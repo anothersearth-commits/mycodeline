@@ -53,7 +53,7 @@ namespace EOM.Web.Services
             _logger = logger;
         }
 
-        public async Task<AiGeneratedMessage> GenerateMessageAsync(int employeeId, long objectiveId)
+        public async Task<AiGeneratedMessage> GenerateMessageAsync(long employeeId, long objectiveId)
         {
             try
             {
@@ -144,7 +144,7 @@ namespace EOM.Web.Services
             }
         }
 
-        public async Task<List<AiGeneratedMessage>> GenerateMessagesForCycleAsync(int employeeId, int cycleId)
+        public async Task<List<AiGeneratedMessage>> GenerateMessagesForCycleAsync(long employeeId, int cycleId)
         {
             try
             {
@@ -178,7 +178,7 @@ namespace EOM.Web.Services
             }
         }
 
-        public async Task<List<AiGeneratedMessage>> GetActiveMessagesAsync(int employeeId, int cycleId)
+        public async Task<List<AiGeneratedMessage>> GetActiveMessagesAsync(long employeeId, int cycleId)
         {
             return await _context.AiGeneratedMessages
                 .Include(am => am.Objective)

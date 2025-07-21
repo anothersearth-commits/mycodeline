@@ -1,4 +1,3 @@
--- Insert test ObjectiveCycle data for AI message testing
 -- Run this script manually in your Oracle database
 
 -- Insert an active objective cycle for 2025 - First Half

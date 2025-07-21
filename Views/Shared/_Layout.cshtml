@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - نظام موظف الشهر</title>
+    <title>@ViewData["Title"] - منصة اثر</title>
     <link rel="icon" type="image/png" href="~/img/favicon.png" />
     <link rel="shortcut icon" href="~/img/favicon.png" />
     <link rel="apple-touch-icon" href="~/img/favicon.png" />
@@ -24,7 +24,7 @@
     <header>
         <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom shadow-sm mb-3">
             <div class="container-fluid">
-                <a class="navbar-brand gradient-text" asp-area="" asp-controller="Home" asp-action="Index">نظام موظف الشهر</a>
+                <a class="navbar-brand gradient-text" asp-area="" asp-controller="Home" asp-action="Index">منصة اثر</a>
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
                         aria-expanded="false" aria-label="Toggle navigation">
                     <span class="navbar-toggler-icon"></span>
@@ -54,6 +54,14 @@
                             <li class="nav-item">
                                 <a class="nav-link enhanced-nav-link" asp-area="" asp-controller="Evaluations" asp-action="Index">
                                     <i class="fas fa-star me-2"></i>التقييمات
+                                </a>
+                            </li>
+                        }
+                        @if (User.IsInRole("EOM-Admin") || User.IsInRole("EOM-Committee-Lead"))
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link enhanced-nav-link" asp-area="" asp-controller="Reports" asp-action="Index">
+                                    <i class="fas fa-chart-bar me-2"></i>التقارير
                                 </a>
                             </li>
                         }

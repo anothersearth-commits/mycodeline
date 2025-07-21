@@ -15,7 +15,7 @@ namespace EOM.Web.Models
         public long ObjectiveId { get; set; }
 
         [Required]
-        public int EmployeeId { get; set; } // Denormalized for performance
+        public long EmployeeId { get; set; } // Denormalized for performance
 
         [Required]
         public int ObjectiveCycleId { get; set; } // Denormalized for performance

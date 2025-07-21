@@ -1,0 +1,62 @@
+@{
+    ViewData["Title"] = "التقارير";
+}
+
+<div class="container-fluid">
+    <h1 class="mb-4"> التقارير</h1>
+    
+    <div class="row">
+        <div class="col-md-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-building me-2"></i>تقرير ترشيحات الدوائر
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p class="card-text">عرض إحصائيات الترشيحات لكل دائرة في المؤسسة وعدد الموظفين المرشحين.</p>
+                    <ul class="list-unstyled">
+                        <li><i class="fas fa-check text-success me-2"></i>إجمالي الترشيحات لكل دائرة</li>
+                        <li><i class="fas fa-check text-success me-2"></i>ترشيحات الدورة الحالية</li>
+                        <li><i class="fas fa-check text-success me-2"></i>آخر تاريخ ترشيح</li>
+                    </ul>
+                </div>
+                <div class="card-footer">
+                    <a href="@Url.Action("DepartmentNominations")" class="btn btn-primary me-2">
+                        <i class="fas fa-eye me-1"></i>عرض التقرير
+                    </a>
+                    <a href="@Url.Action("ExportDepartmentNominations")" class="btn btn-success">
+                        <i class="fas fa-download me-1"></i>تصدير Excel
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-exclamation-triangle me-2"></i>الترشيحات بدون تقييم مدير
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p class="card-text">عرض الترشيحات التي لم يكمل المدراء تقييمها أو التي تحتاج مراجعة.</p>
+                    <ul class="list-unstyled">
+                        <li><i class="fas fa-check text-success me-2"></i>الترشيحات غير المكتملة</li>
+                        <li><i class="fas fa-check text-success me-2"></i>تفاصيل الموظف والمدير</li>
+                        <li><i class="fas fa-check text-success me-2"></i>حالة التقييم</li>
+                        <li><i class="fas fa-check text-success me-2"></i>تاريخ الترشيح</li>
+                    </ul>
+                </div>
+                <div class="card-footer">
+                    <a href="@Url.Action("IncompleteManagerScores")" class="btn btn-warning me-2">
+                        <i class="fas fa-eye me-1"></i>عرض التقرير
+                    </a>
+                    <a href="@Url.Action("ExportIncompleteManagerScores")" class="btn btn-success">
+                        <i class="fas fa-download me-1"></i>تصدير Excel
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

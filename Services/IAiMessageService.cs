@@ -13,7 +13,7 @@ namespace EOM.Web.Services
         /// <param name="employeeId">Employee ID</param>
         /// <param name="objectiveId">Objective ID</param>
         /// <returns>Generated message and advice</returns>
-        Task<AiGeneratedMessage> GenerateMessageAsync(int employeeId, long objectiveId);
+        Task<AiGeneratedMessage> GenerateMessageAsync(long employeeId, long objectiveId);
 
         /// <summary>
         /// Generate AI messages for all objectives in a cycle for a specific employee
@@ -21,7 +21,7 @@ namespace EOM.Web.Services
         /// <param name="employeeId">Employee ID</param>
         /// <param name="cycleId">Objective cycle ID</param>
         /// <returns>List of generated messages</returns>
-        Task<List<AiGeneratedMessage>> GenerateMessagesForCycleAsync(int employeeId, int cycleId);
+        Task<List<AiGeneratedMessage>> GenerateMessagesForCycleAsync(long employeeId, int cycleId);
 
         /// <summary>
         /// Get active AI messages for an employee in a specific cycle
@@ -29,7 +29,7 @@ namespace EOM.Web.Services
         /// <param name="employeeId">Employee ID</param>
         /// <param name="cycleId">Objective cycle ID</param>
         /// <returns>List of active messages</returns>
-        Task<List<AiGeneratedMessage>> GetActiveMessagesAsync(int employeeId, int cycleId);
+        Task<List<AiGeneratedMessage>> GetActiveMessagesAsync(long employeeId, int cycleId);
 
         /// <summary>
         /// Regenerate AI message for a specific objective

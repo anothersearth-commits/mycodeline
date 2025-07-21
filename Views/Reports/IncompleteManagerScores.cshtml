@@ -1,0 +1,144 @@
+@model IEnumerable<EOM.Web.Models.Nomination>
+
+@{
+    ViewData["Title"] = "الترشيحات بدون تقييم مدير";
+}
+
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>⚠️ الترشيحات بدون تقييم مدير</h1>
+        <div>
+            <a href="@Url.Action("ExportIncompleteManagerScores")" class="btn btn-success">
+                <i class="fas fa-download me-2"></i>تصدير Excel
+            </a>
+            <a href="@Url.Action("Index")" class="btn btn-secondary ms-2">
+                <i class="fas fa-arrow-right me-2"></i>العودة للتقارير
+            </a>
+        </div>
+    </div>
+
+    @if (Model.Any())
+    {
+        <div class="alert alert-warning" role="alert">
+            <i class="fas fa-exclamation-triangle me-2"></i>
+            <strong>تنبيه:</strong> يوجد @Model.Count() ترشيح بحاجة لإكمال تقييم المدير قبل البدء في عملية التقييم من قبل اللجنة.
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">قائمة الترشيحات غير المكتملة</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>دورة الجائزة</th>
+                                <th>نوع الجائزة</th>
+                                <th>اسم الموظف</th>
+                                <th>الدائرة</th>
+                                <th>اسم المدير</th>
+                                <th>تاريخ الترشيح</th>
+                                <th class="text-center">حالة التقييم</th>
+                                <th class="text-center">الإجراءات</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var nomination in Model)
+                            {
+                                <tr>
+                                    <td>
+                                        <strong>@nomination.AwardCycle?.Month/@nomination.AwardCycle?.Year</strong>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-info">@nomination.AwardCycle?.AwardType?.Name</span>
+                                    </td>
+                                    <td>
+                                        @nomination.Employee?.FirstName @nomination.Employee?.LastName
+                                        <br>
+                                        <small class="text-muted">رقم: @nomination.Employee?.EmployeeId</small>
+                                    </td>
+                                    <td>
+                                        @nomination.Employee?.Department?.Name
+                                    </td>
+                                    <td>
+                                        @nomination.Manager?.FirstName @nomination.Manager?.LastName
+                                        <br>
+                                        <small class="text-muted">رقم: @nomination.Manager?.EmployeeId</small>
+                                    </td>
+                                    <td>
+                                        <small>@nomination.CreatedAt.ToString("yyyy-MM-dd HH:mm")</small>
+                                    </td>
+                                    <td class="text-center">
+                                        @if (!nomination.ManagerScores.Any())
+                                        {
+                                            <span class="badge bg-danger">لم يتم التقييم</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-warning text-dark">تقييم ناقص</span>
+                                        }
+                                    </td>
+                                    <td class="text-center">
+                                        <a href="@Url.Action("Details", "Nominations", new { id = nomination.NominationId })" 
+                                           class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-eye"></i> عرض
+                                        </a>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mt-4">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h6>📊 تحليل الترشيحات غير المكتملة</h6>
+                    </div>
+                    <div class="card-body">
+                        @{
+                            var groupedByDept = Model.GroupBy(n => n.Employee?.Department?.Name ?? "غير محدد").ToList();
+                            var noScores = Model.Where(n => !n.ManagerScores.Any()).Count();
+                            var incompleteScores = Model.Where(n => n.ManagerScores.Any() && n.ManagerScores.Any(ms => ms.Score == null)).Count();
+                        }
+                        <ul class="list-unstyled">
+                            <li><strong>إجمالي الترشيحات غير المكتملة:</strong> @Model.Count()</li>
+                            <li><strong>بدون تقييم نهائياً:</strong> @noScores</li>
+                            <li><strong>تقييم ناقص:</strong> @incompleteScores</li>
+                            <li><strong>عدد الدوائر المتأثرة:</strong> @groupedByDept.Count</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h6>🏢 التوزيع حسب الدائرة</h6>
+                    </div>
+                    <div class="card-body">
+                        <ul class="list-unstyled">
+                            @foreach (var dept in groupedByDept.OrderByDescending(g => g.Count()).Take(5))
+                            {
+                                <li class="mb-1">
+                                    <strong>@dept.Key:</strong> 
+                                    <span class="badge bg-warning">@dept.Count()</span>
+                                </li>
+                            }
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="alert alert-success" role="alert">
+            <i class="fas fa-check-circle me-2"></i>
+            <strong>ممتاز!</strong> جميع الترشيحات مكتملة التقييم من قبل المدراء.
+        </div>
+    }
+</div>

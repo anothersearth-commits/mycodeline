@@ -240,17 +240,17 @@ namespace EOM.Web.Controllers
             }
         }
 
-        private int? GetCurrentEmployeeId()
+        private long? GetCurrentEmployeeId()
         {
             var employeeIdClaim = User.FindFirst("EmployeeId")?.Value;
-            if (int.TryParse(employeeIdClaim, out int employeeId))
+            if (long.TryParse(employeeIdClaim, out long employeeId))
             {
                 return employeeId;
             }
 
             // Fallback: try to get from user identity if stored differently
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (int.TryParse(userIdClaim, out int userId))
+            if (long.TryParse(userIdClaim, out long userId))
             {
                 return userId;
             }

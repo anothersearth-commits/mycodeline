@@ -15,7 +15,7 @@ namespace EOM.Web.Models
         public int ObjectiveCycleId { get; set; }
 
         [Required]
-        public int EmployeeId { get; set; }
+        public long EmployeeId { get; set; }
 
         [Required]
         public int MainGoalId { get; set; }
