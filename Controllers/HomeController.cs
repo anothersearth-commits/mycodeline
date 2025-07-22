@@ -109,6 +109,15 @@ public class HomeController : BaseController
             ViewBag.ManagerPendingScoring = pendingScoring;
         }
 
+                var latestCycle = await _context.AwardCycles
+                    .Include(ac => ac.AwardType)
+                    .Include(ac => ac.Nominations)
+                    .OrderByDescending(ac => ac.Year)
+                    .ThenByDescending(ac => ac.Month)
+                    .FirstOrDefaultAsync();
+                
+                ViewBag.LatestCycle = latestCycle;
+                
         // Get committee member data if they are a committee member and in committee mode
         if (isCommittee && (currentRole == "Committee" || !isDualRole))
         {
@@ -174,14 +183,7 @@ public class HomeController : BaseController
 
                 // Get the latest cycle (most recent by year/month) for committee review
                 // Note: Excluding Employee include due to VW_EOM_EMPLOYEES database link issues
-                var latestCycle = await _context.AwardCycles
-                    .Include(ac => ac.AwardType)
-                    .Include(ac => ac.Nominations)
-                    .OrderByDescending(ac => ac.Year)
-                    .ThenByDescending(ac => ac.Month)
-                    .FirstOrDefaultAsync();
-                
-                ViewBag.LatestCycle = latestCycle;
+
             }
         }
         

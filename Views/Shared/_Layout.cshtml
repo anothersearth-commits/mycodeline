@@ -59,11 +59,11 @@
                         }
                         @if (User.IsInRole("EOM-Admin") || User.IsInRole("EOM-Committee-Lead"))
                         {
-                            <li class="nav-item">
+                            @* <li class="nav-item">
                                 <a class="nav-link enhanced-nav-link" asp-area="" asp-controller="Reports" asp-action="Index">
                                     <i class="fas fa-chart-bar me-2"></i>التقارير
                                 </a>
-                            </li>
+                            </li> *@
                         }
                         @if (User.IsInRole("EOM-Admin"))
                         {
