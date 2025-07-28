@@ -15,9 +15,15 @@ Employee of the Month (EOM) System - An ASP.NET Core MVC application for managin
 - Bootstrap 5 for responsive UI with Arabic RTL support
 
 **Database Configuration:**
-- Database: EOM
-- Connection: MySQL running on 127.0.0.1:8889 (MAMP/XAMPP setup)
-- Credentials: root/root
+- **Development**: EOM_DIV (Oracle) - Oracle 19c on 10.20.40.71:1521/orcl - Credentials: EOM_DIV/EOM_DIV
+- **Staging**: EOM_DIV (Oracle) - Oracle 19c on 10.20.40.71:1521/orcl - Credentials: EOM_DIV/EOM_DIV
+- **Production**: EOM (Oracle) - Oracle 19c on 10.20.40.71:1521/orcl - Credentials: EOM/EOM
+- **Backup Database**: EOM (MySQL) on 127.0.0.1:8889 (MAMP/XAMPP setup) - Credentials: root/root
+
+**Environment-Specific Connection Strings:**
+- `appsettings.Development.json`: Uses EOM_DIV for local development
+- `appsettings.Staging.json`: Uses EOM_DIV for staging server (testing with dev data)
+- `appsettings.json` & `appsettings.Production.json`: Uses EOM for production deployment
 
 ## Essential Commands
 
@@ -25,8 +31,22 @@ Employee of the Month (EOM) System - An ASP.NET Core MVC application for managin
 # Build the project
 dotnet build
 
-# Run the application
+# Run the application (Development - uses EOM_DIV)
 dotnet run
+
+# Run in Staging environment (uses EOM_DIV)
+dotnet run --environment Staging
+
+# Run in Production environment (uses EOM)
+dotnet run --environment Production
+
+# Set environment explicitly
+$env:ASPNETCORE_ENVIRONMENT="Development"  # PowerShell
+$env:ASPNETCORE_ENVIRONMENT="Staging"      # PowerShell
+$env:ASPNETCORE_ENVIRONMENT="Production"   # PowerShell
+export ASPNETCORE_ENVIRONMENT=Development  # Bash
+export ASPNETCORE_ENVIRONMENT=Staging      # Bash
+export ASPNETCORE_ENVIRONMENT=Production   # Bash
 
 # Create database migration
 dotnet ef migrations add <MigrationName>
@@ -34,9 +54,59 @@ dotnet ef migrations add <MigrationName>
 # Update database with migrations
 dotnet ef database update
 
+# Publishing Commands
+# Publish for Staging (uses EOM_DIV database)
+dotnet publish --configuration Release --output "C:\Publish\EOM-Staging"
+
+# Publish for Production (uses EOM database)
+dotnet publish --configuration Release --output "C:\Publish\EOM-Production"
+
 # Install EF tools (if needed)
 dotnet tool install --global dotnet-ef
 export PATH="$PATH:/Users/majid/.dotnet/tools"
+```
+
+## Deployment Guide
+
+### **Deployment Process (Simplified):**
+
+Since you have a **web.config in the root folder**, deployment is much simpler:
+
+#### **Method 1: Change web.config Before Publishing**
+```bash
+# For Staging: Edit web.config and set environment to "Staging"
+# Then publish:
+dotnet publish --configuration Release --output "C:\Publish\EOM-Staging"
+
+# For Production: Edit web.config and set environment to "Production"  
+# Then publish:
+dotnet publish --configuration Release --output "C:\Publish\EOM-Production"
+```
+
+#### **Method 2: Edit After Publishing**
+```bash
+# Publish once:
+dotnet publish --configuration Release --output "C:\Publish\EOM"
+
+# Then edit the published web.config and change environment value:
+# For Staging: <environmentVariable name="ASPNETCORE_ENVIRONMENT" value="Staging" />
+# For Production: <environmentVariable name="ASPNETCORE_ENVIRONMENT" value="Production" />
+```
+
+### **Environment Mapping:**
+- **`value="Development"`** → Uses EOM_DIV database  
+- **`value="Staging"`** → Uses EOM_DIV database
+- **`value="Production"`** → Uses EOM database
+
+### **Current web.config Structure:**
+The web.config includes environment variables and file upload limits:
+```xml
+<aspNetCore processPath="dotnet" arguments=".\EOM.Web.dll" hostingModel="inprocess">
+  <environmentVariables>
+    <!-- Change this value: Development, Staging, or Production -->
+    <environmentVariable name="ASPNETCORE_ENVIRONMENT" value="Production" />
+  </environmentVariables>
+</aspNetCore>
 ```
 
 ## Project Structure

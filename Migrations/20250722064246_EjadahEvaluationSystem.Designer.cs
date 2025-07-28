@@ -3,6 +3,7 @@ using System;
 using EOM.Web.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Oracle.EntityFrameworkCore.Metadata;
 
@@ -11,9 +12,11 @@ using Oracle.EntityFrameworkCore.Metadata;
 namespace EOM.Web.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250722064246_EjadahEvaluationSystem")]
+    partial class EjadahEvaluationSystem
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -296,6 +299,21 @@ namespace EOM.Web.Migrations
                         .HasColumnName("EJADAH_EMPLOYEE_SCORE_ID")
                         .HasDefaultValueSql("SEQ_EJADAH_EMPLOYEE_SCORES.NEXTVAL");
 
+                    b.Property<string>("Comments")
+                        .HasColumnType("NCLOB")
+                        .HasColumnName("COMMENTS");
+
+                    b.Property<string>("CreatedBy")
+                        .HasMaxLength(100)
+                        .HasColumnType("NVARCHAR2(100)")
+                        .HasColumnName("CREATED_BY");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("DATE")
+                        .HasColumnName("CREATED_DATE")
+                        .HasDefaultValueSql("SYSDATE");
+
                     b.Property<int>("EjadahCycleId")
                         .HasColumnType("NUMBER(10)")
                         .HasColumnName("EJADAH_CYCLE_ID");
@@ -303,6 +321,14 @@ namespace EOM.Web.Migrations
                     b.Property<int>("EmployeeId")
                         .HasColumnType("NUMBER(10)")
                         .HasColumnName("EMPLOYEE_ID");
+
+                    b.Property<DateTime>("EvaluationDate")
+                        .HasColumnType("DATE")
+                        .HasColumnName("EVALUATION_DATE");
+
+                    b.Property<int?>("EvaluatorId")
+                        .HasColumnType("NUMBER(10)")
+                        .HasColumnName("EVALUATOR_ID");
 
                     b.Property<string>("Score")
                         .IsRequired()
@@ -314,6 +340,15 @@ namespace EOM.Web.Migrations
                         .HasColumnType("NUMBER(5,2)")
                         .HasColumnName("SCORE_NUMERIC");
 
+                    b.Property<string>("UpdatedBy")
+                        .HasMaxLength(100)
+                        .HasColumnType("NVARCHAR2(100)")
+                        .HasColumnName("UPDATED_BY");
+
+                    b.Property<DateTime?>("UpdatedDate")
+                        .HasColumnType("DATE")
+                        .HasColumnName("UPDATED_DATE");
+
                     b.HasKey("EjadahEmployeeScoreId");
 
                     b.HasIndex("EjadahCycleId")
@@ -321,6 +356,11 @@ namespace EOM.Web.Migrations
 
                     b.HasIndex("EmployeeId")
                         .HasDatabaseName("IDX_EJADAH_SCORES_EMPLOYEE");
+
+                    b.HasIndex("EvaluationDate")
+                        .HasDatabaseName("IDX_EJADAH_SCORES_EVAL_DATE");
+
+                    b.HasIndex("EvaluatorId");
 
                     b.HasIndex("Score")
                         .HasDatabaseName("IDX_EJADAH_SCORES_SCORE");
@@ -819,9 +859,16 @@ namespace EOM.Web.Migrations
                         .IsRequired()
                         .HasConstraintName("FK_EJADAH_SCORES_EMPLOYEE");
 
+                    b.HasOne("EOM.Web.Models.Employee", "Evaluator")
+                        .WithMany()
+                        .HasForeignKey("EvaluatorId")
+                        .HasConstraintName("FK_EJADAH_SCORES_EVALUATOR");
+
                     b.Navigation("EjadahCycle");
 
                     b.Navigation("Employee");
+
+                    b.Navigation("Evaluator");
                 });
 
             modelBuilder.Entity("EOM.Web.Models.Employee", b =>

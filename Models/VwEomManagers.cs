@@ -7,7 +7,7 @@ namespace EOM.Web.Models;
 public class VwEomManagers
 {
     [Column("MANAGERID")]
-    public string ManagerId { get; set; } = string.Empty;
+    public int ManagerId { get; set; }
 
     [Column("MANAGERNAME")]
     public string ManagerName { get; set; } = string.Empty;

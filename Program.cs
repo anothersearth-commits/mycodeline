@@ -31,6 +31,9 @@ builder.Services.AddAuthorization();
 builder.Services.AddScoped<IOpenAiService, OpenAiService>();
 builder.Services.AddScoped<IAiMessageService, AiMessageService>();
 
+// Register Ejadah eligibility service
+builder.Services.AddScoped<IEjadahEligibilityService, EjadahEligibilityService>();
+
 // Configure file upload limits
 builder.Services.Configure<IISServerOptions>(options =>
 {
@@ -73,30 +76,8 @@ app.MapControllerRoute(
     pattern: "{controller=Home}/{action=Index}/{id?}");
 
 
-// Initialize database with seed data
-using (var scope = app.Services.CreateScope())
-{
-    var services = scope.ServiceProvider;
-    try
-    {
-        Console.WriteLine("🌱 Starting database seeding...");
-        await EOM.Web.Data.SeedData.InitializeAsync(services);
-        Console.WriteLine("✅ Database seeding completed successfully!");
-    }
-    catch (Exception ex)
-    {
-        var logger = services.GetRequiredService<ILogger<Program>>();
-        logger.LogError(ex, "An error occurred while seeding the database.");
-        Console.WriteLine($"❌ Seeding failed: {ex.Message}");
-        if (ex.InnerException != null)
-        {
-            Console.WriteLine($"   Inner: {ex.InnerException.Message}");
-        }
-        
-        // Exit after seeding to prevent web server startup issues
-        return;
-    }
-}
+// Database seeding disabled
+Console.WriteLine("🔧 Database seeding is disabled");
 
 Console.WriteLine("🚀 Starting web server...");
 app.Run();

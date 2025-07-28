@@ -27,7 +27,8 @@
       "Bash(git add:*)",
       "Bash(dotnet publish --configuration Release --output \"C:\\Publish\\EOM\")",
       "Bash(tail:*)",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "WebFetch(domain:localhost)"
     ],
     "deny": []
   }

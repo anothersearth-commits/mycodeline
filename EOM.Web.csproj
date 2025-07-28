@@ -24,4 +24,36 @@
     <Exec Command="taskkill /IM EOM.Web.exe /F 2&gt;nul" IgnoreExitCode="true" />
   </Target>
 
+  <!-- Define custom configurations -->
+  <PropertyGroup Condition="'$(Configuration)' == 'Staging'">
+    <EnvironmentName>Staging</EnvironmentName>
+  </PropertyGroup>
+  
+  <PropertyGroup Condition="'$(Configuration)' == 'Release'">
+    <EnvironmentName>Production</EnvironmentName>
+  </PropertyGroup>
+
+  <!-- Exclude default web.config from staging builds -->
+  <ItemGroup Condition="'$(StagingBuild)' == 'true'">
+    <Content Remove="web.config" />
+    <Content Remove="web.staging.config" />
+  </ItemGroup>
+
+  <!-- Copy correct web.config based on environment during publish -->
+  <Target Name="ReplaceWebConfigForStaging" AfterTargets="Publish" Condition="'$(StagingBuild)' == 'true'">
+    <!-- Force delete and replace published web.config with staging version -->
+    <Delete Files="$(PublishDir)web.config" />
+    
+    <!-- Use Exec with copy command for more reliable file copy -->
+    <Exec Command="copy &quot;$(MSBuildProjectDirectory)\web.staging.config&quot; &quot;$(PublishDir)web.config&quot; /Y" 
+          ContinueOnError="false" />
+          
+    <!-- Verify the file was copied correctly -->
+    <Message Text="Replaced web.config with staging configuration using copy command" Importance="high" />
+    
+    <!-- Clean up any staging config that got copied -->
+    <Delete Files="$(PublishDir)web.staging.config" 
+            Condition="Exists('$(PublishDir)web.staging.config')" />
+  </Target>
+
 </Project>

@@ -18,7 +18,7 @@ public class SubCriteria
     public string Name { get; set; } = string.Empty;
     
     [Range(0, 100)]
-    public byte MaxScore { get; set; }
+    public int MaxScore { get; set; }
     
     [MaxLength(1000)]
     public string? GradingScale { get; set; } // JSON string of grading scale

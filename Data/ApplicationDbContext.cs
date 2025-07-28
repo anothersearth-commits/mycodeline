@@ -16,6 +16,9 @@ public class ApplicationDbContext : DbContext
     // Department view for HR integration
     public DbSet<VwEomDepartments> Departments { get; set; }
     
+    // Managers view for HR integration
+    public DbSet<VwEomManagers> Managers { get; set; }
+    
     // EOM Tables
     public DbSet<AwardType> AwardTypes { get; set; }
     public DbSet<AwardCycle> AwardCycles { get; set; }
@@ -33,6 +36,10 @@ public class ApplicationDbContext : DbContext
     public DbSet<ObjectiveCycle> ObjectiveCycles { get; set; }
     public DbSet<Objective> Objectives { get; set; }
     public DbSet<AiGeneratedMessage> AiGeneratedMessages { get; set; }
+    
+    // Ejadah Evaluation Tables
+    public DbSet<EjadahCycle> EjadahCycles { get; set; }
+    public DbSet<EjadahEmployeeScore> EjadahEmployeeScores { get; set; }
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -49,6 +56,11 @@ public class ApplicationDbContext : DbContext
         builder.Entity<VwEomDepartments>()
             .ToView("VW_EOM_DEPARTMENTS")
             .HasKey(d => d.DepartmentId);
+            
+        // Configure VwEomManagers as existing Oracle view (exclude from migrations)
+        builder.Entity<VwEomManagers>()
+            .ToView("VW_EOM_MANAGERS")
+            .HasKey(m => m.ManagerId);
             
         // Configure Employee to Department relationship
         builder.Entity<Employee>()
@@ -368,6 +380,9 @@ public class ApplicationDbContext : DbContext
         // Configure AI Objectives & Messaging entities
         ConfigureAiObjectivesEntities(builder);
 
+        // Configure Ejadah Evaluation entities
+        ConfigureEjadahEntities(builder);
+
         // Employee model now maps to VW_EOM_EMPLOYEES view instead of physical table
     }
 
@@ -606,5 +621,135 @@ public class ApplicationDbContext : DbContext
         builder.Entity<AiGeneratedMessage>()
             .HasIndex(am => new { am.ObjectiveId, am.IsActive })
             .HasDatabaseName("IX_AIMSG_OBJ_ACTIVE");
+    }
+
+    private void ConfigureEjadahEntities(ModelBuilder builder)
+    {
+        // EjadahCycles configuration
+        builder.Entity<EjadahCycle>()
+            .ToTable("EJADAH_CYCLES")
+            .HasKey(ec => ec.EjadahCycleId);
+
+        builder.Entity<EjadahCycle>()
+            .Property(ec => ec.EjadahCycleId)
+            .HasColumnName("EJADAH_CYCLE_ID")
+            .HasColumnType("NUMBER(10)")
+            .HasDefaultValueSql("SEQ_EJADAH_CYCLES.NEXTVAL")
+            .ValueGeneratedOnAdd();
+
+        builder.Entity<EjadahCycle>()
+            .Property(ec => ec.Year)
+            .HasColumnName("YEAR")
+            .HasColumnType("NUMBER");
+
+        builder.Entity<EjadahCycle>()
+            .Property(ec => ec.Half)
+            .HasColumnName("HALF")
+            .HasColumnType("NUMBER");
+
+        builder.Entity<EjadahCycle>()
+            .Property(ec => ec.StartDate)
+            .HasColumnName("START_DATE")
+            .HasColumnType("DATE");
+
+        builder.Entity<EjadahCycle>()
+            .Property(ec => ec.EndDate)
+            .HasColumnName("END_DATE")
+            .HasColumnType("DATE");
+
+        builder.Entity<EjadahCycle>()
+            .Property(ec => ec.IsActive)
+            .HasColumnName("IS_ACTIVE")
+            .HasColumnType("NUMBER");
+
+        builder.Entity<EjadahCycle>()
+            .Property(ec => ec.CreatedDate)
+            .HasColumnName("CREATED_DATE")
+            .HasColumnType("DATE")
+            .HasDefaultValueSql("SYSDATE");
+
+        builder.Entity<EjadahCycle>()
+            .Property(ec => ec.CreatedBy)
+            .HasColumnName("CREATED_BY")
+            .HasColumnType("NVARCHAR2(100)");
+
+        // Unique constraint on Year and Half for EjadahCycles
+        builder.Entity<EjadahCycle>()
+            .HasIndex(ec => new { ec.Year, ec.Half })
+            .IsUnique()
+            .HasDatabaseName("UK_EJADAH_CYCLES_YEAR_HALF");
+
+        // EjadahEmployeeScores configuration
+        builder.Entity<EjadahEmployeeScore>()
+            .ToTable("EJADAH_EMPLOYEE_SCORES")
+            .HasKey(ees => ees.EjadahEmployeeScoreId);
+
+        builder.Entity<EjadahEmployeeScore>()
+            .Property(ees => ees.EjadahEmployeeScoreId)
+            .HasColumnName("EJADAH_EMPLOYEE_SCORE_ID")
+            .HasColumnType("NUMBER(10)")
+            .HasDefaultValueSql("SEQ_EJADAH_EMPLOYEE_SCORES.NEXTVAL")
+            .ValueGeneratedOnAdd();
+
+        builder.Entity<EjadahEmployeeScore>()
+            .Property(ees => ees.EjadahCycleId)
+            .HasColumnName("EJADAH_CYCLE_ID")
+            .HasColumnType("NUMBER(10)");
+
+        builder.Entity<EjadahEmployeeScore>()
+            .Property(ees => ees.EmployeeId)
+            .HasColumnName("EMPLOYEE_ID")
+            .HasColumnType("NUMBER(10)");
+
+        builder.Entity<EjadahEmployeeScore>()
+            .Property(ees => ees.Score)
+            .HasColumnName("SCORE")
+            .HasColumnType("VARCHAR2(50)");
+
+        builder.Entity<EjadahEmployeeScore>()
+            .Property(ees => ees.ScoreNumeric)
+            .HasColumnName("SCORE_NUMERIC")
+            .HasColumnType("NUMBER(22,0)");
+
+
+        // EjadahEmployeeScore relationships
+        builder.Entity<EjadahEmployeeScore>()
+            .HasOne(ees => ees.EjadahCycle)
+            .WithMany(ec => ec.EjadahEmployeeScores)
+            .HasForeignKey(ees => ees.EjadahCycleId)
+            .HasConstraintName("FK_EJADAH_SCORES_CYCLE");
+
+        // Note: Relationship removed due to type mismatch (decimal vs int)
+        // EjadahEmployeeScore.EmployeeId (decimal) vs Employee.EmployeeId (int)
+
+
+        // Unique constraint on cycle and employee
+        builder.Entity<EjadahEmployeeScore>()
+            .HasIndex(ees => new { ees.EjadahCycleId, ees.EmployeeId })
+            .IsUnique()
+            .HasDatabaseName("UK_EJADAH_SCORES_CYCLE_EMP");
+
+        // Performance indexes for EjadahEmployeeScores
+        builder.Entity<EjadahEmployeeScore>()
+            .HasIndex(ees => ees.EmployeeId)
+            .HasDatabaseName("IDX_EJADAH_SCORES_EMPLOYEE");
+
+        builder.Entity<EjadahEmployeeScore>()
+            .HasIndex(ees => ees.EjadahCycleId)
+            .HasDatabaseName("IDX_EJADAH_SCORES_CYCLE");
+
+        builder.Entity<EjadahEmployeeScore>()
+            .HasIndex(ees => ees.Score)
+            .HasDatabaseName("IDX_EJADAH_SCORES_SCORE");
+
+
+        // Performance indexes for EjadahCycles
+        builder.Entity<EjadahCycle>()
+            .HasIndex(ec => new { ec.Year, ec.Half })
+            .HasDatabaseName("IDX_EJADAH_CYCLES_YEAR_HALF");
+
+        builder.Entity<EjadahCycle>()
+            .HasIndex(ec => ec.IsActive)
+            .HasDatabaseName("IDX_EJADAH_CYCLES_ACTIVE");
     }
 }
