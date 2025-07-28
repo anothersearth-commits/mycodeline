@@ -6,6 +6,10 @@
     var currentNominations = ViewBag.CurrentNominations as List<EOM.Web.Models.Nomination> ?? new List<EOM.Web.Models.Nomination>();
     var recentCycles = ViewBag.RecentCycles as List<EOM.Web.Models.AwardCycle> ?? new List<EOM.Web.Models.AwardCycle>();
     
+    // Department nominations data
+    var departmentNominations = ViewBag.DepartmentNominations as List<EOM.Web.Models.Nomination> ?? new List<EOM.Web.Models.Nomination>();
+    var currentEmployeeDepartment = ViewBag.CurrentEmployeeDepartment as string ?? "غير محدد";
+    
     // Committee member data
     var pendingEvaluations = ViewBag.PendingEvaluations as List<EOM.Web.Models.Nomination> ?? new List<EOM.Web.Models.Nomination>();
     var completedEvaluations = ViewBag.CompletedEvaluations as List<EOM.Web.Models.Evaluation> ?? new List<EOM.Web.Models.Evaluation>();
@@ -135,6 +139,31 @@
         </div>
     </div>
 
+    <!-- Department Nominations Section - Simple clean cards -->
+    @if (departmentNominations.Any())
+    {
+        <div class="container mb-5">
+            <h4 class="text-center mb-4">المترشحون</h4>
+            <div class="row g-3 justify-content-center">
+                @foreach (var nomination in departmentNominations.Take(8))
+                {
+                    <div class="col-lg-3 col-md-4 col-sm-6">
+                        <div class="nominee-card">
+                            <div class="nominee-avatar">
+                                <img src="@Url.Action("WinnerPhoto", "Home", new { adUser = nomination.Employee?.EmployeeId })" 
+                                     alt="@nomination.Employee?.FirstName @nomination.Employee?.LastName"
+                                     onerror="this.src='@Url.Content("~/img/default-user.png")'" />
+                            </div>
+                            <div class="nominee-name">
+                                @nomination.Employee?.FirstName @nomination.Employee?.LastName
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+
     <!-- AI Message Section -->
     <div id="ai-message-container" class="ai-message-container" style="display: none;">
         <div class="container-fluid">
@@ -149,13 +178,52 @@
         </div>
     </div>
 
+    <style>
+        .nominee-card {
+            background: white;
+            border-radius: 15px;
+            padding: 1.5rem;
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            border: 1px solid #e0e0e0;
+        }
+
+        .nominee-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+        }
+
+        .nominee-avatar {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            overflow: hidden;
+            margin: 0 auto 1rem;
+            border: 3px solid #f0f0f0;
+        }
+
+        .nominee-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .nominee-name {
+            font-weight: 600;
+            color: #333;
+            font-size: 1rem;
+            line-height: 1.4;
+        }
+    </style>
+
     <!-- Role-Based Dashboards -->
     @if (User.IsInRole("Manager") && (currentRole == "Manager" || !isDualRole))
     {
         <!-- Manager Dashboard -->
         <div class="dashboard-section slide-up">
             <div class="container">
-                
+
                 @if (openCycles.Any())
                 {
                     <div class="glass-card priority-card mb-4">
@@ -356,7 +424,11 @@
                                 </div>
                                 
                                 <div class="mini-nominations-info">
-                                    <div class="mini-count-number">@cycle.Nominations.Count()</div>
+                                    @{
+                                        var currentManagerId = int.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "0");
+                                        var managerNominationsCount = cycle.Nominations?.Where(n => n.ManagerId == currentManagerId).Count() ?? 0;
+                                    }
+                                    <div class="mini-count-number">@managerNominationsCount</div>
                                     <div class="mini-count-label">ترشيحاتك</div>
                                 </div>
                                 
@@ -376,6 +448,7 @@
     {
         <!-- Committee Member Dashboard -->
         <div class="committee-dashboard slide-up">
+            
             <!-- Modern Quick Actions Grid -->
             <div class="row g-4 mb-5">
                 <!-- Pending Evaluations Card -->
@@ -669,6 +742,7 @@
     else if (!User.IsInRole("Manager"))
     {
         <!-- Current Cycle Overview for Normal Employees -->
+        
         @if (openCycles.Any())
         {
             var currentCycle = openCycles.First();

@@ -103,6 +103,48 @@
     .nominate-btn:hover {
         background: #218838;
     }
+
+    .nominate-btn:disabled {
+        background: #6c757d;
+        cursor: not-allowed;
+    }
+
+    .employee-card.ineligible {
+        opacity: 0.7;
+        border-color: #dc3545;
+    }
+
+    .ejadah-score-badge {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        padding: 2px 8px;
+        border-radius: 12px;
+        font-size: 0.75rem;
+        font-weight: 500;
+    }
+
+    .ejadah-score-eligible {
+        background: #d4edda;
+        color: #155724;
+        border: 1px solid #c3e6cb;
+    }
+
+    .ejadah-score-ineligible {
+        background: #f8d7da;
+        color: #721c24;
+        border: 1px solid #f1aeb5;
+    }
+
+    .employee-card {
+        position: relative;
+    }
+
+    .ejadah-score-info {
+        font-size: 0.75rem;
+        color: #6c757d;
+        margin-top: 0.25rem;
+    }
 </style>
 
 <!-- تحديث أنماط بسيطة للتوافق مع Bootstrap -->
@@ -134,6 +176,23 @@
         margin-top:1.5rem;
     }
     .submit-btn:hover {background:#0b5ed7;}
+    
+    .eligibility-summary {
+        background: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-radius: .5rem;
+        padding: 1rem;
+    }
+    
+    .eligibility-stat {
+        text-align: center;
+        padding: 0.5rem;
+    }
+    
+    .eligibility-stat i {
+        margin-left: 0.25rem;
+        font-size: 1.1rem;
+    }
 </style>
 
 <div class="container py-4">
@@ -175,29 +234,81 @@
         if (canNominate || (quota != null && quota.MaxNominations <= 0))
         {
             <div class="form-container">
-                <form asp-action="Create" method="post">
-                    <div asp-validation-summary="All" class="text-danger mb-3"></div>
-                    
-                    <div class="form-group">
-                        <label class="form-label">دورة الجائزة</label>
-                        @if ((bool)(ViewBag.HideCycleSelect ?? false))
-                        {
-                            var selectedItem = ((SelectList)ViewData["CycleId"]).FirstOrDefault();
-                            <input type="hidden" asp-for="CycleId" value="@selectedItem?.Value" />
-                            <div class="form-control-plaintext mb-2 fw-bold">@selectedItem?.Text</div>
-                        }
-                        else
-                        {
-                            <select asp-for="CycleId" class="form-select" asp-items="@((SelectList?)ViewData["CycleId"])">
-                                <option value="">اختر دورة الجائزة</option>
-                            </select>
-                        }
-                        <span asp-validation-for="CycleId" class="text-danger"></span>
-                    </div>
+                <div asp-validation-summary="All" class="text-danger mb-3"></div>
+                
+                <div class="form-group">
+                    <label class="form-label">دورة الجائزة</label>
+                    @if ((bool)(ViewBag.HideCycleSelect ?? false))
+                    {
+                        var selectedItem = ((SelectList)ViewData["CycleId"]).FirstOrDefault();
+                        <div class="form-control-plaintext mb-2 fw-bold">@selectedItem?.Text</div>
+                    }
+                    else
+                    {
+                        <select class="form-select" onchange="location.href='@Url.Action("Create")?cycleId=' + this.value">
+                            <option value="">اختر دورة الجائزة</option>
+                            @foreach (var item in (SelectList)ViewData["CycleId"])
+                            {
+                                <option value="@item.Value" selected="@item.Selected">@item.Text</option>
+                            }
+                        </select>
+                    }
+                </div>
 
                     <div class="form-group">
                         <label class="form-label">اختر الموظف للترشيح</label>
-                        <div class="form-text text-muted mb-2">ملاحظة: الموظفون المرشحون بالفعل في هذه الدورة غير مدرجين في القائمة</div>
+                        
+                        @{
+                            var totalEmployees = (int)(ViewData["TotalEmployeesCount"] ?? 0);
+                            var eligibleEmployees = (int)(ViewData["EligibleEmployeesCount"] ?? 0);
+                            var ineligibleEmployees = (int)(ViewData["IneligibleEmployeesCount"] ?? 0);
+                            var ineligibleList = ViewData["IneligibleEmployees"] as Dictionary<int, string>;
+                            var ineligibleDetails = ViewData["IneligibleEmployeeDetails"] as List<dynamic>;
+                            var ejadahScores = ViewData["EjadahScores"] as Dictionary<int, dynamic>;
+                            var eligibilityResults = ViewData["EligibilityResults"] as Dictionary<int, bool>;
+                        }
+                        
+                        @if (totalEmployees > 0)
+                        {
+                            <div class="eligibility-summary mb-3">
+                                <div class="row">
+                                    <div class="col-md-4">
+                                        <div class="eligibility-stat text-success">
+                                            <i class="fas fa-check-circle"></i>
+                                            <span class="fw-bold">@eligibleEmployees</span> مؤهل للترشيح
+                                        </div>
+                                    </div>
+                                    @if (ineligibleEmployees > 0)
+                                    {
+                                        <div class="col-md-4">
+                                            <div class="eligibility-stat text-warning">
+                                                <i class="fas fa-exclamation-triangle"></i>
+                                                <span class="fw-bold">@ineligibleEmployees</span> غير مؤهل (تقييم أجادة)
+                                            </div>
+                                        </div>
+                                    }
+                                    <div class="col-md-4">
+                                        <div class="eligibility-stat text-info">
+                                            <i class="fas fa-users"></i>
+                                            المجموع: <span class="fw-bold">@totalEmployees</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            @if (ineligibleEmployees > 0 && ineligibleDetails != null && ineligibleDetails.Any())
+                            {
+                                <div class="alert alert-warning">
+                                    <h6><i class="fas fa-info-circle"></i> موظفون غير مؤهلون للترشيح:</h6>
+                                    <ul class="mb-0">
+                                        @foreach (var ineligible in ineligibleDetails)
+                                        {
+                                            <li>@ineligible.Name - @ineligible.Reason</li>
+                                        }
+                                    </ul>
+                                </div>
+                            }
+                        }
                         
                         @if (ViewData["DepartmentEmployees"] != null)
                         {
@@ -210,7 +321,18 @@
                                 <div class="employee-grid" id="employeeGrid">
                                     @foreach (var employee in employees)
                                     {
-                                        <div class="employee-card" data-employee-id="@employee.EmployeeId">
+                                        var isEligible = eligibilityResults?.GetValueOrDefault(employee.EmployeeId, true) ?? true;
+                                        var hasEjadahScore = ejadahScores?.ContainsKey(employee.EmployeeId) ?? false;
+                                        dynamic ejadahScore = hasEjadahScore ? ejadahScores![employee.EmployeeId] : null;
+                                        
+                                        <div class="employee-card @(!isEligible ? "ineligible" : "")" data-employee-id="@employee.EmployeeId">
+                                            @if (hasEjadahScore)
+                                            {
+                                                <div class="ejadah-score-badge @(isEligible ? "ejadah-score-eligible" : "ejadah-score-ineligible")">
+                                                    @ejadahScore.ScoreArabic
+                                                </div>
+                                            }
+                                            
                                             <div class="employee-info" onclick="selectEmployee(@employee.EmployeeId)">
                                                 <div class="employee-avatar">
                                                     @{
@@ -229,17 +351,39 @@
                                                 <div class="employee-details">
                                                     <div class="employee-name">@employee.FirstName @employee.LastName</div>
                                                     <div class="employee-id">رقم الموظف: @employee.EmployeeId</div>
+                                                    @if (hasEjadahScore)
+                                                    {
+                                                        <div class="ejadah-score-info">
+                                                            أجادة: @ejadahScore.CycleName
+                                                        </div>
+                                                    }
+                                                    else
+                                                    {
+                                                        <div class="ejadah-score-info text-muted">
+                                                            لا يوجد تقييم أجادة
+                                                        </div>
+                                                    }
                                                 </div>
-                                                <input type="radio" 
-                                                       id="employee_@employee.EmployeeId"
-                                                       name="EmployeeId" 
-                                                       value="@employee.EmployeeId" 
-                                                       required 
-                                                       style="display: none;" />
                                             </div>
-                                            <button type="submit" class="nominate-btn" id="nominate_@employee.EmployeeId" style="display: none;">
-                                                ترشيح @employee.FirstName
-                                            </button>
+                                            @if (isEligible)
+                                            {
+                                                <a href="@Url.Action("Score", new { cycleId = ViewBag.SelectedCycleId ?? ViewBag.CycleId, employeeId = employee.EmployeeId })" 
+                                                   class="nominate-btn" 
+                                                   id="nominate_@employee.EmployeeId" 
+                                                   style="display: none; text-decoration: none; color: white;">
+                                                    <span>ترشيح @employee.FirstName</span>
+                                                </a>
+                                            }
+                                            else
+                                            {
+                                                <button type="button" 
+                                                        class="nominate-btn" 
+                                                        id="nominate_@employee.EmployeeId" 
+                                                        disabled
+                                                        style="display: none;">
+                                                    <span>غير مؤهل للترشيح</span>
+                                                </button>
+                                            }
                                         </div>
                                     }
                                 </div>
@@ -252,11 +396,9 @@
                                 </div>
                             }
                         }
-                        <span asp-validation-for="EmployeeId" class="text-danger"></span>
                     </div>
 
                     <!-- سيتم رفع المستندات الداعمة لاحقاً أثناء مرحلة التقييم -->
-                </form>
             </div>
         }
     }
@@ -277,16 +419,22 @@
         if (selectedCard) {
             selectedCard.classList.add('selected');
             
-            // Check the radio button
+            // Check the radio button (only if not disabled)
             const radio = selectedCard.querySelector('input[type="radio"]');
-            if (radio) {
+            if (radio && !radio.disabled) {
                 radio.checked = true;
-            }
-            
-            // Show the nominate button for this card
-            const nominateBtn = selectedCard.querySelector('.nominate-btn');
-            if (nominateBtn) {
-                nominateBtn.style.display = 'block';
+                
+                // Show the nominate button for this card
+                const nominateBtn = selectedCard.querySelector('.nominate-btn');
+                if (nominateBtn) {
+                    nominateBtn.style.display = 'block';
+                }
+            } else {
+                // For ineligible employees, still show the disabled button as feedback
+                const nominateBtn = selectedCard.querySelector('.nominate-btn');
+                if (nominateBtn) {
+                    nominateBtn.style.display = 'block';
+                }
             }
         }
     }

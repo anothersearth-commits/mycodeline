@@ -41,6 +41,48 @@ public class HomeController : BaseController
             
         ViewBag.OpenCycles = openCycles;
 
+        // Get department nominations for all employees to show at the top
+        var currentEmployeeId = int.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "0");
+        var currentEmployee = await _context.Employees.FindAsync(currentEmployeeId);
+        
+        if (currentEmployee != null)
+        {
+            // Get the latest award cycle for department nominations
+            var latestCycleForDept = await _context.AwardCycles
+                .OrderByDescending(ac => ac.Year)
+                .ThenByDescending(ac => ac.Month)
+                .FirstOrDefaultAsync();
+            
+            if (latestCycleForDept != null)
+            {
+                // Get recent nominations from the same department but only from the latest cycle
+                var allDepartmentNominations = await _context.Nominations
+                    .Include(n => n.Employee)
+                    .Include(n => n.Manager)
+                    .Include(n => n.AwardCycle)
+                    .ThenInclude(ac => ac.AwardType)
+                    .Where(n => n.Employee.DepartmentId == currentEmployee.DepartmentId && 
+                               n.CycleId == latestCycleForDept.CycleId)
+                    .OrderByDescending(n => n.CreatedAt)
+                    .ToListAsync();
+                
+                // Remove duplicates by employee ID in memory
+                var departmentNominations = allDepartmentNominations
+                    .GroupBy(n => n.EmployeeId)
+                    .Select(g => g.First())
+                    .Take(10)
+                    .ToList();
+                
+                ViewBag.DepartmentNominations = departmentNominations;
+            }
+            else
+            {
+                ViewBag.DepartmentNominations = new List<Nomination>();
+            }
+            
+            ViewBag.CurrentEmployeeDepartment = currentEmployee.Department?.Name ?? "غير محدد";
+        }
+
         // Get recent cycles for managers to show as cards
         if (isManager && (currentRole == "Manager" || !isDualRole))
         {

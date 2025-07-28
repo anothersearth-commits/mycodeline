@@ -40,10 +40,15 @@ namespace EOM.Web.Models
         public string ScoreArabic => Score switch
         {
             "EXCELLENT" => "ممتاز",
-            "VERY_GOOD" => "جيد جداً",
+            "VERY_GOOD" => "جيد جداً", 
             "GOOD" => "جيد",
             "MODERATE" => "متوسط",
             "POOR" => "ضعيف",
+            "Excellent" => "ممتاز",
+            "Very Good" => "جيد جداً",
+            "Good" => "جيد",
+            "Moderate" => "متوسط",
+            "Poor" => "ضعيف",
             _ => Score
         };
 
@@ -52,14 +57,19 @@ namespace EOM.Web.Models
         {
             "EXCELLENT" => "success",
             "VERY_GOOD" => "primary",
-            "GOOD" => "info",
+            "GOOD" => "info", 
             "MODERATE" => "warning",
             "POOR" => "danger",
+            "Excellent" => "success",
+            "Very Good" => "primary",
+            "Good" => "info",
+            "Moderate" => "warning",
+            "Poor" => "danger",
             _ => "secondary"
         };
 
         [NotMapped]
-        public bool IsEligibleForNomination => Score is not ("POOR" or "MODERATE");
+        public bool IsEligibleForNomination => Score is not ("POOR" or "MODERATE" or "Poor" or "Moderate");
 
         [NotMapped]
         public string EligibilityStatus => IsEligibleForNomination ? "مؤهل للترشيح" : "غير مؤهل للترشيح";
@@ -67,7 +77,7 @@ namespace EOM.Web.Models
         // Static methods for score validation
         public static List<string> GetValidScores()
         {
-            return new List<string> { "EXCELLENT", "VERY_GOOD", "GOOD", "MODERATE", "POOR" };
+            return new List<string> { "EXCELLENT", "VERY_GOOD", "GOOD", "MODERATE", "POOR", "Excellent", "Very Good", "Good", "Moderate", "Poor" };
         }
 
         public static Dictionary<string, string> GetScoreDescriptions()
@@ -78,13 +88,18 @@ namespace EOM.Web.Models
                 { "VERY_GOOD", "جيد جداً" },
                 { "GOOD", "جيد" },
                 { "MODERATE", "متوسط" },
-                { "POOR", "ضعيف" }
+                { "POOR", "ضعيف" },
+                { "Excellent", "ممتاز" },
+                { "Very Good", "جيد جداً" },
+                { "Good", "جيد" },
+                { "Moderate", "متوسط" },
+                { "Poor", "ضعيف" }
             };
         }
 
         public static List<string> GetIneligibleScores()
         {
-            return new List<string> { "POOR", "MODERATE" };
+            return new List<string> { "POOR", "MODERATE", "Poor", "Moderate" };
         }
     }
 }

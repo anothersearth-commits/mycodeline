@@ -7,7 +7,7 @@ namespace EOM.Web.Services
     public class EjadahEligibilityService : IEjadahEligibilityService
     {
         private readonly ApplicationDbContext _context;
-        private static readonly string[] IneligibleScores = { "POOR", "MODERATE" };
+        private static readonly string[] IneligibleScores = { "POOR", "MODERATE", "Poor", "Moderate" };
 
         public EjadahEligibilityService(ApplicationDbContext context)
         {
@@ -30,6 +30,18 @@ namespace EOM.Web.Services
         {
             try
             {
+                Console.WriteLine($"DEBUG: Looking for Ejadah score for employee {employeeId}");
+                
+                // First check if any records exist at all
+                var totalRecords = await _context.EjadahEmployeeScores.CountAsync();
+                Console.WriteLine($"DEBUG: Total Ejadah records in database: {totalRecords}");
+                
+                // Check records for this specific employee
+                var employeeRecords = await _context.EjadahEmployeeScores
+                    .Where(es => es.EmployeeId == employeeId)
+                    .CountAsync();
+                Console.WriteLine($"DEBUG: Records for employee {employeeId}: {employeeRecords}");
+                
                 // Get score without include first
                 var score = await _context.EjadahEmployeeScores
                     .Where(es => es.EmployeeId == employeeId)
@@ -38,11 +50,25 @@ namespace EOM.Web.Services
                 
                 if (score != null)
                 {
+                    Console.WriteLine($"DEBUG: Found score for employee {employeeId}: {score.Score}");
+                    
                     // Get the cycle separately
                     var cycle = await _context.EjadahCycles
                         .FirstOrDefaultAsync(ec => ec.EjadahCycleId == score.EjadahCycleId);
                     
-                    score.EjadahCycle = cycle;
+                    if (cycle != null)
+                    {
+                        Console.WriteLine($"DEBUG: Found cycle {cycle.Year} - {cycle.Half}");
+                        score.EjadahCycle = cycle;
+                    }
+                    else
+                    {
+                        Console.WriteLine($"DEBUG: No cycle found for ID {score.EjadahCycleId}");
+                    }
+                }
+                else
+                {
+                    Console.WriteLine($"DEBUG: No score found for employee {employeeId}");
                 }
                 
                 return score;
@@ -50,6 +76,7 @@ namespace EOM.Web.Services
             catch (Exception ex)
             {
                 Console.WriteLine($"Error getting single Ejadah score for employee {employeeId}: {ex.Message}");
+                Console.WriteLine($"Stack trace: {ex.StackTrace}");
                 return null;
             }
         }
@@ -111,6 +138,11 @@ namespace EOM.Web.Services
                 "GOOD" => "جيد",
                 "MODERATE" => "متوسط",
                 "POOR" => "ضعيف",
+                "Excellent" => "ممتاز",
+                "Very Good" => "جيد جداً",
+                "Good" => "جيد",
+                "Moderate" => "متوسط",
+                "Poor" => "ضعيف",
                 _ => score
             };
         }

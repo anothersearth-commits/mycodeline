@@ -90,8 +90,27 @@ public class AccountController : Controller
                 claims.Add(new Claim(ClaimTypes.Role, "EOM-Admin"));
             }
 
-            // Check if user is a manager using Employee.IsManager field
-            var isManager = employee.IsManager == 1;
+            // Check if user is a manager by looking up in VW_EOM_MANAGERS view
+            bool isManager = false;
+            try
+            {
+                Console.WriteLine($"Checking if employee {employee.EmployeeId} is a manager...");
+                Console.WriteLine($"_context is null: {_context == null}");
+                Console.WriteLine($"_context.Managers is null: {_context.Managers == null}");
+                Console.WriteLine($"employee is null: {employee == null}");
+                Console.WriteLine($"employee.EmployeeId: {employee?.EmployeeId}");
+                
+                isManager = await _context.Managers
+                    .AnyAsync(m => m.ManagerId == employee.EmployeeId);
+                Console.WriteLine($"Manager check result: {isManager}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error checking manager status: {ex.Message}");
+                Console.WriteLine($"Stack trace: {ex.StackTrace}");
+                isManager = false; // Default to false if there's an error
+            }
+            
             if (isManager)
             {
                 claims.Add(new Claim(ClaimTypes.Role, "Manager"));
