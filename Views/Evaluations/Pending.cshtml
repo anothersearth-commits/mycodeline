@@ -22,7 +22,10 @@ else
 {
     // Quick stats
     var total = Model.Count();
-    var departmentsCount = Model.Select(n => n.Employee?.Department?.Name ?? "غير محدد").Distinct().Count();
+    var departmentsCount = Model.Select(n => new { 
+            Name = n.Employee?.Department?.Name ?? "غير محدد",
+            Description = n.Employee?.Department?.Description ?? "غير محدد"
+        }).Distinct().Count();
 
     <div class="row mb-4">
         <div class="col-6 col-md-3">
@@ -34,20 +37,25 @@ else
         <div class="col-6 col-md-3">
             <div class="stat-card text-center glass-fade-in">
                 <div class="stat-number">@departmentsCount</div>
-                <div class="stat-label"> عدد الدوائر</div>
+                <div class="stat-label"> عدد الدائرة</div>
             </div>
         </div>
     </div>
 
     var grouped = Model
-        .GroupBy(n => n.Employee?.Department?.Name ?? "غير محدد")
-        .OrderBy(g => g.Key);
+        .GroupBy(n => new { 
+            Name = n.Employee?.Department?.Name ?? "غير محدد",
+            Description = n.Employee?.Department?.Description ?? "غير محدد"
+        })
+        .OrderBy(g => g.Key.Name)
+        .ThenBy(g => g.Key.Description);
 
     foreach (var dept in grouped)
     {
+        var displayName = dept.Key.Description;
         <div class="card glass-fade-in mb-4">
             <div class="card-header d-flex justify-content-between align-items-center">
-                <h5 class="m-0">@dept.Key</h5>
+                <h5 class="m-0">@displayName</h5>
                 <span class="badge bg-secondary">@dept.Count()</span>
             </div>
             <div class="card-body p-0">
@@ -67,8 +75,8 @@ else
                         {
                             <tr>
                                 <td>
-                                    @nomination.Employee?.FirstName @nomination.Employee?.LastName<br />
-                                    <small class="text-muted">@nomination.Employee?.JobTitle</small>
+                                    @nomination.Employee?.FirstName <br />
+                                    
                                 </td>
                                 <td>
                                     <span class="badge bg-info text-dark">@nomination.AwardCycle?.AwardType?.Name</span>

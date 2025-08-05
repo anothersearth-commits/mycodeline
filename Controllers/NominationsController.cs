@@ -788,7 +788,7 @@ public class NominationsController : BaseController
 
         var currentEmployeeId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
         
-        nomination.IsWinner = true;
+        nomination.IsWinner = 1;
         nomination.WonAt = DateTime.UtcNow;
         nomination.SelectedByCommitteeMemberId = currentEmployeeId;
 
@@ -815,7 +815,7 @@ public class NominationsController : BaseController
             return RedirectToAction("Index", "Home");
         }
 
-        nomination.IsWinner = false;
+        nomination.IsWinner = 0;
         nomination.WonAt = null;
         nomination.SelectedByCommitteeMemberId = null;
 

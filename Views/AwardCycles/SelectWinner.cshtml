@@ -1,17 +1,29 @@
 @model EOM.Web.Models.NominationRankingViewModel
 @{
-    ViewData["Title"] = "اختيار الفائزين";
+    ViewData["Title"] = Model.IsSecondStage ? "اعتماد الفائزين نهائياً" : "اختيار الفائزين";
     var winnerCount = Model.AwardType?.WinnerCount ?? 1;
+    var stageTitle = Model.IsSecondStage ? "اعتماد الفائزين نهائياً" : "اختيار الفائزين";
+    var stageDescription = Model.IsSecondStage ? "الفائزون المبدئيون" : "جميع المرشحين";
+    var actionName = Model.IsSecondStage ? "ConfirmWinners" : "SelectWinner";
 }
 
 <div class="page-header glass-fade-in mb-4">
-    <h1 class="m-0">اختيار الفائزين - الدورة رقم @Model.CycleId</h1>
-    <div class="alert alert-info">
-        <strong>عدد الفائزين المطلوب:</strong> @winnerCount من أصل @Model.RankedNominations.Count مرشحين
-    </div>
+    <h1 class="m-0">@stageTitle - الدورة رقم @Model.CycleId</h1>
+    @if (Model.IsSecondStage)
+    {
+        <div class="alert alert-warning">
+            <strong>المرحلة الثانية:</strong> اعتماد الفائزين نهائياً من بين الفائزين المبدئيين (@Model.RankedNominations.Count فائز مبدئي)
+        </div>
+    }
+    else
+    {
+        <div class="alert alert-info">
+            <strong>المرحلة الأولى:</strong> اختيار @winnerCount فائز مبدئي من أصل @Model.RankedNominations.Count مرشحين
+        </div>
+    }
 </div>
 
-<form asp-action="SelectWinner" method="post">
+<form asp-action="@actionName" method="post">
     <input type="hidden" name="id" value="@Model.CycleId" />
     <div class="table-responsive mb-4">
         <table class="table table-hover align-middle">
@@ -30,7 +42,12 @@
                     var item = Model.RankedNominations[i];
                     <tr>
                         <td>@(i + 1)</td>
-                        <td>@item.Nomination.Employee?.FirstName @item.Nomination.Employee?.LastName<br /><small class="text-muted">@item.Nomination.Employee?.JobTitle</small></td>
+                        <td>
+                            <strong>@item.Nomination.Employee?.FirstName @item.Nomination.Employee?.LastName</strong><br />
+                            <small class="text-muted">@item.Nomination.Employee?.JobTitle</small><br />
+                            <small class="text-info">الدائرة: @(item.Nomination.Employee?.Department?.Description ?? "غير محدد")</small><br />
+                            <small class="text-success">المدير: @(item.Nomination.Manager?.FirstName ?? "غير محدد") @item.Nomination.Manager?.LastName</small>
+                        </td>
                         <td class="text-center"><span class="badge bg-info">@item.AverageScore.ToString("F1")</span></td>
                         <td class="text-center">
                             <a href="@Url.Action("Details", "Nominations", new { id = item.Nomination.NominationId })" class="btn btn-info btn-sm" target="_blank">
@@ -38,11 +55,7 @@
                             </a>
                         </td>
                         <td class="text-center">
-                            <input type="checkbox" name="nominationIds" value="@item.Nomination.NominationId" @(i < winnerCount ? "checked" : "") class="large-checkbox" disabled />
-                            @if (i < winnerCount)
-                            {
-                                <input type="hidden" name="nominationIds" value="@item.Nomination.NominationId" />
-                            }
+                            <input type="checkbox" name="nominationIds" value="@item.Nomination.NominationId" @((!Model.IsSecondStage && i < winnerCount) || (Model.IsSecondStage && item.Nomination.IsWinner == 2) ? "checked" : "") class="large-checkbox winner-checkbox" />
                         </td>
                     </tr>
                 }
@@ -51,9 +64,18 @@
     </div>
 
     <div class="d-grid">
-        <button type="submit" class="btn btn-success btn-lg" id="confirmButton">
-            تأكيد الفائزين (<span id="selectedCount">@winnerCount</span>/@winnerCount)
-        </button>
+        @if (Model.IsSecondStage)
+        {
+            <button type="submit" class="btn btn-warning btn-lg" id="confirmButton">
+                🏆 اعتماد نهائي (<span id="selectedCount">@winnerCount</span>/@winnerCount)
+            </button>
+        }
+        else
+        {
+            <button type="submit" class="btn btn-primary btn-lg" id="confirmButton">
+                📋 اعتماد مبدئي (<span id="selectedCount">@winnerCount</span>/@winnerCount)
+            </button>
+        }
     </div>
 </form>
 
@@ -84,31 +106,57 @@
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const maxWinners = @winnerCount;
-    const checkboxes = document.querySelectorAll('input[name="nominationIds"]');
+    const isSecondStage = @Json.Serialize(Model.IsSecondStage);
+    const checkboxes = document.querySelectorAll('input.winner-checkbox');
     const selectedCountSpan = document.getElementById('selectedCount');
     const confirmButton = document.getElementById('confirmButton');
+    const form = document.querySelector('form');
+    
+    const stageTexts = {
+        first: {
+            confirmGood: '✅ اعتماد مبدئي',
+            confirmWarning: '⚠️ يجب اختيار',
+            confirmError: '❌ تم اختيار أكثر من المطلوب',
+            confirmMessage: 'هل أنت متأكد من اختيار {} فائز مبدئي؟\nيمكنك مراجعة الاختيار لاحقاً قبل الاعتماد النهائي.'
+        },
+        second: {
+            confirmGood: '🏆 اعتماد نهائي',
+            confirmWarning: '⚠️ يجب اختيار',
+            confirmError: '❌ تم اختيار أكثر من المطلوب',
+            confirmMessage: 'هل أنت متأكد من الاعتماد النهائي لـ {} فائز؟\nلن تتمكن من التراجع عن هذا الإجراء.'
+        }
+    };
+    
+    const currentStage = isSecondStage ? stageTexts.second : stageTexts.first;
     
     function updateUI() {
-        const checkedCount = document.querySelectorAll('input[name="nominationIds"]:checked').length;
+        const checkedCount = document.querySelectorAll('input.winner-checkbox:checked').length;
         selectedCountSpan.textContent = checkedCount;
         
-        // Update button state
+        // Update button state and text
         if (checkedCount === maxWinners) {
-            confirmButton.classList.remove('btn-warning');
-            confirmButton.classList.add('btn-success');
+            confirmButton.classList.remove('btn-warning', 'btn-danger');
+            if (isSecondStage) {
+                confirmButton.classList.add('btn-warning');
+            } else {
+                confirmButton.classList.add('btn-primary');
+            }
             confirmButton.disabled = false;
-        } else if (checkedCount > maxWinners) {
-            confirmButton.classList.remove('btn-success');
-            confirmButton.classList.add('btn-warning');
-            confirmButton.disabled = false;
+            confirmButton.innerHTML = `${currentStage.confirmGood} (${checkedCount}/${maxWinners})`;
+        } else if (checkedCount < maxWinners) {
+            confirmButton.classList.remove('btn-success', 'btn-danger', 'btn-primary', 'btn-warning');
+            confirmButton.classList.add('btn-secondary');
+            confirmButton.disabled = true;
+            confirmButton.innerHTML = `${currentStage.confirmWarning} ${maxWinners} فائز (${checkedCount}/${maxWinners})`;
         } else {
-            confirmButton.classList.remove('btn-success');
-            confirmButton.classList.add('btn-warning');
-            confirmButton.disabled = false;
+            confirmButton.classList.remove('btn-success', 'btn-warning', 'btn-primary', 'btn-secondary');
+            confirmButton.classList.add('btn-danger');
+            confirmButton.disabled = true;
+            confirmButton.innerHTML = `${currentStage.confirmError} (${checkedCount}/${maxWinners})`;
         }
         
         // Update row styling
-        checkboxes.forEach((checkbox, index) => {
+        checkboxes.forEach((checkbox) => {
             const row = checkbox.closest('tr');
             if (checkbox.checked) {
                 row.classList.add('winner-row');
@@ -122,16 +170,35 @@ document.addEventListener('DOMContentLoaded', function() {
     
     checkboxes.forEach(checkbox => {
         checkbox.addEventListener('change', function() {
-            const checkedCount = document.querySelectorAll('input[name="nominationIds"]:checked').length;
+            const checkedCount = document.querySelectorAll('input.winner-checkbox:checked').length;
             
-            // If we've exceeded the max, uncheck this checkbox
+            // Allow selection but show warning if exceeded
             if (checkedCount > maxWinners) {
-                this.checked = false;
-                alert(`يمكن اختيار ${maxWinners} فائز فقط`);
+                // Show warning but don't uncheck
+                const remainingCount = checkedCount - maxWinners;
+                alert(`تحذير: لقد اخترت ${checkedCount} مرشحين بينما المطلوب ${maxWinners} فقط.\nالرجاء إلغاء اختيار ${remainingCount} مرشح.`);
             }
             
             updateUI();
         });
+    });
+    
+    // Form submission validation
+    form.addEventListener('submit', function(e) {
+        const checkedCount = document.querySelectorAll('input.winner-checkbox:checked').length;
+        
+        if (checkedCount !== maxWinners) {
+            e.preventDefault();
+            alert(`يجب اختيار ${maxWinners} فائز بالضبط. لقد اخترت ${checkedCount}.`);
+            return false;
+        }
+        
+        // Confirm before submission
+        const confirmMessage = currentStage.confirmMessage.replace('{}', checkedCount);
+        if (!confirm(confirmMessage)) {
+            e.preventDefault();
+            return false;
+        }
     });
     
     // Initial UI update

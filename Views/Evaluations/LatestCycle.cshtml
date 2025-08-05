@@ -60,10 +60,10 @@
                         <tbody>
                             @foreach (var nomination in Model.Nominations.OrderBy(n => n.Employee?.DepartmentId).ThenBy(n => n.Employee?.LastName))
                             {
-                                <tr class="@(nomination.IsWinner ? "table-success" : "")">
+                                <tr class="@(nomination.IsWinner == 1 ? "table-success" : "")">
                                     <td>
                                         <div class="d-flex align-items-center">
-                                            @if (nomination.IsWinner)
+                                            @if (nomination.IsWinner == 1)
                                             {
                                                 <i class="fas fa-crown text-warning me-2"></i>
                                             }
@@ -80,7 +80,7 @@
                                         <span class="badge w-100" style="background-color: #007bff; color: white;">@nomination.Evaluations.Count تقييم</span>
                                     </td>
                                     <td>
-                                        @if (nomination.IsWinner)
+                                        @if (nomination.IsWinner == 1)
                                         {
                                             <span class="badge bg-success w-100">فائز</span>
                                         }

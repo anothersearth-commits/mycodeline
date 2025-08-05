@@ -254,9 +254,20 @@
 <div class="card mb-4">
     <div class="card-body row align-items-center">
         <div class="col-md-8">
-            <h4 class="mb-1">@Model.Nomination?.Employee?.FirstName @Model.Nomination?.Employee?.LastName</h4>
-            <p class="mb-1 text-muted">@Model.Nomination?.Employee?.JobTitle</p>
-            <small class="text-muted">نوع الجائزة: @Model.Nomination?.AwardCycle?.AwardType?.Name | دورة @Model.Nomination?.AwardCycle?.Month/@Model.Nomination?.AwardCycle?.Year</small>
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <h4 class="mb-1">@Model.Nomination?.Employee?.FirstName </h4>
+                    <small class="text-muted">نوع الجائزة: @Model.Nomination?.AwardCycle?.AwardType?.Name | دورة @Model.Nomination?.AwardCycle?.Month/@Model.Nomination?.AwardCycle?.Year</small>
+                </div>
+                <button type="button" class="btn btn-outline-primary btn-primary btn-sm d-flex align-items-center gap-2" id="attendanceBtn" 
+                        data-employee-id="@Model.Nomination?.EmployeeId" 
+                        data-month="@Model.Nomination?.AwardCycle?.Month" 
+                        data-year="@Model.Nomination?.AwardCycle?.Year"
+                        style="height: fit-content; white-space: nowrap;">
+                    <i class="fas fa-calendar-check"></i>
+                    <span>سجل الحضور</span>
+                </button>
+            </div>
         </div>
         <div class="col-md-4 text-md-end mt-3 mt-md-0">
             <span class="text-muted">إجمالي الدرجة</span>
@@ -361,6 +372,7 @@
 
 <form asp-action="Create" method="post">
     <input type="hidden" asp-for="NominationId" />
+    <input type="hidden" name="submissionToken" value="@ViewData["SubmissionToken"]" />
     <div asp-validation-summary="All" class="alert alert-danger" style="display: none;"></div>
 
     @foreach (var criterion in Model.Nomination.AwardCycle.AwardType.Criteria.OrderBy(c=>c.CriterionId))
@@ -430,6 +442,54 @@
     </div>
 </form>
 
+<!-- Attendance Modal -->
+<div class="modal fade" id="attendanceModal" tabindex="-1" aria-labelledby="attendanceModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="attendanceModalLabel">سجل الحضور</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="attendanceLoading" class="text-center">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">جاري التحميل...</span>
+                    </div>
+                    <p class="mt-2">جاري تحميل سجل الحضور...</p>
+                </div>
+                <div id="attendanceContent" style="display: none;">
+                    <div class="mb-3">
+                        <h6 id="attendanceEmployeeName"></h6>
+                        <p class="text-muted mb-1">رقم الموظف: <span id="attendanceEmployeeNumber"></span></p>
+                        <p class="text-muted">الفترة: <span id="attendancePeriod"></span></p>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover">
+                            <thead>
+                                <tr>
+                                    <th>التاريخ</th>
+                                    <th>اليوم</th>
+                                    <th>وقت الحضور</th>
+                                    <th>وقت الانصراف</th>
+                                    <th>المدة</th>
+                                </tr>
+                            </thead>
+                            <tbody id="attendanceTableBody">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div id="attendanceError" class="alert alert-danger" style="display: none;">
+                    <i class="fas fa-exclamation-triangle"></i> <span id="attendanceErrorMessage"></span>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إغلاق</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 @section Scripts{
     <script>
         document.addEventListener('DOMContentLoaded', function(){
@@ -438,6 +498,28 @@
             const submitBtn = document.getElementById('submitBtn');
             const submitBtnScore = document.getElementById('submitBtnScore');
             const celebrationParticles = document.getElementById('celebrationParticles');
+            
+            // Prevent double-submit
+            let isSubmitting = false;
+            const form = document.querySelector('form');
+            
+            form.addEventListener('submit', function(e) {
+                if (isSubmitting) {
+                    e.preventDefault();
+                    return false;
+                }
+                
+                isSubmitting = true;
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status"></span>جاري الحفظ...';
+                
+                // Re-enable after 5 seconds as fallback (in case of error)
+                setTimeout(() => {
+                    isSubmitting = false;
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = '<span id="submitBtnText">حفظ التقييم</span><span class="badge bg-light text-dark ms-2" id="submitBtnScore">' + submitBtnScore.textContent + '</span><div class="celebration-particles" id="celebrationParticles"></div>';
+                }, 5000);
+            });
 
             function createParticles() {
                 // Clear existing particles
@@ -661,6 +743,74 @@
             // Initialize on page load
             initializeCriterionTotals();
             recalc();
+            
+            // Attendance Modal functionality
+            const attendanceBtn = document.getElementById('attendanceBtn');
+            const attendanceModal = new bootstrap.Modal(document.getElementById('attendanceModal'));
+            
+            if (attendanceBtn) {
+                attendanceBtn.addEventListener('click', async function() {
+                    const employeeId = this.getAttribute('data-employee-id');
+                    const month = this.getAttribute('data-month');
+                    const year = this.getAttribute('data-year');
+                    
+                    // Show modal
+                    attendanceModal.show();
+                    
+                    // Reset modal state
+                    document.getElementById('attendanceLoading').style.display = 'block';
+                    document.getElementById('attendanceContent').style.display = 'none';
+                    document.getElementById('attendanceError').style.display = 'none';
+                    
+                    try {
+                        // Fetch attendance data
+                        const response = await fetch(`@Url.Action("GetAttendance", "Evaluations")?employeeId=${employeeId}&month=${month}&year=${year}`);
+                        
+                        if (!response.ok) {
+                            throw new Error('حدث خطأ في تحميل البيانات');
+                        }
+                        
+                        const data = await response.json();
+                        
+                        if (data.success) {
+                            // Populate employee info
+                            document.getElementById('attendanceEmployeeName').textContent = data.employeeName;
+                            document.getElementById('attendanceEmployeeNumber').textContent = data.employeeNumber;
+                            document.getElementById('attendancePeriod').textContent = data.monthName;
+                            
+                            // Populate attendance table
+                            const tbody = document.getElementById('attendanceTableBody');
+                            tbody.innerHTML = '';
+                            
+                            if (data.records && data.records.length > 0) {
+                                data.records.forEach(record => {
+                                    const row = tbody.insertRow();
+                                    row.innerHTML = `
+                                        <td>${record.date}</td>
+                                        <td>${record.dayName}</td>
+                                        <td>${record.checkIn}</td>
+                                        <td>${record.checkOut}</td>
+                                        <td>${record.duration}</td>
+                                    `;
+                                });
+                            } else {
+                                tbody.innerHTML = '<tr><td colspan="5" class="text-center">لا توجد سجلات حضور لهذه الفترة</td></tr>';
+                            }
+                            
+                            // Show content
+                            document.getElementById('attendanceLoading').style.display = 'none';
+                            document.getElementById('attendanceContent').style.display = 'block';
+                        } else {
+                            throw new Error(data.message || 'حدث خطأ في تحميل البيانات');
+                        }
+                    } catch (error) {
+                        // Show error
+                        document.getElementById('attendanceLoading').style.display = 'none';
+                        document.getElementById('attendanceError').style.display = 'block';
+                        document.getElementById('attendanceErrorMessage').textContent = error.message;
+                    }
+                });
+            }
         });
     </script>
     @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}

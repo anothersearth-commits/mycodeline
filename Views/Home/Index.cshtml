@@ -119,7 +119,7 @@
                                 var totalPastCycles = pastCycles.Count;
                                 var currentYear = DateTime.Now.Year;
                                 var currentMonth = DateTime.Now.Month;
-                                var lastWinner = pastCycles.FirstOrDefault()?.Nominations?.FirstOrDefault(n => n.IsWinner)?.Employee;
+                                var lastWinner = pastCycles.FirstOrDefault()?.Nominations?.FirstOrDefault(n => n.IsWinner == 1)?.Employee;
                                 
                                 <div class="floating-card card-2" style="@Html.Raw(string.Join(";", shuffledPositions[1].GetType().GetProperties().Select(p => $"{p.Name}: {p.GetValue(shuffledPositions[1])}")))">
                                     <div class="card-icon"><img src="~/img/credibility.png" alt="Past Cycles" class="floating-card-img" /></div>
@@ -655,6 +655,28 @@
                     font-size: 0.875rem;
                 }
 
+                .employee-avatar-small {
+                    width: 100%;
+                    height: 100%;
+                    border-radius: 50%;
+                    object-fit: cover;
+                    border: 2px solid white;
+                }
+
+                .activity-icon {
+                    width: 40px;
+                    height: 40px;
+                    border-radius: 50%;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    flex-shrink: 0;
+                }
+
+                .activity-icon.completed {
+                    overflow: hidden;
+                }
+
                 @@media (max-width: 768px) {
                     .modern-action-card {
                         margin-bottom: 1rem;
@@ -702,7 +724,11 @@
                             {
                                 <div class="activity-item">
                                     <div class="activity-icon completed">
-                                        <i class="fas fa-check"></i>
+                                        <img src="@Url.Action("WinnerPhoto", "Home", new { adUser = activity.Nomination?.Employee?.EmployeeId })" 
+                                             alt="@activity.Nomination?.Employee?.FirstName @activity.Nomination?.Employee?.LastName"
+                                             class="employee-avatar-small"
+                                             onerror="this.style.display='none'; this.nextElementSibling.style.display='inline-block';" />
+                                        <i class="fas fa-check" style="display: none;"></i>
                                     </div>
                                     <div class="activity-content">
                                         <div class="activity-title">تم تقييم @activity.Nomination?.Employee?.FirstName @activity.Nomination?.Employee?.LastName</div>
@@ -710,9 +736,21 @@
                                     </div>
                                     <div class="activity-score">
                                         @{
-                                            var totalScore = activity.EvaluationScores?.Sum(es => es.Score ?? 0) ?? 0;
+                                            double CalculateEvaluationScore(EOM.Web.Models.Evaluation evaluation)
+                                            {
+                                                if (!evaluation.EvaluationScores.Any())
+                                                {
+                                                    return 0;
+                                                }
+
+                                                // Simple sum - SubCriteria max scores total to 100
+                                                var validScores = evaluation.EvaluationScores.Where(es => es.Score.HasValue);
+                                                return validScores.Sum(es => (double)es.Score.Value);
+                                            }
+                                            
+                                            var totalScore = CalculateEvaluationScore(activity);
                                         }
-                                        @totalScore/100
+                                        @totalScore.ToString("F1")
                                     </div>
                                 </div>
                             }

@@ -40,6 +40,9 @@ public class ApplicationDbContext : DbContext
     // Ejadah Evaluation Tables
     public DbSet<EjadahCycle> EjadahCycles { get; set; }
     public DbSet<EjadahEmployeeScore> EjadahEmployeeScores { get; set; }
+    
+    // Attendance View
+    public DbSet<AttendanceRecord> AttendanceRecords { get; set; }
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -61,6 +64,32 @@ public class ApplicationDbContext : DbContext
         builder.Entity<VwEomManagers>()
             .ToView("VW_EOM_MANAGERS")
             .HasKey(m => m.ManagerId);
+            
+        // Configure AttendanceRecord as existing Oracle view (exclude from migrations)
+        builder.Entity<AttendanceRecord>()
+            .ToView("VW_EOM_ATTENDANCE")
+            .HasKey(a => new { a.EmployeeNumber, a.AttendanceDate });
+            
+        // Configure AttendanceRecord column types for Oracle
+        builder.Entity<AttendanceRecord>()
+            .Property(a => a.EmployeeNumber)
+            .HasColumnType("NUMBER(10)");
+            
+        builder.Entity<AttendanceRecord>()
+            .Property(a => a.AttendanceDate)
+            .HasColumnType("DATE");
+            
+        builder.Entity<AttendanceRecord>()
+            .Property(a => a.AttendanceIn)
+            .HasColumnType("VARCHAR2(8)");
+            
+        builder.Entity<AttendanceRecord>()
+            .Property(a => a.AttendanceOut)
+            .HasColumnType("VARCHAR2(8)");
+            
+        builder.Entity<AttendanceRecord>()
+            .Property(a => a.Difference)
+            .HasColumnType("VARCHAR2(8)");
             
         // Configure Employee to Department relationship
         builder.Entity<Employee>()
@@ -301,10 +330,10 @@ public class ApplicationDbContext : DbContext
             .Property(n => n.SupportingDocPath)
             .HasColumnType("NVARCHAR2(500)");
             
-        // Configure boolean fields in Nomination for Oracle
+        // Configure IsWinner field in Nomination for Oracle (0=not winner, 1=final winner, 2=preliminary winner)
         builder.Entity<Nomination>()
             .Property(n => n.IsWinner)
-            .HasColumnType("NUMBER(1)");
+            .HasColumnType("NUMBER(10)");
 
         builder.Entity<CommitteeMember>()
             .HasOne(cm => cm.Employee)
@@ -356,6 +385,12 @@ public class ApplicationDbContext : DbContext
         builder.Entity<Evaluation>()
             .HasIndex(e => e.CommitteeMemberId)
             .HasDatabaseName("IX_Evaluation_Committee");
+            
+        // Add unique constraint to prevent duplicate evaluations
+        builder.Entity<Evaluation>()
+            .HasIndex(e => new { e.NominationId, e.CommitteeMemberId })
+            .IsUnique()
+            .HasDatabaseName("UQ_Eval_Nom_Committee");
             
         builder.Entity<EvaluationScore>()
             .HasIndex(es => es.EvaluationId)

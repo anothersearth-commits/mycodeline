@@ -18,8 +18,8 @@ public class Nomination
     
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     
-    // Winner tracking
-    public bool IsWinner { get; set; } = false;
+    // Winner tracking (0 = not winner, 1 = final winner, 2 = preliminary winner)
+    public int IsWinner { get; set; } = 0;
     public DateTime? WonAt { get; set; }
     public int? SelectedByCommitteeMemberId { get; set; }
     

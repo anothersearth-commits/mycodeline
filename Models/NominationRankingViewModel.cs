@@ -8,5 +8,6 @@ namespace EOM.Web.Models
         public int CycleId { get; set; }
         public AwardType? AwardType { get; set; }
         public IList<NominationWithScore> RankedNominations { get; set; } = new List<NominationWithScore>();
+        public bool IsSecondStage { get; set; } = false;
     }
 } 

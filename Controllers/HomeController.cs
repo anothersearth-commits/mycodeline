@@ -181,6 +181,7 @@ public class HomeController : BaseController
 
                 // Get all nominations that need evaluation from this committee member
                 var pendingNominations = await _context.Nominations
+                    .AsNoTracking()
                     .Include(n => n.Employee)
                     .Include(n => n.AwardCycle)
                     .ThenInclude(ac => ac.AwardType)
@@ -188,29 +189,53 @@ public class HomeController : BaseController
                                !n.Evaluations.Any(e => e.CommitteeMemberId == committeeMember.Id))
                     .ToListAsync();
                 
+                // Remove any duplicates based on NominationId
+                pendingNominations = pendingNominations
+                    .GroupBy(n => n.NominationId)
+                    .Select(g => g.First())
+                    .ToList();
+                
                 ViewBag.PendingEvaluations = pendingNominations;
                 ViewBag.PendingCount = pendingNominations.Count();
 
                 // Get completed evaluations by this committee member
                 var completedEvaluations = await _context.Evaluations
+                    .AsNoTracking()
                     .Include(e => e.Nomination)
                     .ThenInclude(n => n.Employee)
                     .Include(e => e.Nomination)
                     .ThenInclude(n => n.AwardCycle)
                     .ThenInclude(ac => ac.AwardType)
+                    .ThenInclude(at => at.Criteria)
+                    .ThenInclude(c => c.SubCriteria)
                     .Include(e => e.EvaluationScores)
+                    .ThenInclude(es => es.SubCriteria)
                     .Where(e => e.CommitteeMemberId == committeeMember.Id &&
                                evaluationCycles.Select(ec => ec.CycleId).Contains(e.Nomination.CycleId))
-                    .OrderByDescending(e => e.CreatedAt)
-                    .Take(10)
                     .ToListAsync();
                 
+                // Remove any duplicates based on EvaluationId
+                completedEvaluations = completedEvaluations
+                    .GroupBy(e => e.EvaluationId)
+                    .Select(g => g.First())
+                    .OrderByDescending(e => e.CreatedAt)
+                    .Take(10)
+                    .ToList();
+                
+                // Get the actual count before limiting to 10
+                var actualCompletedCount = await _context.Evaluations
+                    .Where(e => e.CommitteeMemberId == committeeMember.Id &&
+                               evaluationCycles.Select(ec => ec.CycleId).Contains(e.Nomination.CycleId))
+                    .Select(e => e.EvaluationId)
+                    .Distinct()
+                    .CountAsync();
+                
                 ViewBag.CompletedEvaluations = completedEvaluations;
-                ViewBag.CompletedCount = completedEvaluations.Count();
+                ViewBag.CompletedCount = actualCompletedCount;
 
                 // Calculate progress
-                var totalEvaluations = pendingNominations.Count() + completedEvaluations.Count();
-                var progressPercentage = totalEvaluations > 0 ? (completedEvaluations.Count() * 100) / totalEvaluations : 0;
+                var totalEvaluations = pendingNominations.Count() + actualCompletedCount;
+                var progressPercentage = totalEvaluations > 0 ? (actualCompletedCount * 100) / totalEvaluations : 0;
                 ViewBag.ProgressPercentage = progressPercentage;
 
                 // Calculate days remaining (assuming evaluation period ends at month end)
@@ -383,7 +408,7 @@ public class HomeController : BaseController
             .Include(n => n.AwardCycle)
             .ThenInclude(ac => ac.AwardType)
             .Include(n => n.SelectedByCommitteeMember)
-            .Where(n => n.CycleId == lastClosedCycle.CycleId && n.IsWinner)
+            .Where(n => n.CycleId == lastClosedCycle.CycleId && n.IsWinner == 1)
             .OrderBy(n => n.Employee.FirstName)
             .ToListAsync();
 

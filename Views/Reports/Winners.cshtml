@@ -1,0 +1,148 @@
+@model IEnumerable<EOM.Web.Models.Nomination>
+
+@{
+    ViewData["Title"] = "تقرير الفائزون";
+    var cycles = ViewBag.AwardCycles as dynamic;
+    var selectedCycleId = ViewBag.SelectedCycleId as int?;
+}
+
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1><i class="fas fa-trophy text-warning"></i> تقرير الفائزون</h1>
+        <div>
+            @if (selectedCycleId.HasValue && Model.Any())
+            {
+                <a href="@Url.Action("ExportWinners", new { cycleId = selectedCycleId })" class="btn btn-success">
+                    <i class="fas fa-download me-2"></i>تصدير Excel
+                </a>
+            }
+            <a href="@Url.Action("Index")" class="btn btn-secondary ms-2">
+                <i class="fas fa-arrow-right me-2"></i>العودة للتقارير
+            </a>
+        </div>
+    </div>
+
+    <!-- Cycle Selection -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="get" action="@Url.Action("Winners")">
+                <div class="row align-items-end">
+                    <div class="col-md-6">
+                        <label for="cycleId" class="form-label">اختر دورة الجائزة:</label>
+                        <select name="cycleId" id="cycleId" class="form-select" onchange="this.form.submit()">
+                            <option value="">-- اختر الدورة --</option>
+                            @if (cycles != null)
+                            {
+                                foreach (var cycle in cycles)
+                                {
+                                    @if (cycle.CycleId == selectedCycleId)
+                                    {
+                                        <option value="@cycle.CycleId" selected>@cycle.Name</option>
+                                    }
+                                    else
+                                    {
+                                        <option value="@cycle.CycleId">@cycle.Name</option>
+                                    }
+                                }
+                            }
+                        </select>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    @if (Model != null && Model.Any())
+    {
+        <div class="card">
+            <div class="card-header bg-warning bg-opacity-10">
+                <h5 class="mb-0"><i class="fas fa-star text-warning me-2"></i>قائمة الفائزين</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover">
+                        <thead class="table-warning">
+                            <tr>
+                                <th>#</th>
+                                <th>الموظف</th>
+                                <th>رقم الموظف</th>
+                                <th>الدائرة</th>
+                                <th>المدير</th>
+                                <th>نوع الجائزة</th>
+                                <th>الشهر/السنة</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @{
+                                int index = 1;
+                            }
+                            @foreach (var winner in Model)
+                            {
+                                <tr>
+                                    <td>@index</td>
+                                    <td>
+                                        <strong>@winner.Employee?.FirstName @winner.Employee?.LastName</strong>
+                                    </td>
+                                    <td>@winner.Employee?.EmployeeId</td>
+                                    <td>@winner.Employee?.Department?.Name</td>
+                                    <td>
+                                        @winner.Manager?.FirstName @winner.Manager?.LastName
+                                    </td>
+                                    <td>
+                                        <strong class="text-primary">@winner.AwardCycle?.AwardType?.Name</strong>
+                                    </td>
+                                    <td>
+                                        @winner.AwardCycle?.Month/@winner.AwardCycle?.Year
+                                    </td>
+                                </tr>
+                                index++;
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Winners by Department -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5 class="mb-0">توزيع الفائزين حسب الدائرة</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    @{
+                        var winnersByDept = Model.GroupBy(w => w.Employee?.Department?.Name ?? "غير محدد")
+                                                 .OrderByDescending(g => g.Count())
+                                                 .ToList();
+                    }
+                    @foreach (var deptGroup in winnersByDept)
+                    {
+                        <div class="col-md-4 mb-3">
+                            <div class="card bg-light">
+                                <div class="card-body text-center">
+                                    <h6 class="card-title">@deptGroup.Key</h6>
+                                    <h3 class="text-warning">@deptGroup.Count()</h3>
+                                    <small class="text-muted">فائز</small>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    }
+    else if (selectedCycleId.HasValue)
+    {
+        <div class="alert alert-info" role="alert">
+            <i class="fas fa-info-circle me-2"></i>
+            لا يوجد فائزون في الدورة المختارة.
+        </div>
+    }
+    else
+    {
+        <div class="alert alert-warning" role="alert">
+            <i class="fas fa-exclamation-triangle me-2"></i>
+            الرجاء اختيار دورة الجائزة لعرض التقرير.
+        </div>
+    }
+</div>

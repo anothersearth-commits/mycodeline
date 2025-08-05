@@ -134,7 +134,7 @@
                                                 else if (cycle.Status == CycleStatus.Closed)
                                                 {
                                                     // Check if cycle has a winner
-                                                    var hasWinner = cycle.Nominations?.Any(n => n.IsWinner) ?? false;
+                                                    var hasWinner = cycle.Nominations?.Any(n => n.IsWinner == 1) ?? false;
                                                     
                                                     if (!hasWinner && (User.IsInRole("EOM-Admin") || User.IsInRole("EOM-Committee-Lead")))
                                                     {

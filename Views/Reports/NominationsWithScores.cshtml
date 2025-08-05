@@ -1,0 +1,235 @@
+@{
+    ViewData["Title"] = "تقرير الترشيحات والدرجات";
+    var cycles = ViewBag.AwardCycles as dynamic;
+    var selectedCycleId = ViewBag.SelectedCycleId as int?;
+}
+
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1><i class="fas fa-trophy text-warning"></i> تقرير الترشيحات والدرجات</h1>
+        <div>
+            @if (selectedCycleId.HasValue)
+            {
+                <a href="@Url.Action("ExportNominationsWithScores", new { cycleId = selectedCycleId })" class="btn btn-success">
+                    <i class="fas fa-download me-2"></i>تصدير Excel
+                </a>
+            }
+            <a href="@Url.Action("Index")" class="btn btn-secondary ms-2">
+                <i class="fas fa-arrow-right me-2"></i>العودة للتقارير
+            </a>
+        </div>
+    </div>
+
+    <!-- Cycle Selection -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="get" action="@Url.Action("NominationsWithScores")">
+                <div class="row align-items-end">
+                    <div class="col-md-6">
+                        <label for="cycleId" class="form-label">اختر دورة الجائزة:</label>
+                        <select name="cycleId" id="cycleId" class="form-select" onchange="this.form.submit()">
+                            <option value="">-- اختر الدورة --</option>
+                            @if (cycles != null)
+                            {
+                                foreach (var cycle in cycles)
+                                {
+                                    @if (cycle.CycleId == selectedCycleId)
+                                    {
+                                        <option value="@cycle.CycleId" selected>@cycle.Name</option>
+                                    }
+                                    else
+                                    {
+                                        <option value="@cycle.CycleId">@cycle.Name</option>
+                                    }
+                                }
+                            }
+                        </select>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    @if (Model != null && ((IEnumerable<dynamic>)Model).Any())
+    {
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">قائمة الترشيحات مع الدرجات</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>#</th>
+                                <th>الموظف</th>
+                                <th>الدائرة</th>
+                                <th>المدير</th>
+                                <th>نوع الجائزة</th>
+                                <th class="text-center">درجة المدير</th>
+                                <th class="text-center">درجات اللجنة</th>
+                                <th class="text-center">متوسط اللجنة</th>
+                                <th class="text-center">الدرجة النهائية</th>
+                                <th class="text-center">الحالة</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @{
+                                int index = 1;
+                            }
+                            @foreach (var item in Model)
+                            {
+                                var nomination = item.Nomination;
+                                <tr @(nomination.IsWinner == 1 ? "class=table-success" : "")>
+                                    <td>@index</td>
+                                    <td>
+                                        <strong>@nomination.Employee?.FirstName @nomination.Employee?.LastName</strong>
+                                        <br>
+                                        <small class="text-muted">رقم: @nomination.Employee?.EmployeeId</small>
+                                    </td>
+                                    <td>@nomination.Employee?.Department?.Name</td>
+                                    <td>
+                                        @nomination.Manager?.FirstName @nomination.Manager?.LastName
+                                    </td>
+                                    <td>
+                                        @nomination.AwardCycle?.AwardType?.Name
+                                    </td>
+                                    <td class="text-center">
+                                        <strong class="text-primary">@item.ManagerScore.ToString("F2")</strong>
+                                    </td>
+                                    <td class="text-center">
+                                        @if (item.CommitteeScores != null && item.CommitteeScores.Count > 0)
+                                        {
+                                            <button type="button" class="btn btn-sm btn-outline-info" 
+                                                    data-bs-toggle="popover" 
+                                                    data-bs-trigger="hover focus"
+                                                    data-bs-html="true"
+                                                    data-bs-content="@{
+                                                        var scoreDetails = new List<string>();
+                                                        foreach(var cs in item.CommitteeScores)
+                                                        {
+                                                            scoreDetails.Add($"{cs.CommitteeMember}: {cs.Score:F2}");
+                                                        }
+                                                    }@string.Join("<br>", scoreDetails)"
+                                                    data-bs-placement="left">
+                                                <i class="fas fa-users"></i> @item.CommitteeScores.Count
+                                            </button>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">-</span>
+                                        }
+                                    </td>
+                                    <td class="text-center">
+                                        @if (item.AverageCommitteeScore > 0)
+                                        {
+                                            <strong class="text-secondary">@item.AverageCommitteeScore.ToString("F2")</strong>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">-</span>
+                                        }
+                                    </td>
+                                    <td class="text-center">
+                                        <strong class="@(item.FinalScore >= 90 ? "text-success" : item.FinalScore >= 70 ? "text-warning" : "text-danger")">
+                                            @item.FinalScore.ToString("F2")
+                                        </strong>
+                                    </td>
+                                    <td class="text-center">
+                                        @if (nomination.IsWinner == 1)
+                                        {
+                                            <strong class="text-success">
+                                                <i class="fas fa-trophy"></i> فائز
+                                            </strong>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-secondary">مرشح</span>
+                                        }
+                                    </td>
+                                </tr>
+                                index++;
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Statistics Summary -->
+        <div class="row mt-4">
+            <div class="col-md-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <h5 class="card-title">إجمالي الترشيحات</h5>
+                        <h2 class="text-primary">@(((IEnumerable<dynamic>)Model).Count())</h2>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <h5 class="card-title">الفائزون</h5>
+                        <h2 class="text-success">@(((IEnumerable<dynamic>)Model).Count(x => ((dynamic)x).Nomination.IsWinner == 1))</h2>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <h5 class="card-title">متوسط الدرجات</h5>
+                        <h2 class="text-info">@{
+                            double avgScore = 0;
+                            int count = 0;
+                            foreach(var item in Model)
+                            {
+                                avgScore += (double)item.FinalScore;
+                                count++;
+                            }
+                            if(count > 0) avgScore = avgScore / count;
+                        }@avgScore.ToString("F2")</h2>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <h5 class="card-title">أعلى درجة</h5>
+                        <h2 class="text-warning">@{
+                            double maxScore = 0;
+                            foreach(var item in Model)
+                            {
+                                double score = (double)item.FinalScore;
+                                if(score > maxScore) maxScore = score;
+                            }
+                        }@maxScore.ToString("F2")</h2>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+    else if (selectedCycleId.HasValue)
+    {
+        <div class="alert alert-info" role="alert">
+            <i class="fas fa-info-circle me-2"></i>
+            لا توجد ترشيحات للدورة المختارة.
+        </div>
+    }
+    else
+    {
+        <div class="alert alert-warning" role="alert">
+            <i class="fas fa-exclamation-triangle me-2"></i>
+            الرجاء اختيار دورة الجائزة لعرض التقرير.
+        </div>
+    }
+</div>
+
+@section Scripts {
+    <script>
+        // Initialize Bootstrap popovers
+        var popoverTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="popover"]'))
+        var popoverList = popoverTriggerList.map(function (popoverTriggerEl) {
+            return new bootstrap.Popover(popoverTriggerEl)
+        });
+    </script>
+}

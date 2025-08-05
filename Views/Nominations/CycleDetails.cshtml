@@ -353,7 +353,7 @@
                 
                 <div class="meta-item">
                     <span class="meta-label">الفائزون</span>
-                    <span class="meta-value">@Model.Nominations.Count(n => n.IsWinner)</span>
+                    <span class="meta-value">@Model.Nominations.Count(n => n.IsWinner == 1)</span>
                 </div>
             </div>
         </div>
@@ -406,7 +406,7 @@
                     var hasManagerScores = nomination.ManagerScores.Any();
                     var hasCommitteeEvaluations = nomination.Evaluations != null && nomination.Evaluations.Any();
                     var hasFile = !string.IsNullOrEmpty(nomination.SupportingDocPath);
-                    var isWinner = nomination.IsWinner;
+                    var isWinner = nomination.IsWinner == 1;
                     
                     <div class="nomination-card @(isWinner ? "winner-card" : "")">
                         @if (isWinner)

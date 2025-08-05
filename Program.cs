@@ -27,6 +27,15 @@ builder.Services.AddAuthentication("Cookies")
 
 builder.Services.AddAuthorization();
 
+// Add session support for double-submit prevention
+builder.Services.AddDistributedMemoryCache();
+builder.Services.AddSession(options =>
+{
+    options.IdleTimeout = TimeSpan.FromMinutes(30);
+    options.Cookie.HttpOnly = true;
+    options.Cookie.IsEssential = true;
+});
+
 // Register AI services
 builder.Services.AddScoped<IOpenAiService, OpenAiService>();
 builder.Services.AddScoped<IAiMessageService, AiMessageService>();
@@ -67,6 +76,8 @@ if (!app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseRouting();
+
+app.UseSession(); // Enable session middleware
 
 app.UseAuthentication();
 app.UseAuthorization();

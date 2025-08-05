@@ -38,7 +38,7 @@
                     </div>
                 </div>
             </div>
-            @if (Model.IsWinner)
+            @if (Model.IsWinner == 1)
             {
                 <div class="col-md-4 text-end">
                     <div class="bg-success bg-opacity-20 rounded-pill px-4 py-2 d-inline-block">
@@ -303,102 +303,69 @@
 </div>
 
 @functions {
-    // Calculate the manager score for this nomination (0-100)
+    // Calculate the manager score for this nomination (sum of all manager scores)
     double GetManagerScore(EOM.Web.Models.Nomination nomination)
     {
         if (nomination.ManagerScores == null || !nomination.ManagerScores.Any())
             return 0;
         
-        if (nomination.AwardCycle?.AwardType?.Criteria == null)
-            return 0;
-
-        double totalWeightedScore = 0;
+        var validScores = nomination.ManagerScores.Where(ms => ms.Score.HasValue);
+        if (!validScores.Any()) return 0;
         
-        foreach (var criterion in nomination.AwardCycle.AwardType.Criteria)
-        {
-            if (criterion.SubCriteria == null || !criterion.SubCriteria.Any())
-                continue;
-                
-            double criterionTotal = 0;
-            double criterionMax = 0;
-            
-            foreach (var sub in criterion.SubCriteria)
-            {
-                var score = nomination.ManagerScores.FirstOrDefault(s => s.SubCriteriaId == sub.SubCriteriaId);
-                criterionTotal += score?.Score ?? 0;
-                criterionMax += sub.MaxScore;
-            }
-            
-            if (criterionMax > 0)
-            {
-                var normalized = criterionTotal / criterionMax;
-                totalWeightedScore += normalized * (double)criterion.WeightPercent;
-            }
-        }
-        return Math.Round(totalWeightedScore, 2);
+        // Since subcriteria are designed to total 100, just sum them
+        return Math.Round(validScores.Sum(ms => (double)ms.Score.Value), 1);
     }
 
-    // Calculate the average committee score for this nomination (0-100)
+    // Calculate individual committee member score (sum of their evaluation scores)
+    double GetCommitteeMemberScore(EOM.Web.Models.Evaluation evaluation)
+    {
+        if (evaluation.EvaluationScores == null || !evaluation.EvaluationScores.Any())
+            return 0;
+        
+        var validScores = evaluation.EvaluationScores.Where(es => es.Score.HasValue);
+        if (!validScores.Any()) return 0;
+        
+        // Since subcriteria are designed to total 100, just sum them
+        return Math.Round(validScores.Sum(es => (double)es.Score.Value), 1);
+    }
+
+    // Calculate the average committee score for this nomination
     double GetCommitteeAverage(EOM.Web.Models.Nomination nomination)
     {
         if (nomination.Evaluations == null || !nomination.Evaluations.Any())
             return 0;
-            
-        if (nomination.AwardCycle?.AwardType?.Criteria == null)
-            return 0;
-
-        double total = 0;
-        int count = 0;
         
-        foreach (var eval in nomination.Evaluations)
+        var scores = new List<double>();
+        foreach (var evaluation in nomination.Evaluations)
         {
-            if (eval.EvaluationScores == null || !eval.EvaluationScores.Any())
-                continue;
-
-            double totalWeightedScore = 0;
-            
-            foreach (var criterion in nomination.AwardCycle.AwardType.Criteria)
-            {
-                if (criterion.SubCriteria == null || !criterion.SubCriteria.Any())
-                    continue;
-                    
-                double criterionTotal = 0;
-                double criterionMax = 0;
-                
-                foreach (var sub in criterion.SubCriteria)
-                {
-                    var score = eval.EvaluationScores.FirstOrDefault(s => s.SubCriteriaId == sub.SubCriteriaId);
-                    criterionTotal += score?.Score ?? 0;
-                    criterionMax += sub.MaxScore;
-                }
-                
-                if (criterionMax > 0)
-                {
-                    var normalized = criterionTotal / criterionMax;
-                    totalWeightedScore += normalized * (double)criterion.WeightPercent;
-                }
-            }
-            total += totalWeightedScore;
-            count++;
+            var evalScore = GetCommitteeMemberScore(evaluation);
+            if (evalScore > 0) scores.Add(evalScore);
         }
-        return count > 0 ? Math.Round(total / count, 2) : 0;
+        
+        return scores.Any() ? Math.Round(scores.Average(), 1) : 0;
     }
 
-    // Calculate the final average score (manager + committee average) / 2
+    // Calculate the final average score (average of manager + all committee members)
     double GetFinalAverage(EOM.Web.Models.Nomination nomination)
     {
-        var managerScore = GetManagerScore(nomination);
-        var committeeScore = GetCommitteeAverage(nomination);
+        var allScores = new List<double>();
         
-        // If either score is missing, return the available score
-        if (managerScore == 0 && committeeScore == 0)
-            return 0;
-        if (managerScore == 0)
-            return committeeScore;
-        if (committeeScore == 0)
-            return managerScore;
-            
-        return Math.Round((managerScore + committeeScore) / 2, 2);
+        // Add manager score if exists
+        var managerScore = GetManagerScore(nomination);
+        if (managerScore > 0) allScores.Add(managerScore);
+        
+        // Add each committee member's score
+        if (nomination.Evaluations != null)
+        {
+            foreach (var evaluation in nomination.Evaluations)
+            {
+                var evalScore = GetCommitteeMemberScore(evaluation);
+                if (evalScore > 0) allScores.Add(evalScore);
+            }
+        }
+        
+        // Return average: (manager_total + committee1_total + committee2_total + ...) / number_of_evaluators
+        return allScores.Any() ? Math.Round(allScores.Average(), 1) : 0;
     }
 }
 
