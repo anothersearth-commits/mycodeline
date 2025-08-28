@@ -22,6 +22,7 @@ else
 {
     // Quick stats
     var total = Model.Count();
+    var awardTypesCount = Model.Select(n => n.AwardCycle?.AwardType?.Name).Distinct().Count();
     var departmentsCount = Model.Select(n => new { 
             Name = n.Employee?.Department?.Name ?? "غير محدد",
             Description = n.Employee?.Department?.Description ?? "غير محدد"
@@ -36,65 +37,258 @@ else
         </div>
         <div class="col-6 col-md-3">
             <div class="stat-card text-center glass-fade-in">
+                <div class="stat-number">@awardTypesCount</div>
+                <div class="stat-label">أنواع الجوائز</div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="stat-card text-center glass-fade-in">
                 <div class="stat-number">@departmentsCount</div>
-                <div class="stat-label"> عدد الدائرة</div>
+                <div class="stat-label">عدد الدوائر</div>
             </div>
         </div>
     </div>
 
-    var grouped = Model
+    // Group by Award Type first
+    var groupedByAwardType = Model
         .GroupBy(n => new { 
-            Name = n.Employee?.Department?.Name ?? "غير محدد",
-            Description = n.Employee?.Department?.Description ?? "غير محدد"
+            AwardTypeId = n.AwardCycle?.AwardTypeId ?? 0,
+            AwardTypeName = n.AwardCycle?.AwardType?.Name ?? "غير محدد",
+            CycleId = n.CycleId,
+            Month = n.AwardCycle?.Month ?? 0,
+            Year = n.AwardCycle?.Year ?? 0
         })
-        .OrderBy(g => g.Key.Name)
-        .ThenBy(g => g.Key.Description);
+        .OrderBy(g => g.Key.AwardTypeId)
+        .ThenByDescending(g => g.Key.Year)
+        .ThenByDescending(g => g.Key.Month);
 
-    foreach (var dept in grouped)
+    int accordionIndex = 0;
+    foreach (var awardTypeGroup in groupedByAwardType)
     {
-        var displayName = dept.Key.Description;
-        <div class="card glass-fade-in mb-4">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <h5 class="m-0">@displayName</h5>
-                <span class="badge bg-secondary">@dept.Count()</span>
-            </div>
-            <div class="card-body p-0">
-                <div class="table-responsive">
-                    <table class="table table-hover align-middle m-0">
-                        <thead class="table-light">
-                            <tr>
-                                <th>الموظف</th>
-                                <th>نوع الجائزة</th>
-                                <th>الدورة</th>
-                                <th>تاريخ الترشيح</th>
-                                <th style="width: 120px;">الإجراءات</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                        @foreach (var nomination in dept)
-                        {
-                            <tr>
-                                <td>
-                                    @nomination.Employee?.FirstName <br />
-                                    
-                                </td>
-                                <td>
-                                    <span class="badge bg-info text-dark">@nomination.AwardCycle?.AwardType?.Name</span>
-                                </td>
-                                <td>@nomination.AwardCycle?.Month/@nomination.AwardCycle?.Year</td>
-                                <td>@nomination.CreatedAt.ToString("dd/MM/yyyy")</td>
-                                <td>
-                                    <a class="btn btn-sm btn-success d-flex align-items-center" href="@Url.Action("Create", "Evaluations", new { nominationId = nomination.NominationId })">
-                                        <i class="fas fa-pen me-1"></i>
-                                        تقييم
-                                    </a>
-                                </td>
-                            </tr>
+        var awardTypeId = $"award-{accordionIndex}";
+        var awardTypeCount = awardTypeGroup.Count();
+        var isExpanded = accordionIndex == 0; // Expand first award type by default
+        
+        <div class="accordion mb-4" id="accordion-@awardTypeId">
+            <div class="accordion-item glass-fade-in">
+                <h2 class="accordion-header" id="heading-@awardTypeId">
+                    <button class="accordion-button @(!isExpanded ? "collapsed" : "")" type="button" 
+                            data-bs-toggle="collapse" data-bs-target="#collapse-@awardTypeId" 
+                            aria-expanded="@(isExpanded ? "true" : "false")" aria-controls="collapse-@awardTypeId">
+                        <div class="d-flex justify-content-between align-items-center w-100 me-3">
+                            <div>
+                                <i class="fas fa-award me-2 text-warning"></i>
+                                <strong>@awardTypeGroup.Key.AwardTypeName</strong>
+                                <span class="text-muted ms-2">(@awardTypeGroup.Key.Month/@awardTypeGroup.Key.Year)</span>
+                            </div>
+                            <span class="">@awardTypeCount ترشيح</span>
+                        </div>
+                    </button>
+                </h2>
+                <div id="collapse-@awardTypeId" class="accordion-collapse collapse @(isExpanded ? "show" : "")" 
+                     aria-labelledby="heading-@awardTypeId" data-bs-parent="#accordion-@awardTypeId">
+                    <div class="accordion-body p-0">
+                        @{
+                            // Group by Department within each Award Type
+                            var groupedByDept = awardTypeGroup
+                                .GroupBy(n => new { 
+                                    Name = n.Employee?.Department?.Name ?? "غير محدد",
+                                    Description = n.Employee?.Department?.Description ?? "غير محدد"
+                                })
+                                .OrderBy(g => g.Key.Name)
+                                .ThenBy(g => g.Key.Description);
+
+                            int deptIndex = 0;
+                            foreach (var dept in groupedByDept)
+                            {
+                                var deptId = $"{awardTypeId}-dept-{deptIndex}";
+                                var displayName = dept.Key.Description;
+                                var isDeptExpanded = deptIndex == 0; // Expand first department
+                                
+                                <div class="accordion accordion-flush" id="accordion-@deptId">
+                                    <div class="accordion-item">
+                                        <h2 class="accordion-header" id="heading-@deptId">
+                                            <button class="accordion-button @(!isDeptExpanded ? "collapsed" : "") bg-light" type="button" 
+                                                    data-bs-toggle="collapse" data-bs-target="#collapse-@deptId" 
+                                                    aria-expanded="@(isDeptExpanded ? "true" : "false")" aria-controls="collapse-@deptId">
+                                                <div class="d-flex justify-content-between align-items-center w-100 me-3">
+                                                    <div>
+                                                        <i class="fas fa-building me-2 text-secondary"></i>
+                                                        @displayName
+                                                    </div>
+                                                    <span class="">@dept.Count() موظف</span>
+                                                </div>
+                                            </button>
+                                        </h2>
+                                        <div id="collapse-@deptId" class="accordion-collapse collapse @(isDeptExpanded ? "show" : "")" 
+                                             aria-labelledby="heading-@deptId" data-bs-parent="#accordion-@deptId">
+                                            <div class="accordion-body p-0">
+                                                <div class="table-responsive">
+                                                    <table class="table table-hover align-middle m-0">
+                                                        <thead class="table-light">
+                                                            <tr>
+                                                                <th>الموظف</th>
+                                                                <th>تاريخ الترشيح</th>
+                                                                @if (awardTypeGroup.Key.AwardTypeId != 1)
+                                                                {
+                                                                    <th>عنوان المبادرة</th>
+                                                                }
+                                                                <th style="width: 120px;">الإجراءات</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody>
+                                                        @foreach (var nomination in dept.OrderBy(n => n.Employee?.FirstName))
+                                                        {
+                                                            var adUser = nomination.Employee?.ActiveDirectoryId;
+                                                            var employeeImgId = $"emp-img-{nomination.NominationId}";
+                                                            <tr>
+                                                                <td>
+                                                                    <div class="d-flex align-items-center">
+                                                                        <div class="avatar-circle me-2" style="overflow: hidden;">
+                                                                            <img id="@employeeImgId" 
+                                                                                 data-aduser="@adUser" 
+                                                                                 src="@Url.Content("~/img/default-user.png")" 
+                                                                                 alt="صورة الموظف" 
+                                                                                 style="width: 100%; height: 100%; object-fit: cover;" />
+                                                                        </div>
+                                                                        <div>
+                                                                            <strong>@nomination.Employee?.FirstName @nomination.Employee?.LastName</strong>
+                                                                            <br />
+                                                                            <small class="text-muted">@nomination.Employee?.JobTitle</small>
+                                                                        </div>
+                                                                    </div>
+                                                                </td>
+                                                                <td>@nomination.CreatedAt.ToString("dd/MM/yyyy")</td>
+                                                                @if (awardTypeGroup.Key.AwardTypeId != 1)
+                                                                {
+                                                                    <td>
+                                                                        <span class="text-truncate d-inline-block" style="max-width: 200px;" title="@nomination.Title">
+                                                                            @nomination.Title
+                                                                        </span>
+                                                                    </td>
+                                                                }
+                                                                <td>
+                                                                    <a class="btn btn-sm btn-success d-flex align-items-center justify-content-center" 
+                                                                       href="@Url.Action("Create", "Evaluations", new { nominationId = nomination.NominationId })">
+                                                                        <i class="fas fa-pen me-1"></i>
+                                                                        تقييم
+                                                                    </a>
+                                                                </td>
+                                                            </tr>
+                                                        }
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                deptIndex++;
+                            }
                         }
-                        </tbody>
-                    </table>
+                    </div>
                 </div>
             </div>
         </div>
+        accordionIndex++;
     }
-} 
+}
+
+<style>
+    /* Enhanced accordion styling */
+    .accordion-button {
+        font-size: 1.1rem;
+        padding: 1rem 1.5rem;
+    }
+    
+    .accordion-button:not(.collapsed) {
+        background-color: #f8f9fa;
+        color: #0d6efd;
+    }
+    
+    .accordion-button.bg-light {
+        font-size: 1rem;
+        padding: 0.75rem 1.25rem;
+    }
+    
+    .accordion-button.bg-light:not(.collapsed) {
+        background-color: #e9ecef !important;
+    }
+    
+    .accordion-body {
+        padding: 0;
+    }
+    
+    /* Avatar circle for employees */
+    .avatar-circle {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background-color: #e9ecef;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #6c757d;
+    }
+    
+    /* Nested accordion styling */
+    .accordion-flush .accordion-item {
+        border: none;
+        border-bottom: 1px solid #dee2e6;
+    }
+    
+    .accordion-flush .accordion-item:last-child {
+        border-bottom: none;
+    }
+    
+    /* Award type icon colors */
+    .fa-award {
+        color: #ffc107;
+    }
+    
+    /* Hover effects */
+    .accordion-button:hover {
+        background-color: #f8f9fa;
+    }
+    
+    /* Table enhancements */
+    .table tbody tr:hover {
+        background-color: #f8f9fa;
+    }
+    
+    /* Badge styling */
+    .badge {
+        font-weight: 500;
+        padding: 0.35em 0.65em;
+    }
+    
+    /* Smooth transitions */
+    .accordion-collapse {
+        transition: all 0.3s ease;
+    }
+</style>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+$(document).ready(function() {
+    // Load employee photos from Active Directory
+    $('img[data-aduser]').each(function() {
+        var $img = $(this);
+        var adUser = $img.data('aduser');
+        
+        if (adUser) {
+            var url = '@Url.Action("WinnerPhoto", "Home")' + '?adUser=' + encodeURIComponent(adUser);
+            
+            // Preload image, then set src if successful
+            var image = new Image();
+            image.onload = function() { 
+                $img.attr('src', url);
+            };
+            image.onerror = function() { 
+                $img.attr('src', '@Url.Content("~/img/default-user.png")');
+            };
+            image.src = url;
+        }
+    });
+});
+</script>

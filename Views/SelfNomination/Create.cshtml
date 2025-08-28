@@ -1,0 +1,909 @@
+@model EOM.Web.Models.Nomination
+
+@{
+    ViewData["Title"] = "ترشيح جديد";
+    var currentEmployee = ViewData["CurrentEmployee"] as EOM.Web.Models.Employee;
+    var groupMembers = ViewData["GroupMembers"] as List<EOM.Web.Models.Employee> ?? new List<EOM.Web.Models.Employee>();
+    var criteria = ViewData["Criteria"] as List<EOM.Web.Models.Criterion> ?? new List<EOM.Web.Models.Criterion>();
+}
+
+<div class="container-fluid">
+    <div class="nomination-wizard">
+
+
+        @if (ViewBag.Message != null)
+        {
+            <div class="container">
+                <div class="alert alert-warning shadow-sm">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    @ViewBag.Message
+                </div>
+            </div>
+        }
+        else
+        {
+            <form asp-action="Create" method="post" enctype="multipart/form-data" id="selfNominationForm">
+                <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+                
+                <div class="container">
+                    <!-- Award Selection -->
+                    @if (!ViewBag.HideCycleSelect)
+                    {
+                        <div class="wizard-step">
+                            <div class="step-card">
+                                <div class="step-header">
+                                    <div class="step-number">1</div>
+                                    <h4>اختر نوع الجائزة</h4>
+                                </div>
+                                <div class="step-content">
+                                    <select asp-for="CycleId" class="form-select form-select-lg" asp-items="ViewBag.CycleId">
+                                        <option value="">-- اختر الجائزة التي تريد الترشح لها --</option>
+                                    </select>
+                                    <span asp-validation-for="CycleId" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                    else
+                    {
+                        <input asp-for="CycleId" type="hidden" />
+                        @if (ViewBag.SelectedCycleId != null)
+                        {
+                            var selectedCycle = ((SelectList)ViewData["CycleId"]).FirstOrDefault(x => x.Value == ViewBag.SelectedCycleId.ToString());
+                            <div class="wizard-step">
+                                <div class="step-card success-card">
+                                    <div class="step-header">
+                                        <div class="step-number success"><i class="fas fa-check"></i></div>
+                                        <h4>نوع الجائزة</h4>
+                                    </div>
+                                    <div class="step-content">
+                                        <div class="selected-award">
+                                            <i class="fas fa-award text-warning"></i>
+                                            <strong>@selectedCycle?.Text</strong>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    }
+
+                    <!-- Main Information -->
+                    <div class="wizard-step">
+                        <div class="step-card">
+                            <div class="step-header d-flex justify-content-between align-items-center">
+                                <h4>معلومات الترشيح</h4>
+                                @if (criteria.Any())
+                                {
+                                    <button type="button" class="btn btn-info btn-sm" data-bs-toggle="modal" data-bs-target="#criteriaModal">
+                                        <i class="fas fa-info-circle me-2"></i>
+                                        عرض معايير التقييم
+                                    </button>
+                                }
+                            </div>
+                            <div class="step-content">
+                                <div class="row g-4">
+                                    <div class="col-12">
+                                        <label asp-for="Title" class="form-label fw-bold">عنوان المبادرة أو الابتكار <span class="text-danger">*</span></label>
+                                        <input asp-for="Title" class="form-control form-control-lg" required />
+                                        <span asp-validation-for="Title" class="text-danger"></span>
+                                    </div>
+                                    <div class="col-12">
+                                        <label asp-for="InitiativeDetails" class="form-label fw-bold">وصف المبادرة <span class="text-danger">*</span></label>
+                                        <textarea asp-for="InitiativeDetails" class="form-control" rows="5" 
+                                                  placeholder="" required></textarea>
+                                        <span asp-validation-for="InitiativeDetails" class="text-danger"></span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- File Upload -->
+                    <div class="wizard-step">
+                        <div class="step-card">
+                            <div class="step-header">
+                                <h4>المرفقات</h4>
+                            </div>
+                            <div class="step-content">
+                                <div class="upload-area" id="uploadArea">
+                                    <div class="upload-icon">
+                                        <i class="fas fa-cloud-upload-alt"></i>
+                                    </div>
+                                    <h5>اسحب ملف PDF هنا أو انقر للاختيار</h5>
+                                    <p class="text-muted">ملف PDF يحتوي على تفاصيل المبادرة والمستندات الداعمة</p>
+                                    <input type="file" class="file-input" id="attachmentFile" name="attachmentFile" accept=".pdf" required>
+                                    <button type="button" class="btn btn-primary" onclick="document.getElementById('attachmentFile').click()">
+                                        <i class="fas fa-folder-open me-2"></i>
+                                        اختر ملف
+                                    </button>
+                                </div>
+                                <span asp-validation-for="AttachmentPath" class="text-danger"></span>
+                                <div id="fileInfo" class="file-info" style="display: none;">
+                                    <i class="fas fa-file-pdf text-danger"></i>
+                                    <span id="fileName"></span>
+                                    <button type="button" class="btn-remove" onclick="removeFile()">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Team Members (Collapsible) -->
+                    <div class="wizard-step">
+                        <div class="step-card">
+                            <div class="step-header">
+                                <h4>أعضاء الفريق 
+                                    <button type="button" class="btn btn-sm btn-outline-primary ms-2" data-bs-toggle="collapse" data-bs-target="#teamSection">
+                                        <i class="fas fa-plus"></i> إضافة فريق
+                                    </button>
+                                </h4>
+                            </div>
+                            <div class="step-content collapse" id="teamSection">
+
+                                
+                                <div class="add-member-section">
+                                    <div class="input-group input-group-lg">
+                                        <input type="number" id="employeeNumber" class="form-control" placeholder="رقم الموظف" />
+                                        <button type="button" id="searchEmployee" class="btn btn-primary">
+                                            <i class="fas fa-search"></i>
+                                            بحث وإضافة
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div id="membersList" class="members-list">
+                                    @if (groupMembers.Any())
+                                    {
+                                        @foreach (var member in groupMembers)
+                                        {
+                                            <div class="member-item" data-employee-id="@member.EmployeeId">
+                                                <div class="member-avatar">
+                                                    <i class="fas fa-user"></i>
+                                                </div>
+                                                <div class="member-info">
+                                                    <div class="member-name">@member.FirstName @member.LastName</div>
+                                                    <div class="member-id">@member.EmployeeId</div>
+                                                </div>
+                                                <button type="button" class="btn-remove-member" data-employee-id="@member.EmployeeId">
+                                                    <i class="fas fa-times"></i>
+                                                </button>
+                                                <input type="hidden" name="groupMemberIds" value="@member.EmployeeId" />
+                                            </div>
+                                        }
+                                    }
+                                </div>
+                                <div id="noMembers" class="no-members @(groupMembers.Any() ? "d-none" : "")">
+                                    <i class="fas fa-users text-muted"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Submit Section -->
+                    <div class="wizard-step">
+                        <div class="submit-section">
+                            <div class="row justify-content-center">
+                                <div class="col-md-6 text-center">
+                                    <button type="submit" class="btn btn-success btn-lg submit-btn">
+                                        <i class="fas fa-paper-plane me-2"></i>
+                                        إرسال الترشيح
+                                    </button>
+                                    <div class="submit-info">
+                                        <small class="text-muted">
+                                            <i class="fas fa-lock me-1"></i>
+                                            سيتم مراجعة طلبك من قبل لجنة التقييم
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        }
+    </div>
+</div>
+
+<!-- Criteria Modal -->
+@if (criteria.Any())
+{
+    <div class="modal fade" id="criteriaModal" tabindex="-1" aria-labelledby="criteriaModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header bg-info text-white">
+                    <h5 class="modal-title" id="criteriaModalLabel">
+                        <i class="fas fa-list-check me-2"></i>
+                        معايير التقييم
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="criteria-info mb-3">
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>
+                            سيتم تقييم ترشيحك بناءً على المعايير التالية:
+                        </div>
+                    </div>
+                    
+                    @foreach (var criterion in criteria.OrderBy(c => c.CriterionId))
+                    {
+                        <div class="criterion-section mb-4">
+                            <div class="criterion-header d-flex justify-content-between align-items-center mb-3">
+                                <h6 class="fw-bold text-primary mb-0">
+                                    <i class="fas fa-chevron-left me-2"></i>
+                                    @criterion.Name
+                                </h6>
+                                <span>@criterion.WeightPercent%</span>
+                            </div>
+                            
+                            @if (criterion.SubCriteria.Any())
+                            {
+                                <div class="sub-criteria-list ps-4">
+                                    @foreach (var subCriterion in criterion.SubCriteria.OrderBy(sc => sc.SubCriteriaCode))
+                                    {
+                                        <div class="sub-criterion-item p-3 mb-2 bg-light rounded">
+                                            <div class="d-flex justify-content-between align-items-start">
+                                                <div class="flex-grow-1">
+                                                    <span class=" me-2">@subCriterion.SubCriteriaCode</span>
+                                                    <span class="fw-semibold">@subCriterion.Name</span>
+                                                </div>
+                                                <span class="badge bg-success">@subCriterion.MaxScore نقطة</span>
+                                            </div>
+                                        </div>
+                                    }
+                                </div>
+                            }
+                        </div>
+                    }
+                    
+
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-2"></i>
+                        إغلاق
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    
+    <script>
+        $(document).ready(function() {
+            // File upload handling
+            $('#attachmentFile').on('change', function() {
+                const file = this.files[0];
+                if (file) {
+                    if (file.type === 'application/pdf') {
+                        $('#fileName').text(file.name);
+                        $('#fileInfo').show();
+                        $('#uploadArea').addClass('has-file');
+                        clearFileError();
+                    } else {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'خطأ',
+                            text: 'يجب أن يكون الملف من نوع PDF',
+                            confirmButtonText: 'حسناً'
+                        });
+                        this.value = '';
+                    }
+                }
+            });
+
+            // Drag and drop
+            const uploadArea = $('#uploadArea')[0];
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                uploadArea.addEventListener(eventName, preventDefaults, false);
+            });
+            ['dragenter', 'dragover'].forEach(eventName => {
+                uploadArea.addEventListener(eventName, highlight, false);
+            });
+            ['dragleave', 'drop'].forEach(eventName => {
+                uploadArea.addEventListener(eventName, unhighlight, false);
+            });
+            uploadArea.addEventListener('drop', handleDrop, false);
+
+            function preventDefaults(e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+            function highlight() {
+                uploadArea.classList.add('drag-over');
+            }
+            function unhighlight() {
+                uploadArea.classList.remove('drag-over');
+            }
+            function handleDrop(e) {
+                const dt = e.dataTransfer;
+                const files = dt.files;
+                if (files.length > 0) {
+                    $('#attachmentFile')[0].files = files;
+                    $('#attachmentFile').trigger('change');
+                }
+            }
+
+            // Remove file
+            window.removeFile = function() {
+                $('#attachmentFile').val('');
+                $('#fileInfo').hide();
+                $('#uploadArea').removeClass('has-file');
+            };
+
+            // Form validation
+            $('form').on('submit', function(e) {
+                let isValid = true;
+                
+                // Validate Title
+                const title = $('#Title').val().trim();
+                if (!title) {
+                    e.preventDefault();
+                    isValid = false;
+                    $('#Title').addClass('is-invalid');
+                    if ($('#Title').next('.text-danger').length === 0) {
+                        $('#Title').after('<span class="text-danger">يجب إدخال عنوان المبادرة أو الابتكار</span>');
+                    }
+                    // Scroll to first error
+                    $('html, body').animate({
+                        scrollTop: $('#Title').offset().top - 100
+                    }, 500);
+                }
+                
+                // Validate InitiativeDetails
+                const details = $('#InitiativeDetails').val().trim();
+                if (!details) {
+                    e.preventDefault();
+                    isValid = false;
+                    $('#InitiativeDetails').addClass('is-invalid');
+                    if ($('#InitiativeDetails').next('.text-danger').length === 0) {
+                        $('#InitiativeDetails').after('<span class="text-danger">يجب إدخال وصف المبادرة</span>');
+                    }
+                    if (isValid) { // Only scroll if title was valid
+                        $('html, body').animate({
+                            scrollTop: $('#InitiativeDetails').offset().top - 100
+                        }, 500);
+                    }
+                }
+                
+                // Validate PDF file
+                if (!$('#attachmentFile')[0].files[0]) {
+                    e.preventDefault();
+                    isValid = false;
+                    showFileError('يجب إرفاق ملف PDF يحتوي على تفاصيل المبادرة');
+                    if (isValid) { // Only scroll if other fields were valid
+                        $('html, body').animate({
+                            scrollTop: $('#uploadArea').offset().top - 100
+                        }, 500);
+                    }
+                }
+                
+                if (!isValid) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'خطأ',
+                        text: 'الرجاء تعبئة جميع الحقول المطلوبة',
+                        confirmButtonText: 'حسناً'
+                    });
+                }
+                
+                return isValid;
+            });
+            
+            // Clear error messages on input
+            $('#Title').on('input', function() {
+                $(this).removeClass('is-invalid');
+                $(this).next('.text-danger').remove();
+            });
+            
+            $('#InitiativeDetails').on('input', function() {
+                $(this).removeClass('is-invalid');
+                $(this).next('.text-danger').remove();
+            });
+
+            function showFileError(message) {
+                let errorSpan = $('span[data-valmsg-for="attachmentFile"]');
+                if (errorSpan.length === 0) {
+                    errorSpan = $('<span data-valmsg-for="attachmentFile" class="text-danger field-validation-error"></span>');
+                    $('#uploadArea').after(errorSpan);
+                }
+                errorSpan.text(message).addClass('field-validation-error');
+                $('#uploadArea').addClass('has-error');
+            }
+
+            function clearFileError() {
+                $('span[data-valmsg-for="attachmentFile"]').text('').removeClass('field-validation-error');
+                $('#uploadArea').removeClass('has-error');
+            }
+
+            // Employee search
+            $('#searchEmployee').click(function() {
+                const employeeNumber = $('#employeeNumber').val();
+                const currentEmployeeId = '@(currentEmployee?.EmployeeId ?? 0)';
+                
+                if (!employeeNumber) {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'تنبيه',
+                        text: 'الرجاء إدخال رقم الموظف',
+                        confirmButtonText: 'حسناً'
+                    });
+                    return;
+                }
+                
+                // Check if trying to add themselves
+                if (employeeNumber === currentEmployeeId) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'خطأ',
+                        text: 'لا يمكنك إضافة نفسك كعضو في الفريق. أنت المرشح الرئيسي بالفعل',
+                        confirmButtonText: 'حسناً'
+                    });
+                    $('#employeeNumber').val('');
+                    return;
+                }
+
+                if ($('#membersList').find('[data-employee-id="' + employeeNumber + '"]').length > 0) {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'تنبيه',
+                        text: 'هذا الموظف مضاف بالفعل',
+                        confirmButtonText: 'حسناً'
+                    });
+                    return;
+                }
+
+                if ($('#membersList .member-item').length >= 4) {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'تنبيه',
+                        text: 'لا يمكن إضافة أكثر من 4 موظفين',
+                        confirmButtonText: 'حسناً'
+                    });
+                    return;
+                }
+
+                const cycleId = $('#CycleId').val() || @(ViewBag.SelectedCycleId ?? "null");
+                $.post('@Url.Action("SearchEmployee")', { employeeNumber: employeeNumber, cycleId: cycleId })
+                    .done(function(data) {
+                        if (data.success) {
+                            addMemberToList(data.employee);
+                            $('#employeeNumber').val('');
+                            $('#noMembers').addClass('d-none');
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'تم',
+                                text: 'تم إضافة الموظف بنجاح',
+                                timer: 2000,
+                                showConfirmButton: false
+                            });
+                        } else {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'خطأ',
+                                text: data.message,
+                                confirmButtonText: 'حسناً'
+                            });
+                        }
+                    })
+                    .fail(function() {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'خطأ',
+                            text: 'خطأ في البحث عن الموظف',
+                            confirmButtonText: 'حسناً'
+                        });
+                    });
+            });
+
+            $('#employeeNumber').keypress(function(e) {
+                if (e.which == 13) {
+                    e.preventDefault();
+                    $('#searchEmployee').click();
+                }
+            });
+
+            $(document).on('click', '.btn-remove-member', function() {
+                const employeeId = $(this).data('employee-id');
+                $('[data-employee-id="' + employeeId + '"]').remove();
+                
+                if ($('#membersList .member-item').length === 0) {
+                    $('#noMembers').removeClass('d-none');
+                }
+                
+                Swal.fire({
+                    icon: 'info',
+                    title: 'تم',
+                    text: 'تم إزالة الموظف من الفريق',
+                    timer: 1500,
+                    showConfirmButton: false
+                });
+            });
+
+            function addMemberToList(employee) {
+                const memberHtml = `
+                    <div class="member-item" data-employee-id="${employee.employeeId}">
+                        <div class="member-avatar">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        <div class="member-info">
+                            <div class="member-name">${employee.name}</div>
+                            <div class="member-id">${employee.employeeNumber}</div>
+                        </div>
+                        <button type="button" class="btn-remove-member" data-employee-id="${employee.employeeId}">
+                            <i class="fas fa-times"></i>
+                        </button>
+                        <input type="hidden" name="groupMemberIds" value="${employee.employeeId}" />
+                    </div>
+                `;
+                
+                $('#membersList').append(memberHtml);
+            }
+        });
+    </script>
+    
+    <style>
+        /* Modern Wizard Styling */
+        .nomination-wizard {
+            background: #f8f9fa;
+            min-height: 100vh;
+            padding: 0;
+        }
+
+        .wizard-header {
+            background: white;
+            padding: 2rem 0;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 2rem;
+        }
+
+        .wizard-title {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #2c3e50;
+            margin-bottom: 0.5rem;
+        }
+
+        .wizard-subtitle {
+            color: #6c757d;
+            font-size: 1.1rem;
+            margin: 0;
+        }
+
+        .wizard-step {
+            margin-bottom: 2rem;
+        }
+
+        .step-card {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .step-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(0,0,0,0.12);
+        }
+
+        .step-header {
+            background: #f8f9fa;
+            color: #495057;
+            padding: 1.5rem 2rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            border-bottom: 1px solid #dee2e6;
+        }
+
+        .success-card .step-header {
+            background: #f8f9fa;
+            color: #495057;
+        }
+
+        .step-number {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #e9ecef;
+            color: #495057;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 1.2rem;
+            flex-shrink: 0;
+        }
+
+        .step-number.success {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .step-number.optional {
+            background: #fff;
+            border: 2px solid #dee2e6;
+            color: #6c757d;
+        }
+
+        .step-content {
+            padding: 2rem;
+        }
+
+        .selected-award {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            font-size: 1.2rem;
+            color: #2c3e50;
+        }
+
+        /* Upload Area */
+        .upload-area {
+            border: 3px dashed #dee2e6;
+            border-radius: 12px;
+            padding: 3rem 2rem;
+            text-align: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .upload-area:hover,
+        .upload-area.drag-over {
+            border-color: #667eea;
+            background: rgba(102, 126, 234, 0.05);
+        }
+
+        .upload-area.has-file {
+            border-color: #28a745;
+            background: rgba(40, 167, 69, 0.05);
+        }
+
+        .upload-area.has-error {
+            border-color: #dc3545;
+            background: rgba(220, 53, 69, 0.05);
+        }
+
+        .upload-icon {
+            font-size: 3rem;
+            color: #6c757d;
+            margin-bottom: 1rem;
+        }
+
+        .file-input {
+            position: absolute;
+            opacity: 0;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+        }
+
+        .file-info {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem;
+            background: #f8f9fa;
+            border-radius: 8px;
+            margin-top: 1rem;
+        }
+
+        .btn-remove {
+            background: none;
+            border: none;
+            color: #dc3545;
+            font-size: 1.2rem;
+            cursor: pointer;
+            padding: 0.25rem;
+            margin-left: auto;
+        }
+
+        /* Team Section */
+        .team-info {
+            background: #e3f2fd;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: #1976d2;
+        }
+
+        .add-member-section {
+            margin-bottom: 2rem;
+        }
+
+        .members-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .member-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border: 1px solid #dee2e6;
+        }
+
+        .member-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #6c757d;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .member-info {
+            flex: 1;
+        }
+
+        .member-name {
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .member-id {
+            color: #6c757d;
+            font-size: 0.9rem;
+        }
+
+        .btn-remove-member {
+            background: none;
+            border: none;
+            color: #dc3545;
+            padding: 0.5rem;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-remove-member:hover {
+            background: #dc3545;
+            color: white;
+        }
+
+        .no-members {
+            text-align: center;
+            padding: 2rem;
+            color: #6c757d;
+        }
+
+        /* Submit Section */
+        .submit-section {
+            background: white;
+            padding: 3rem 2rem;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        }
+
+        .submit-btn {
+            padding: 1rem 3rem;
+            font-size: 1.2rem;
+            border-radius: 50px;
+            background: #495057;
+            border: none;
+            box-shadow: 0 4px 15px rgba(73, 80, 87, 0.2);
+            transition: all 0.3s ease;
+            color: white;
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(73, 80, 87, 0.3);
+            background: #343a40;
+            color: white;
+        }
+
+        .submit-info {
+            margin-top: 1rem;
+        }
+
+        /* Responsive */
+        @@media (max-width: 768px) {
+            .wizard-header {
+                padding: 1rem 0;
+            }
+            
+            .wizard-title {
+                font-size: 1.5rem;
+            }
+            
+            .step-header {
+                flex-direction: column;
+                text-align: center;
+                gap: 0.5rem;
+            }
+            
+            .step-content {
+                padding: 1.5rem;
+            }
+            
+            .upload-area {
+                padding: 2rem 1rem;
+            }
+        }
+        
+        /* Required field styling */
+        .text-danger {
+            color: #dc3545 !important;
+            font-weight: 600;
+            font-size: 0.875rem;
+            margin-top: 0.25rem;
+            display: block;
+        }
+        
+        /* Criteria Modal Styles */
+        .criterion-section {
+            border-bottom: 1px solid #e9ecef;
+            padding-bottom: 1.5rem;
+        }
+        
+        .criterion-section:last-child {
+            border-bottom: none;
+        }
+        
+        .criterion-header {
+            background: linear-gradient(90deg, rgba(13,110,253,0.05) 0%, transparent 100%);
+            padding: 0.75rem;
+            border-radius: 8px;
+        }
+        
+        .sub-criterion-item {
+            transition: all 0.3s ease;
+            border-left: 3px solid transparent;
+        }
+        
+        .sub-criterion-item:hover {
+            border-left-color: #0d6efd;
+            transform: translateX(-5px);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .grading-scale {
+            padding-top: 0.5rem;
+            border-top: 1px dashed #dee2e6;
+        }
+        
+        #criteriaModal .modal-body {
+            max-height: 70vh;
+        }
+        
+        #criteriaModal .badge {
+            font-weight: 600;
+        }
+        
+        /* Invalid input styling */
+        .form-control.is-invalid,
+        .form-control.is-invalid:focus {
+            border-color: #dc3545;
+            box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
+        }
+        
+        textarea.is-invalid {
+            border-color: #dc3545 !important;
+        }
+        
+        .field-validation-error {
+            animation: fadeIn 0.3s ease-in;
+        }
+        
+        @@keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+}

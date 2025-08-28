@@ -66,8 +66,13 @@ public class ReportsController : BaseController
                 DepartmentName = n.Employee.Department.Description ?? n.Employee.Department.Name,
                 ManagerName = n.Manager.FirstName + " " + n.Manager.LastName,
                 AwardTypeName = n.AwardCycle.AwardType.Name,
+                AwardTypeId = n.AwardCycle.AwardTypeId,
                 n.IsWinner,
-                n.CreatedAt
+                n.CreatedAt,
+                n.Title,
+                n.InitiativeDetails,
+                n.AttachmentPath,
+                n.IsSelfNomination
             })
             .ToListAsync();
         
@@ -77,6 +82,24 @@ public class ReportsController : BaseController
         }
         
         var nominationIds = nominations.Select(n => n.NominationId).ToList();
+        
+        // Get team members for awards 2 and 3
+        var teamMembers = await _context.GroupNominationMembers
+            .Include(gm => gm.Employee)
+            .Where(gm => nominationIds.Contains(gm.NominationId))
+            .Select(gm => new {
+                gm.NominationId,
+                gm.EmployeeId,
+                EmployeeName = gm.Employee.FirstName + " " + gm.Employee.LastName
+            })
+            .ToListAsync();
+        
+        // Debug: Log team members count
+        System.Diagnostics.Debug.WriteLine($"Found {teamMembers.Count} team members for cycle {cycleId}");
+        
+        var teamMembersByNomination = teamMembers
+            .GroupBy(tm => tm.NominationId)
+            .ToDictionary(g => g.Key, g => g.Select(tm => tm.EmployeeName).ToList());
         
         // Step 2: Get manager scores (sum all ManagerScores for the nomination)
         var managerScoreData = await _context.ManagerScores
@@ -130,6 +153,7 @@ public class ReportsController : BaseController
             var managerScore = managerScoreData.ContainsKey(n.NominationId) ? managerScoreData[n.NominationId] : 0;
             var committeeData = committeeScoreData.ContainsKey(n.NominationId) ? committeeScoreData[n.NominationId] : null;
             var committeeMembers = committeeByNomination.ContainsKey(n.NominationId) ? committeeByNomination[n.NominationId].Cast<dynamic>().ToList() : new List<dynamic>();
+            var teamMemberNames = teamMembersByNomination.ContainsKey(n.NominationId) ? teamMembersByNomination[n.NominationId] : new List<string>();
             
             // Calculate final score as average of manager + all committee members
             double finalScore = 0;
@@ -158,17 +182,24 @@ public class ReportsController : BaseController
                         }
                     },
                     Manager = new {
-                        FirstName = n.ManagerName.Split(' ')[0],
-                        LastName = n.ManagerName.Contains(' ') ? n.ManagerName.Substring(n.ManagerName.IndexOf(' ') + 1) : ""
+                        FirstName = n.ManagerName != null && n.ManagerName.Contains(' ') ? n.ManagerName.Split(' ')[0] : n.ManagerName ?? "",
+                        LastName = n.ManagerName != null && n.ManagerName.Contains(' ') ? n.ManagerName.Substring(n.ManagerName.IndexOf(' ') + 1) : ""
                     },
                     AwardCycle = new {
                         AwardType = new {
-                            Name = n.AwardTypeName
+                            Name = n.AwardTypeName,
+                            AwardTypeId = n.AwardTypeId
                         }
                     },
                     IsWinner = n.IsWinner,
-                    CreatedAt = n.CreatedAt
+                    CreatedAt = n.CreatedAt,
+                    Title = n.Title,
+                    InitiativeDetails = n.InitiativeDetails,
+                    AttachmentPath = n.AttachmentPath,
+                    IsSelfNomination = n.IsSelfNomination
                 },
+                TeamMembers = teamMemberNames,
+                ShowTeamMembers = (n.AwardTypeId == 2 || n.AwardTypeId == 3),
                 ManagerScore = Math.Round(managerScore, 1),
                 CommitteeScores = committeeMembers.Select(cm => new {
                     CommitteeMember = cm.MemberName,
@@ -213,6 +244,8 @@ public class ReportsController : BaseController
                     .ThenInclude(cm => cm.Employee)
             .Include(n => n.Evaluations)
                 .ThenInclude(e => e.EvaluationScores)
+            .Include(n => n.GroupMembers)
+                .ThenInclude(gm => gm.Employee)
             .Where(n => n.CycleId == cycleId)
             .ToListAsync();
             
@@ -225,16 +258,19 @@ public class ReportsController : BaseController
             
             // Headers
             worksheet.Cells[1, 1].Value = "الموظف";
-            worksheet.Cells[1, 2].Value = "الدائرة";
-            worksheet.Cells[1, 3].Value = "المدير";
-            worksheet.Cells[1, 4].Value = "نوع الجائزة";
-            worksheet.Cells[1, 5].Value = "درجة المدير";
-            worksheet.Cells[1, 6].Value = "متوسط درجة اللجنة";
-            worksheet.Cells[1, 7].Value = "الدرجة النهائية";
-            worksheet.Cells[1, 8].Value = "حالة الترشيح";
+            worksheet.Cells[1, 2].Value = "العنوان";
+            worksheet.Cells[1, 3].Value = "تفاصيل المبادرة";
+            worksheet.Cells[1, 4].Value = "أعضاء الفريق";
+            worksheet.Cells[1, 5].Value = "الدائرة";
+            worksheet.Cells[1, 6].Value = "المدير";
+            worksheet.Cells[1, 7].Value = "نوع الجائزة";
+            worksheet.Cells[1, 8].Value = "درجة المدير";
+            worksheet.Cells[1, 9].Value = "متوسط درجة اللجنة";
+            worksheet.Cells[1, 10].Value = "الدرجة النهائية";
+            worksheet.Cells[1, 11].Value = "حالة الترشيح";
             
             // Style headers
-            using (var range = worksheet.Cells[1, 1, 1, 8])
+            using (var range = worksheet.Cells[1, 1, 1, 11])
             {
                 range.Style.Font.Bold = true;
                 range.Style.Fill.PatternType = OfficeOpenXml.Style.ExcelFillStyle.Solid;
@@ -247,23 +283,56 @@ public class ReportsController : BaseController
             foreach (var nomination in nominations.OrderByDescending(n => CalculateFinalScore(n)))
             {
                 worksheet.Cells[row, 1].Value = $"{nomination.Employee?.FirstName} {nomination.Employee?.LastName}";
-                worksheet.Cells[row, 2].Value = nomination.Employee?.Department?.Description ?? nomination.Employee?.Department?.Name;
-                worksheet.Cells[row, 3].Value = $"{nomination.Manager?.FirstName} {nomination.Manager?.LastName}";
-                worksheet.Cells[row, 4].Value = nomination.AwardCycle?.AwardType?.Name;
-                worksheet.Cells[row, 5].Value = Math.Round(CalculateManagerScore(nomination), 2);
+                
+                // Title
+                worksheet.Cells[row, 2].Value = string.IsNullOrEmpty(nomination.Title) ? "-" : nomination.Title;
+                
+                // Initiative Details
+                worksheet.Cells[row, 3].Value = string.IsNullOrEmpty(nomination.InitiativeDetails) ? "-" : nomination.InitiativeDetails;
+                worksheet.Cells[row, 3].Style.WrapText = true; // Wrap text for long details
+                
+                // Team members for award types 2 and 3
+                string teamMembers = "";
+                if ((nomination.AwardCycle?.AwardType?.AwardTypeId == 2 || nomination.AwardCycle?.AwardType?.AwardTypeId == 3) 
+                    && nomination.GroupMembers != null && nomination.GroupMembers.Any())
+                {
+                    teamMembers = string.Join(", ", nomination.GroupMembers.Select(gm => 
+                        $"{gm.Employee?.FirstName} {gm.Employee?.LastName}"));
+                }
+                worksheet.Cells[row, 4].Value = string.IsNullOrEmpty(teamMembers) ? "-" : teamMembers;
+                
+                worksheet.Cells[row, 5].Value = nomination.Employee?.Department?.Description ?? nomination.Employee?.Department?.Name;
+                worksheet.Cells[row, 6].Value = nomination.Manager != null ? $"{nomination.Manager?.FirstName} {nomination.Manager?.LastName}" : "-";
+                worksheet.Cells[row, 7].Value = nomination.AwardCycle?.AwardType?.Name;
+                worksheet.Cells[row, 8].Value = Math.Round(CalculateManagerScore(nomination), 2);
                 
                 var avgCommitteeScore = nomination.Evaluations.Any() ? 
                     nomination.Evaluations.Average(e => CalculateEvaluationScore(e, nomination.AwardCycle.AwardType.Criteria)) : 0;
-                worksheet.Cells[row, 6].Value = Math.Round(avgCommitteeScore, 2);
+                worksheet.Cells[row, 9].Value = Math.Round(avgCommitteeScore, 2);
                 
-                worksheet.Cells[row, 7].Value = Math.Round(CalculateFinalScore(nomination), 2);
-                worksheet.Cells[row, 8].Value = nomination.IsWinner == 1 ? "فائز" : "مرشح";
+                worksheet.Cells[row, 10].Value = Math.Round(CalculateFinalScore(nomination), 2);
+                worksheet.Cells[row, 11].Value = nomination.IsWinner == 1 ? "فائز" : "مرشح";
                 
                 row++;
             }
             
-            // Auto-fit columns
+            // Auto-fit columns and set specific widths
             worksheet.Cells[worksheet.Dimension.Address].AutoFitColumns();
+            
+            // Set specific column widths for better readability
+            worksheet.Column(1).Width = 20;  // Employee name
+            worksheet.Column(2).Width = 30;  // Title
+            worksheet.Column(3).Width = 50;  // Initiative Details - wider for text
+            worksheet.Column(4).Width = 25;  // Team members
+            worksheet.Column(5).Width = 20;  // Department
+            worksheet.Column(6).Width = 20;  // Manager
+            worksheet.Column(7).Width = 20;  // Award type
+            
+            // Set row height for rows with wrapped text
+            for (int i = 2; i < row; i++)
+            {
+                worksheet.Row(i).Height = 30; // Set minimum height for better readability
+            }
             
             // Return as file
             var cycleInfo = await _context.AwardCycles

@@ -123,6 +123,8 @@ public class EvaluationsController : BaseController
             .ThenInclude(c => c.SubCriteria)
             .Include(n => n.ManagerScores)
             .ThenInclude(ms => ms.SubCriteria)
+            .Include(n => n.GroupMembers)
+            .ThenInclude(gm => gm.Employee)
             .FirstOrDefaultAsync(n => n.NominationId == nominationId);
 
         if (nomination == null)

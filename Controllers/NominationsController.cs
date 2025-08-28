@@ -74,10 +74,10 @@ public class NominationsController : BaseController
             return NotFound();
         }
 
-        // Get active nomination cycles
+        // Get active nomination cycles (exclude self-nomination award types)
         var activeCycles = await _context.AwardCycles
             .Include(ac => ac.AwardType)
-            .Where(ac => ac.Status == CycleStatus.Nomination)
+            .Where(ac => ac.Status == CycleStatus.Nomination && !ac.AwardType.IsSelfNomination)
             .ToListAsync();
 
         if (!activeCycles.Any())
@@ -304,10 +304,10 @@ public class NominationsController : BaseController
         }
         System.Diagnostics.Debug.WriteLine("======================================================");
 
-        // Reload view data for error case
+        // Reload view data for error case (exclude self-nomination award types)
         var activeCycles = await _context.AwardCycles
             .Include(ac => ac.AwardType)
-            .Where(ac => ac.Status == CycleStatus.Nomination)
+            .Where(ac => ac.Status == CycleStatus.Nomination && !ac.AwardType.IsSelfNomination)
             .ToListAsync();
 
         var departmentEmployees = await _context.Employees
@@ -831,13 +831,14 @@ public class NominationsController : BaseController
     {
         var currentEmployeeId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
         
-        // Get all cycles with manager's nomination counts
+        // Get all cycles with manager's nomination counts (exclude self-nomination award types)
         var cycles = await _context.AwardCycles
             .Include(ac => ac.AwardType)
             .Include(ac => ac.Nominations.Where(n => n.ManagerId == currentEmployeeId))
             .ThenInclude(n => n.Employee)
             .Include(ac => ac.Nominations.Where(n => n.ManagerId == currentEmployeeId))
             .ThenInclude(n => n.Evaluations)
+            .Where(ac => !ac.AwardType.IsSelfNomination)
             .OrderByDescending(ac => ac.Year)
             .ThenByDescending(ac => ac.Month)
             .ToListAsync();
@@ -866,6 +867,7 @@ public class NominationsController : BaseController
             .ThenInclude(ms => ms.SubCriteria)
             .Include(ac => ac.Nominations.Where(n => n.ManagerId == currentEmployeeId))
             .ThenInclude(n => n.Evaluations)
+            .Where(ac => !ac.AwardType.IsSelfNomination)
             .FirstOrDefaultAsync(ac => ac.CycleId == id);
         
         if (cycle == null)
@@ -879,5 +881,74 @@ public class NominationsController : BaseController
     private bool NominationExists(int id)
     {
         return _context.Nominations.Any(e => e.NominationId == id);
+    }
+
+    // GET: Nominations/DownloadAttachment/{id}
+    public async Task<IActionResult> DownloadAttachment(int id)
+    {
+        var currentEmployeeId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
+
+        // Get the nomination
+        var nomination = await _context.Nominations
+            .Include(n => n.Employee)
+            .Include(n => n.Manager)
+            .FirstOrDefaultAsync(n => n.NominationId == id);
+
+        if (nomination == null || string.IsNullOrEmpty(nomination.AttachmentPath))
+        {
+            return NotFound();
+        }
+
+        // Check access: allow nominee, manager, committee member, or admin
+        bool hasAccess = false;
+        
+        // Check if current user is the nominee
+        if (nomination.EmployeeId == currentEmployeeId)
+        {
+            hasAccess = true;
+        }
+        // Check if current user is the manager who nominated
+        else if (nomination.ManagerId == currentEmployeeId)
+        {
+            hasAccess = true;
+        }
+        else if (User.IsInRole("EOM-Admin"))
+        {
+            // Admin always has access
+            hasAccess = true;
+        }
+        else if (User.IsInRole("Manager"))
+        {
+            // Any manager can view attachments
+            hasAccess = true;
+        }
+        else
+        {
+            // Check if current user is a committee member
+            var isCommitteeMember = await _context.CommitteeMembers
+                .AnyAsync(cm => cm.EmployeeId == currentEmployeeId && cm.IsActive == true);
+            
+            if (isCommitteeMember)
+            {
+                hasAccess = true;
+            }
+        }
+
+        if (!hasAccess)
+        {
+            return Forbid();
+        }
+
+        var filePath = Path.Combine(@"C:\EOM\uploads", nomination.AttachmentPath);
+        
+        if (!System.IO.File.Exists(filePath))
+        {
+            return NotFound("الملف غير موجود");
+        }
+
+        var fileBytes = await System.IO.File.ReadAllBytesAsync(filePath);
+        var fileName = $"{nomination.Title ?? "Nomination"}_attachment.pdf";
+        
+        return File(fileBytes, "application/pdf", fileName);
     }
 }

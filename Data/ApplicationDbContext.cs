@@ -31,6 +31,7 @@ public class ApplicationDbContext : DbContext
     public DbSet<Administrator> Administrators { get; set; }
     public DbSet<Evaluation> Evaluations { get; set; }
     public DbSet<EvaluationScore> EvaluationScores { get; set; }
+    public DbSet<GroupNominationMember> GroupNominationMembers { get; set; }
     
     // AI Objectives & Messaging Tables
     public DbSet<ObjectiveCycle> ObjectiveCycles { get; set; }
@@ -204,6 +205,10 @@ public class ApplicationDbContext : DbContext
             .Property(at => at.IsActive)
             .HasColumnType("NUMBER(1)");
             
+        builder.Entity<AwardType>()
+            .Property(at => at.IsSelfNomination)
+            .HasColumnType("NUMBER(1)");
+            
         builder.Entity<CommitteeMember>()
             .Property(cm => cm.IsActive)
             .HasColumnType("NUMBER(1)");
@@ -334,6 +339,19 @@ public class ApplicationDbContext : DbContext
         builder.Entity<Nomination>()
             .Property(n => n.IsWinner)
             .HasColumnType("NUMBER(10)");
+            
+        // Configure self-nomination fields
+        builder.Entity<Nomination>()
+            .Property(n => n.IsSelfNomination)
+            .HasColumnType("NUMBER(1)");
+            
+        builder.Entity<Nomination>()
+            .Property(n => n.InitiativeDetails)
+            .HasColumnType("NCLOB");
+            
+        builder.Entity<Nomination>()
+            .Property(n => n.AttachmentPath)
+            .HasColumnType("NVARCHAR2(500)");
 
         builder.Entity<CommitteeMember>()
             .HasOne(cm => cm.Employee)
@@ -411,6 +429,42 @@ public class ApplicationDbContext : DbContext
         builder.Entity<Nomination>()
             .HasIndex(n => n.SelectedByCommitteeMemberId)
             .HasDatabaseName("IX_Nomination_SelCommittee");
+            
+        // Configure GroupNominationMember
+        builder.Entity<GroupNominationMember>()
+            .ToTable("GROUPNOMINATIONMEMBERS")
+            .Property(gnm => gnm.GroupMemberId)
+            .HasColumnName("GROUPMEMBERID")
+            .HasColumnType("NUMBER(10)")
+            .HasDefaultValueSql("SEQ_GROUPNOMINATION.NEXTVAL")
+            .ValueGeneratedOnAdd();
+            
+        builder.Entity<GroupNominationMember>()
+            .Property(gnm => gnm.NominationId)
+            .HasColumnName("NOMINATIONID")
+            .HasColumnType("NUMBER(10)");
+            
+        builder.Entity<GroupNominationMember>()
+            .Property(gnm => gnm.EmployeeId)
+            .HasColumnName("EMPLOYEEID")
+            .HasColumnType("NUMBER(10)");
+            
+        builder.Entity<GroupNominationMember>()
+            .HasOne(gnm => gnm.Nomination)
+            .WithMany(n => n.GroupMembers)
+            .HasForeignKey(gnm => gnm.NominationId)
+            .HasConstraintName("FK_GroupNom_Nomination");
+            
+        builder.Entity<GroupNominationMember>()
+            .HasOne(gnm => gnm.Employee)
+            .WithMany()
+            .HasForeignKey(gnm => gnm.EmployeeId)
+            .HasConstraintName("FK_GroupNom_Employee");
+            
+        builder.Entity<GroupNominationMember>()
+            .HasIndex(gnm => new { gnm.NominationId, gnm.EmployeeId })
+            .IsUnique()
+            .HasDatabaseName("UQ_GroupNom_Nom_Emp");
 
         // Configure AI Objectives & Messaging entities
         ConfigureAiObjectivesEntities(builder);

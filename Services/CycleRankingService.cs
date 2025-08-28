@@ -34,6 +34,11 @@ namespace EOM.Web.Services
                     n.IsWinner,
                     n.WonAt,
                     n.SelectedByCommitteeMemberId,
+                    n.Title,
+                    n.IsSelfNomination,
+                    n.InitiativeDetails,
+                    n.AttachmentPath,
+                    n.SupportingDocPath,
                     e.FirstName,
                     e.LastName,
                     e.JobTitle,
@@ -69,6 +74,8 @@ namespace EOM.Web.Services
                 .Include(n => n.Employee)
                     .ThenInclude(e => e.Department)
                 .Include(n => n.Manager)
+                .Include(n => n.GroupMembers)
+                    .ThenInclude(gm => gm.Employee)
                 .ToListAsync();
 
             var result = new List<NominationWithScore>();
@@ -121,6 +128,8 @@ namespace EOM.Web.Services
                 .Include(n => n.Employee)
                     .ThenInclude(e => e.Department)
                 .Include(n => n.Manager)
+                .Include(n => n.GroupMembers)
+                    .ThenInclude(gm => gm.Employee)
                 .Where(n => n.CycleId == cycleId)
                 .ToListAsync();
 

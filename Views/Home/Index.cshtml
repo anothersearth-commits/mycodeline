@@ -140,12 +140,12 @@
     </div>
 
     <!-- Department Nominations Section - Simple clean cards -->
-    @if (departmentNominations.Any())
+    @if (departmentNominations.Where(n => n.AwardCycle?.AwardTypeId == 1).Any())
     {
         <div class="container mb-5">
             <h4 class="text-center mb-4">المترشحون</h4>
             <div class="row g-3 justify-content-center">
-                @foreach (var nomination in departmentNominations.Take(8))
+                @foreach (var nomination in departmentNominations.Where(n => n.AwardCycle?.AwardTypeId == 1).Take(8))
                 {
                     <div class="col-lg-3 col-md-4 col-sm-6">
                         <div class="nominee-card">
@@ -215,6 +215,160 @@
             font-size: 1rem;
             line-height: 1.4;
         }
+
+        /* Self-Nomination Cycles Styling */
+        .self-nomination-section {
+            padding: 2rem 0;
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.05), rgba(118, 75, 162, 0.05));
+            border-radius: 20px;
+            margin-bottom: 2rem;
+        }
+
+        .self-nomination-card {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+            transition: all 0.3s ease;
+            border: none;
+            overflow: hidden;
+            position: relative;
+            height: 100%;
+        }
+
+        .self-nomination-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+        }
+
+        .self-nomination-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.18);
+        }
+
+        .card-header-gradient {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-radius: 0;
+        }
+
+        .card-header-gradient .card-title {
+            font-size: 1.3rem;
+            font-weight: 700;
+            margin: 0;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .cycle-badge {
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.1);
+        }
+
+        .self-nomination-card .card-body {
+            padding: 2rem;
+        }
+
+        .card-description {
+            color: #6c757d;
+            font-size: 1rem;
+            line-height: 1.6;
+            margin-bottom: 1.5rem;
+        }
+
+        .card-meta {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            color: #495057;
+            font-size: 0.95rem;
+            margin-bottom: 2rem;
+            padding: 1rem;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+        }
+
+        .card-meta i {
+            color: #667eea;
+            font-size: 1.1rem;
+        }
+
+        .btn-block {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            padding: 0.875rem 1.5rem;
+            font-weight: 600;
+            border-radius: 10px;
+            transition: all 0.3s ease;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            color: white;
+            text-decoration: none;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-block::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s ease;
+        }
+
+        .btn-block:hover::before {
+            left: 100%;
+        }
+
+        .btn-block:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+            color: white;
+            text-decoration: none;
+        }
+
+        .btn-block:active {
+            transform: translateY(0);
+        }
+
+        /* Responsive adjustments */
+        @@media (max-width: 768px) {
+            .self-nomination-section {
+                padding: 1rem;
+            }
+            
+            .card-header-gradient {
+                padding: 1rem;
+                flex-direction: column;
+                gap: 1rem;
+                text-align: center;
+            }
+            
+            .self-nomination-card .card-body {
+                padding: 1.5rem;
+            }
+        }
     </style>
 
     <!-- Role-Based Dashboards -->
@@ -224,7 +378,7 @@
         <div class="dashboard-section slide-up">
             <div class="container">
 
-                @if (openCycles.Any())
+                @if (openCycles.Where(c => c.AwardTypeId == 1).Any())
                 {
                     <div class="glass-card priority-card mb-4">
                         <div class="card-header">
@@ -234,7 +388,7 @@
                         </div>
                         <div class="card-content">
                             <div class="cycles-grid">
-                                @foreach (var cycle in openCycles)
+                                @foreach (var cycle in openCycles.Where(c => c.AwardTypeId == 1))
                                 {
                                     <div class="cycle-card">
                                         <div class="cycle-header">
@@ -271,7 +425,7 @@
                                     <img src="~/img/cooperation.png" alt="Current Nominations" class="feature-icon-img" />
                                 </div>
                                 <div class="feature-badge">
-                                    <span class="badge-number">@currentNominations.Count</span>
+                                    <span class="badge-number">@currentNominations.Where(n => n.AwardCycle?.AwardTypeId == 1).Count()</span>
                                     <span class="badge-text">ترشيح نشط</span>
                                 </div>
                             </div>
@@ -294,7 +448,7 @@
                                     <img src="~/img/analysis.png" alt="Previous Cycles" class="feature-icon-img" />
                                 </div>
                                 <div class="feature-badge">
-                                    <span class="badge-number">@recentCycles.Count</span>
+                                    <span class="badge-number">@recentCycles.Where(c => c.AwardTypeId == 1).Count()</span>
                                     <span class="badge-text">دورة مكتملة</span>
                                 </div>
                             </div>
@@ -313,7 +467,7 @@
         </div>
     }
 
-    @if (User.IsInRole("Manager") && currentNominations.Any())
+    @if (User.IsInRole("Manager") && currentNominations.Where(n => n.AwardCycle?.AwardTypeId == 1).Any())
     {
         <div class="row mb-5">
             <div class="col-12">
@@ -337,7 +491,7 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    @foreach (var nomination in currentNominations)
+                                    @foreach (var nomination in currentNominations.Where(n => n.AwardCycle?.AwardTypeId == 1))
                                     {
                                         <tr>
                                             <td>
@@ -379,7 +533,7 @@
         </div>
     }
 
-    @if (User.IsInRole("Manager") && recentCycles.Any())
+    @if (User.IsInRole("Manager") && recentCycles.Where(c => c.AwardTypeId == 1).Any())
     {
         <div class="row mb-5">
             <div class="col-12">
@@ -400,7 +554,7 @@
                         </a>
                     </div>
                     <div class="enhanced-cycles-grid">
-                        @foreach (var cycle in recentCycles)
+                        @foreach (var cycle in recentCycles.Where(c => c.AwardTypeId == 1))
                         {
                             <div class="enhanced-mini-cycle-card" onclick="location.href='@Url.Action("CycleDetails", "Nominations", new { id = cycle.CycleId })'">
                                 <div class="card-background-overlay"></div>
@@ -777,13 +931,58 @@
             </div>
         </div>
     }
-    else if (!User.IsInRole("Manager"))
-    {
-        <!-- Current Cycle Overview for Normal Employees -->
+  
+    <!-- Self-Nomination Cycles for Employees (Show for all except pure managers) -->
+    @{
+        var selfNominationCycles = ViewBag.SelfNominationCycles as List<EOM.Web.Models.AwardCycle> ?? new List<EOM.Web.Models.AwardCycle>();
+        bool isManager = User.IsInRole("Manager");
+        bool isAdmin = User.IsInRole("EOM-Admin");
+        bool isCommittee = User.IsInRole("EOM-Committee");
         
-        @if (openCycles.Any())
+        // Show self-nomination for: Admin, Committee, dual-role users, or non-managers
+        // Hide only for pure managers (manager role without committee or admin)
+        bool showSelfNomination = isAdmin || isCommittee || !isManager || (isManager && isDualRole);
+    }
+    
+    @if (showSelfNomination && selfNominationCycles.Any())
         {
-            var currentCycle = openCycles.First();
+            <div class="container mb-5">
+                <div class="self-nomination-section">
+                    <div class="section-header mb-4">
+                        <p class="text-center text-muted">يمكنك ترشيح نفسك أو فريقك للجوائز التالية</p>
+                    </div>
+                    <div class="row g-4">
+                        @foreach (var cycle in selfNominationCycles)
+                        {
+                            <div class="col-md-6">
+                                <div class="self-nomination-card">
+                                    <div class="card-header-gradient">
+                                        <h4 class="card-title mb-0 text-white">@cycle.AwardType?.Name</h4>
+                                        <span class="cycle-badge">@cycle.Month/@cycle.Year</span>
+                                    </div>
+                                    <div class="card-body">
+                                        <p class="card-description">@cycle.AwardType?.Description</p>
+                                        <div class="card-meta">
+                                            <i class="fas fa-calendar-alt"></i>
+                                            <span>فترة الترشيح: @cycle.NominationStart.ToString("dd/MM") - @cycle.NominationEnd.ToString("dd/MM")</span>
+                                        </div>
+                                        <a href="@Url.Action("Create", "SelfNomination", new { cycleId = cycle.CycleId })" class="btn btn-primary btn-block mt-3">
+                                            <i class="fas fa-plus-circle me-2"></i>
+                                            ترشح الآن
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+         
+        
+        <!-- Current Cycle Overview for Normal Employees -->
+        @if (openCycles.Where(c => c.AwardTypeId == 1).Any())
+        {
+            var currentCycle = openCycles.Where(c => c.AwardTypeId == 1).First();
             var totalNominations = currentCycle.Nominations?.Count ?? 0;
             var evaluatedNominations = currentCycle.Nominations?.Where(n => n.Evaluations.Any()).Count() ?? 0;
             

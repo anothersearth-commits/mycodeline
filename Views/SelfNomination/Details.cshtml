@@ -1,0 +1,779 @@
+@model EOM.Web.Models.Nomination
+
+@{
+    ViewData["Title"] = "تفاصيل الترشيح";
+    var isWinner = Model.IsWinner == 1;
+    var hasEvaluations = Model.Evaluations != null && Model.Evaluations.Any();
+    var hasGroupMembers = Model.GroupMembers != null && Model.GroupMembers.Any();
+}
+
+<div class="container-fluid">
+    
+
+    <div class="row g-4">
+        <!-- Main Content Column -->
+        <div class="col-lg-8">
+            <!-- Basic Information Section -->
+            <div class="info-section">
+                <div class="section-header">
+                    <h2 class="section-title">
+                        <i class="fas fa-info-circle"></i>
+                        معلومات أساسية
+                    </h2>
+                </div>
+                <div class="section-content">
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <div class="info-label">نوع الجائزة</div>
+                            <div class="info-value award-type">@Model.AwardCycle?.AwardType?.Name</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">الدورة</div>
+                            <div class="info-value">@Model.AwardCycle?.Month/@Model.AwardCycle?.Year</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">تاريخ الترشيح</div>
+                            <div class="info-value">@Model.CreatedAt.ToString("dd MMMM yyyy - HH:mm", new System.Globalization.CultureInfo("en-US"))</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">حالة الترشيح</div>
+                            <div class="info-value">
+                                @if (isWinner)
+                                {
+                                    <span class="status-badge winner-status">
+                                        <i class="fas fa-trophy"></i>
+                                        فائز
+                                    </span>
+                                }
+                                else if (hasEvaluations)
+                                {
+                                    <span class="status-badge evaluated-status">
+                                        <i class="fas fa-check-circle"></i>
+                                        تم التقييم
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="status-badge pending-status">
+                                        <i class="fas fa-clock"></i>
+                                        قيد المراجعة
+                                    </span>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Nomination Details Section -->
+            <div class="info-section">
+                <div class="section-header">
+                    <h2 class="section-title">
+                        <i class="fas fa-lightbulb"></i>
+                        تفاصيل المبادرة/الابتكار
+                    </h2>
+                </div>
+                <div class="section-content">
+                    <!-- Title -->
+                    <div class="detail-block">
+                        <div class="detail-header">
+                            <i class="fas fa-heading"></i>
+                            <span>عنوان المبادرة</span>
+                        </div>
+                        <div class="detail-content title-content">
+                            @(Model.Title ?? "غير محدد")
+                        </div>
+                    </div>
+
+                    <!-- Description -->
+                    <div class="detail-block">
+                        <div class="detail-header">
+                            <i class="fas fa-align-left"></i>
+                            <span>وصف المبادرة</span>
+                        </div>
+                        <div class="detail-content description-content">
+                            @if (!string.IsNullOrEmpty(Model.InitiativeDetails))
+                            {
+                                @Html.Raw(Model.InitiativeDetails.Replace("\n", "<br>"))
+                            }
+                            else
+                            {
+                                <em class="no-content">لا توجد تفاصيل مضافة</em>
+                            }
+                        </div>
+                    </div>
+
+                    <!-- Attachment -->
+                    @if (!string.IsNullOrEmpty(Model.AttachmentPath))
+                    {
+                        <div class="detail-block">
+                            <div class="detail-header">
+                                <i class="fas fa-file-pdf"></i>
+                                <span>المرفق</span>
+                            </div>
+                            <div class="detail-content">
+                                <a href="@Url.Action("DownloadAttachment", new { id = Model.NominationId })" target="_blank" class="download-btn">
+                                    <i class="fas fa-download"></i>
+                                    <span>تحميل ملف PDF</span>
+                                    <div class="btn-bg"></div>
+                                </a>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <!-- Team Members Section -->
+            @if (hasGroupMembers)
+            {
+                <div class="info-section">
+                    <div class="section-header">
+                        <h2 class="section-title">
+                            <i class="fas fa-users"></i>
+                            أعضاء الفريق (@(Model.GroupMembers.Count() + 1) موظف)
+                        </h2>
+                    </div>
+                    <div class="section-content">
+                        <div class="members-grid">
+                            <!-- Main Nominee -->
+                            <div class="member-card main-nominee">
+                                <div class="member-icon">
+                                    <img src="@Url.Action("WinnerPhoto", "Home", new { adUser = Model.Employee?.EmployeeId })" 
+                                         alt="@Model.Employee?.FirstName @Model.Employee?.LastName"
+                                         class="member-photo"
+                                         onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
+                                    <div class="member-icon-fallback" style="display: none;">
+                                        <i class="fas fa-user"></i>
+                                    </div>
+                                </div>
+                                <div class="member-details">
+                                    <div class="member-name">@Model.Employee?.FirstName @Model.Employee?.LastName</div>
+                                    <div class="member-number">رقم الموظف: @Model.Employee?.EmployeeId</div>
+                                    <div class="member-role">المترشح الرئيسي</div>
+                                </div>
+                            </div>
+                            
+                            <!-- Group Members -->
+                            @foreach (var member in Model.GroupMembers)
+                            {
+                                <div class="member-card">
+                                    <div class="member-icon">
+                                        <img src="@Url.Action("WinnerPhoto", "Home", new { adUser = member.Employee?.EmployeeId })" 
+                                             alt="@member.Employee?.FirstName @member.Employee?.LastName"
+                                             class="member-photo"
+                                             onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
+                                        <div class="member-icon-fallback" style="display: none;">
+                                            <i class="fas fa-user"></i>
+                                        </div>
+                                    </div>
+                                    <div class="member-details">
+                                        <div class="member-name">@member.Employee?.FirstName @member.Employee?.LastName</div>
+                                        <div class="member-number">رقم الموظف: @member.Employee?.EmployeeId</div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            }
+            else
+            {
+                <div class="info-section">
+                    <div class="section-header">
+                        <h2 class="section-title">
+                            <i class="fas fa-user"></i>
+                            نوع الترشيح
+                        </h2>
+                    </div>
+                    <div class="section-content">
+                        <div class="individual-notice">
+                            <i class="fas fa-info-circle"></i>
+                            <span>هذا ترشيح فردي (لا يحتوي على أعضاء فريق إضافيين)</span>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+
+        <!-- Sidebar - Evaluation Status -->
+        <div class="col-lg-4">
+            <div class="sidebar-section">
+                <div class="status-overview">
+                    <div class="status-header">
+                        <h3>حالة التقييم</h3>
+                    </div>
+                    
+                    @if (isWinner)
+                    {
+                        <div class="status-content winner-content">
+                            <div class="status-icon">
+                                <i class="fas fa-trophy"></i>
+                            </div>
+                            <div class="status-text">
+                                <h4>مبروك! أنت فائز</h4>
+                                <p>تم اختيارك كفائز في هذه الجائزة المميزة</p>
+                            </div>
+                        </div>
+                    }
+                    else if (hasEvaluations)
+                    {
+                        <div class="status-content evaluated-content">
+                            <div class="status-icon">
+                                <i class="fas fa-check-circle"></i>
+                            </div>
+                            <div class="status-text">
+                                <h4>تم التقييم</h4>
+                                <p>تم تقييم ترشيحك من قبل @Model.Evaluations.Count() من أعضاء اللجنة</p>
+                            </div>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="status-content pending-content">
+                            <div class="status-icon">
+                                <i class="fas fa-clock"></i>
+                            </div>
+                            <div class="status-text">
+                                <h4>قيد المراجعة</h4>
+                                <p>ترشيحك قيد المراجعة من قبل اللجنة</p>
+                            </div>
+                        </div>
+                    }
+                </div>
+
+                <!-- Evaluation Timeline -->
+                @if (hasEvaluations)
+                {
+                    <div class="evaluation-timeline">
+                        <div class="timeline-header">
+                            <h4>
+                                <i class="fas fa-history"></i>
+                                تسلسل التقييم
+                            </h4>
+                        </div>
+                        <div class="timeline-content">
+                            @foreach (var evaluation in Model.Evaluations.OrderBy(e => e.CreatedAt))
+                            {
+                                <div class="timeline-item">
+                                    <div class="timeline-marker"></div>
+                                    <div class="timeline-info">
+                                        <div class="evaluator-name">
+                                            @evaluation.CommitteeMember?.Employee?.FirstName @evaluation.CommitteeMember?.Employee?.LastName
+                                        </div>
+                                        <div class="evaluation-date">
+                                            @evaluation.CreatedAt.ToString("dd MMMM yyyy", new System.Globalization.CultureInfo("en-US"))
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <style>
+
+    .section-header {
+     margin-top: 10px;
+     margin-bottom: 10px;
+    }
+        /* Clear and Simple Design */
+        .page-header {
+            background: #fff;
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            border-left: 5px solid #007bff;
+            margin-bottom: 2rem;
+        }
+
+        .winner-header {
+            border-left-color: #28a745 !important;
+            background: linear-gradient(to right, rgba(40, 167, 69, 0.05), rgba(40, 167, 69, 0));
+        }
+
+        .page-title {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #2c3e50;
+            margin: 0 0 0.5rem 0;
+        }
+
+        .page-subtitle {
+            color: #6c757d;
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .award-name {
+            font-weight: 600;
+            color: #007bff;
+        }
+
+        .separator {
+            color: #dee2e6;
+        }
+
+        .winner-icon {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: #28a745;
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 25px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            width: fit-content;
+        }
+
+        .btn-back {
+            background: #6c757d;
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.2s;
+        }
+
+        .btn-back:hover {
+            background: #5a6268;
+            color: white;
+            text-decoration: none;
+        }
+
+        /* Clean Section Design */
+        .info-section {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            margin-bottom: 2rem;
+            overflow: hidden;
+        }
+
+        .section-header {
+            background: #f8f9fa;
+            padding: 1.5rem 2rem;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .section-title {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: #212529;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .section-title i {
+            color: #495057;
+            font-size: 1.2rem;
+        }
+
+        .section-content {
+            padding: 2rem;
+        }
+
+        /* Information Grid */
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .info-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .info-label {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #6c757d;
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .info-value {
+            font-size: 1.1rem;
+            color: #2c3e50;
+            font-weight: 500;
+        }
+
+        .award-type {
+            color: #007bff;
+            font-weight: 600;
+        }
+
+        /* Status Badges */
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .winner-status {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .evaluated-status {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+
+        .pending-status {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        /* Detail Blocks */
+        .detail-block {
+            margin-bottom: 2rem;
+            padding-bottom: 2rem;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .detail-block:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+
+        .detail-header {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+            font-weight: 600;
+            color: #495057;
+        }
+
+        .detail-header i {
+            color: #007bff;
+            font-size: 1.1rem;
+        }
+
+        .detail-content {
+            font-size: 1rem;
+            line-height: 1.6;
+            color: #2c3e50;
+        }
+
+        .title-content {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .description-content {
+            background: #f8f9fa;
+            padding: 1.5rem;
+            border-radius: 8px;
+            border: 1px solid #e9ecef;
+        }
+
+        .no-content {
+            color: #6c757d;
+            font-style: italic;
+        }
+
+        /* Download Button */
+        .download-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.75rem;
+            background: #007bff;
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.2s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .download-btn:hover {
+            background: #0056b3;
+            color: white;
+            text-decoration: none;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0,123,255,0.3);
+        }
+
+        /* Members Grid */
+        .members-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1rem;
+        }
+
+        .member-card {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            padding: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .member-card.main-nominee {
+            background: #e8f4fd;
+            border: 2px solid #007bff;
+        }
+        
+        .member-role {
+            font-size: 0.85rem;
+            color: #007bff;
+            font-weight: 600;
+            margin-top: 0.25rem;
+        }
+
+        .member-icon {
+            background: #007bff;
+            color: white;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        .member-photo {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 50%;
+        }
+        
+        .member-icon-fallback {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #007bff;
+            color: white;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+
+        .member-details {
+            flex: 1;
+        }
+
+        .member-name {
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 0.25rem;
+        }
+
+        .member-number {
+            color: #6c757d;
+            font-size: 0.9rem;
+        }
+
+        /* Individual Notice */
+        .individual-notice {
+            background: #e3f2fd;
+            border: 1px solid #bbdefb;
+            border-radius: 8px;
+            padding: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            color: #1976d2;
+        }
+
+        .individual-notice i {
+            font-size: 1.5rem;
+        }
+
+        /* Sidebar */
+        .sidebar-section {
+            position: sticky;
+            top: 2rem;
+        }
+
+        .status-overview {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            overflow: hidden;
+            margin-bottom: 2rem;
+        }
+
+        .status-header h3 {
+            background: #f8f9fa;
+            margin: 0;
+            padding: 1.5rem;
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #2c3e50;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .status-content {
+            padding: 2rem;
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+        }
+
+        .status-icon {
+            font-size: 3rem;
+        }
+
+        .winner-content .status-icon { color: #28a745; }
+        .evaluated-content .status-icon { color: #17a2b8; }
+        .pending-content .status-icon { color: #ffc107; }
+
+        .status-text h4 {
+            margin: 0 0 0.5rem 0;
+            font-size: 1.3rem;
+            font-weight: 600;
+        }
+
+        .status-text p {
+            margin: 0;
+            color: #6c757d;
+            line-height: 1.5;
+        }
+
+        .winner-content h4 { color: #28a745; }
+        .evaluated-content h4 { color: #17a2b8; }
+        .pending-content h4 { color: #ffc107; }
+
+        /* Timeline */
+        .evaluation-timeline {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            overflow: hidden;
+        }
+
+        .timeline-header {
+            background: #f8f9fa;
+            padding: 1.5rem;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .timeline-header h4 {
+            margin: 0;
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #2c3e50;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .timeline-header i {
+            color: #007bff;
+        }
+
+        .timeline-content {
+            padding: 1.5rem;
+        }
+
+        .timeline-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 0.75rem 0;
+            position: relative;
+        }
+
+        .timeline-item:not(:last-child)::after {
+            content: '';
+            position: absolute;
+            left: 11px;
+            bottom: -0.75rem;
+            width: 2px;
+            height: 1.5rem;
+            background: #e9ecef;
+        }
+
+        .timeline-marker {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: #007bff;
+            flex-shrink: 0;
+            position: relative;
+            z-index: 1;
+        }
+
+        .timeline-info {
+            flex: 1;
+        }
+
+        .evaluator-name {
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 0.25rem;
+        }
+
+        .evaluation-date {
+            color: #6c757d;
+            font-size: 0.9rem;
+        }
+
+        /* Responsive */
+        @@media (max-width: 768px) {
+            .page-header .d-flex {
+                flex-direction: column;
+                gap: 1rem;
+                text-align: center;
+            }
+
+            .page-subtitle {
+                flex-direction: column;
+                gap: 0.25rem;
+            }
+
+            .info-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .members-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .status-content {
+                flex-direction: column;
+                text-align: center;
+                gap: 1rem;
+            }
+
+            .sidebar-section {
+                position: static;
+            }
+        }
+    </style>
+}

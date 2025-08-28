@@ -63,6 +63,9 @@
                             <tr>
                                 <th>#</th>
                                 <th>الموظف</th>
+                                <th>أعضاء الفريق</th>
+                                <th>العنوان</th>
+                                <th>تفاصيل المبادرة</th>
                                 <th>الدائرة</th>
                                 <th>المدير</th>
                                 <th>نوع الجائزة</th>
@@ -70,6 +73,7 @@
                                 <th class="text-center">درجات اللجنة</th>
                                 <th class="text-center">متوسط اللجنة</th>
                                 <th class="text-center">الدرجة النهائية</th>
+                                <th class="text-center">المرفقات</th>
                                 <th class="text-center">الحالة</th>
                             </tr>
                         </thead>
@@ -86,6 +90,69 @@
                                         <strong>@nomination.Employee?.FirstName @nomination.Employee?.LastName</strong>
                                         <br>
                                         <small class="text-muted">رقم: @nomination.Employee?.EmployeeId</small>
+                                        @if (nomination.IsSelfNomination == true)
+                                        {
+                                            <br>
+                                            <span class="badge bg-info">ترشيح ذاتي</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        @{
+                                            var teamMembersList = item.TeamMembers as IEnumerable<string>;
+                                            bool showTeam = item.ShowTeamMembers ?? false;
+                                        }
+                                        @if (showTeam || (nomination.AwardCycle?.AwardType?.AwardTypeId == 2 || nomination.AwardCycle?.AwardType?.AwardTypeId == 3))
+                                        {
+                                            if (teamMembersList != null && teamMembersList.Any())
+                                            {
+                                                <div class="team-members">
+                                                    @foreach (var member in teamMembersList)
+                                                    {
+                                                        <small class="d-block">• @member</small>
+                                                    }
+                                                </div>
+                                            }
+                                            else if (nomination.IsSelfNomination == true)
+                                            {
+                                                <span class="text-muted">فردي</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="text-muted">-</span>
+                                            }
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">-</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (!string.IsNullOrEmpty(nomination.Title))
+                                        {
+                                            <strong>@nomination.Title</strong>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">-</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (!string.IsNullOrEmpty(nomination.InitiativeDetails))
+                                        {
+                                            var details = nomination.InitiativeDetails;
+                                            if (details.Length > 100)
+                                            {
+                                                <span title="@details">@details.Substring(0, 100)...</span>
+                                            }
+                                            else
+                                            {
+                                                <span>@details</span>
+                                            }
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">-</span>
+                                        }
                                     </td>
                                     <td>@nomination.Employee?.Department?.Name</td>
                                     <td>
@@ -134,6 +201,33 @@
                                         <strong class="@(item.FinalScore >= 90 ? "text-success" : item.FinalScore >= 70 ? "text-warning" : "text-danger")">
                                             @item.FinalScore.ToString("F2")
                                         </strong>
+                                    </td>
+                                    <td class="text-center">
+                                        @if (!string.IsNullOrEmpty(nomination.AttachmentPath))
+                                        {
+                                            @if (nomination.IsSelfNomination == true)
+                                            {
+                                                <a href="@Url.Action("DownloadAttachment", "SelfNomination", new { id = nomination.NominationId })" 
+                                                   class="btn btn-sm btn-outline-primary" 
+                                                   target="_blank"
+                                                   title="تحميل المرفق">
+                                                    <i class="fas fa-file-pdf"></i> PDF
+                                                </a>
+                                            }
+                                            else
+                                            {
+                                                <a href="@Url.Action("DownloadAttachment", "Nominations", new { id = nomination.NominationId })" 
+                                                   class="btn btn-sm btn-outline-primary" 
+                                                   target="_blank"
+                                                   title="تحميل المرفق">
+                                                    <i class="fas fa-file-pdf"></i> PDF
+                                                </a>
+                                            }
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">-</span>
+                                        }
                                     </td>
                                     <td class="text-center">
                                         @if (nomination.IsWinner == 1)
@@ -233,3 +327,13 @@
         });
     </script>
 }
+
+<style>
+    .team-members {
+        max-width: 200px;
+    }
+    .team-members small {
+        color: #6c757d;
+        line-height: 1.4;
+    }
+</style>

@@ -90,16 +90,8 @@ public class AwardCyclesController : BaseController
     // GET: AwardCycles/Create
     public async Task<IActionResult> Create()
     {
-        // Check if there's already an active cycle
-        var activeCycle = await _context.AwardCycles
-            .Where(c => c.Status == CycleStatus.Nomination || c.Status == CycleStatus.Evaluating)
-            .FirstOrDefaultAsync();
-
-        if (activeCycle != null)
-        {
-            TempData["Error"] = "لا يمكن إنشاء دورة جديدة. يوجد دورة نشطة بالفعل يجب إغلاقها أولاً.";
-            return RedirectToAction(nameof(Index));
-        }
+        // Allow multiple active cycles of different award types
+        // No longer blocking new cycle creation based on existing active cycles
 
         var awardTypes = _context.AwardTypes.Where(at => at.IsActive).ToList();
 
@@ -125,14 +117,17 @@ public class AwardCyclesController : BaseController
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Create([Bind("AwardTypeId,Month,Year,NominationStart,NominationEnd,Status")] AwardCycle awardCycle)
     {
-        // Check if there's already an active cycle
-        var activeCycle = await _context.AwardCycles
-            .Where(c => c.Status == CycleStatus.Nomination || c.Status == CycleStatus.Evaluating)
+        // Check if there's already an active cycle for the SAME award type and period
+        var activeCycleForSameType = await _context.AwardCycles
+            .Where(c => c.AwardTypeId == awardCycle.AwardTypeId 
+                       && c.Month == awardCycle.Month 
+                       && c.Year == awardCycle.Year
+                       && (c.Status == CycleStatus.Nomination || c.Status == CycleStatus.Evaluating))
             .FirstOrDefaultAsync();
 
-        if (activeCycle != null)
+        if (activeCycleForSameType != null)
         {
-            TempData["Error"] = "لا يمكن إنشاء دورة جديدة. يوجد دورة نشطة بالفعل يجب إغلاقها أولاً.";
+            TempData["Error"] = "يوجد دورة نشطة بالفعل لنفس نوع الجائزة والفترة الزمنية.";
             return RedirectToAction(nameof(Index));
         }
 
@@ -257,14 +252,25 @@ public class AwardCyclesController : BaseController
             return NotFound();
         }
 
-        // Check if there's already an active cycle
-        var activeCycle = await _context.AwardCycles
-            .Where(c => c.Status == CycleStatus.Nomination || c.Status == CycleStatus.Evaluating)
+        // Check if there's already an active cycle for the SAME award type
+        var cycleToOpen = await _context.AwardCycles
+            .Include(c => c.AwardType)
+            .FirstOrDefaultAsync(c => c.CycleId == id);
+            
+        if (cycleToOpen == null)
+        {
+            return NotFound();
+        }
+        
+        var activeCycleForSameType = await _context.AwardCycles
+            .Where(c => c.AwardTypeId == cycleToOpen.AwardTypeId
+                       && c.CycleId != id
+                       && (c.Status == CycleStatus.Nomination || c.Status == CycleStatus.Evaluating))
             .FirstOrDefaultAsync();
 
-        if (activeCycle != null && activeCycle.CycleId != id)
+        if (activeCycleForSameType != null)
         {
-            TempData["Error"] = "لا يمكن فتح دورة جديدة. يوجد دورة نشطة بالفعل يجب إغلاقها أولاً.";
+            TempData["Error"] = $"يوجد دورة نشطة بالفعل لنفس نوع الجائزة ({cycleToOpen.AwardType?.Name}). يجب إغلاقها أولاً.";
             return RedirectToAction(nameof(Index));
         }
 

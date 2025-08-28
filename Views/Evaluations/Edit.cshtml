@@ -121,15 +121,35 @@
     </div>
 </div>
 
-<h4 class="mb-2 text-primary">مراجعة تقييم المدير والمرفق</h4>
+@if (!Model.Nomination?.AwardCycle?.AwardType?.IsSelfNomination == true)
+{
+    <h4 class="mb-2 text-primary">مراجعة تقييم المدير والمرفق</h4>
+}
+else
+{
+    <h4 class="mb-2 text-primary">مراجعة تفاصيل الترشيح الذاتي</h4>
+}
+
 <!-- Manager's evaluation and file for committee review (collapsible, collapsed by default) -->
 <div class="card mb-4">
-    <div class="card-header bg-info text-dark d-flex justify-content-between align-items-center manager-header-hover" style="cursor:pointer" data-bs-toggle="collapse" data-bs-target="#managerEvalCollapse" aria-expanded="false" aria-controls="managerEvalCollapse" title="انقر هنا لعرض تقييم المدير والمرفق">
+    @if (!Model.Nomination?.AwardCycle?.AwardType?.IsSelfNomination == true)
+    {
+        <div class="card-header bg-info text-dark d-flex justify-content-between align-items-center manager-header-hover" style="cursor:pointer" data-bs-toggle="collapse" data-bs-target="#managerEvalCollapse" aria-expanded="false" aria-controls="managerEvalCollapse" title="انقر هنا لعرض تقييم المدير والمرفق">
+            <span class="fw-bold">
+                <i class="fas fa-chevron-down me-2 chevron-indicator" style="font-size:1.3em; vertical-align:middle;"></i>
+                تقييم المدير <span class="small">(انقر هنا لعرض التفاصيل والمرفق)</span>
+            </span>
+        </div>
+    }
+    else
+    {
+        <div class="card-header bg-success text-white d-flex justify-content-between align-items-center manager-header-hover" style="cursor:pointer" data-bs-toggle="collapse" data-bs-target="#managerEvalCollapse" aria-expanded="false" aria-controls="managerEvalCollapse" title="انقر هنا لعرض تفاصيل الترشيح الذاتي">
         <span class="fw-bold">
             <i class="fas fa-chevron-down me-2 chevron-indicator" style="font-size:1.3em; vertical-align:middle;"></i>
             تقييم المدير <span class="small">(انقر هنا لعرض التفاصيل والمرفق)</span>
         </span>
     </div>
+    }
     <style>
         .chevron-indicator {
             transition: transform 0.3s;
@@ -164,53 +184,129 @@
     </script>
     <div class="collapse" id="managerEvalCollapse">
         <div class="card-body">
-            @if (User.IsInRole("EOM-Admin"))
+            @if (!Model.Nomination?.AwardCycle?.AwardType?.IsSelfNomination == true)
             {
-                if (Model.Nomination?.ManagerScores != null && Model.Nomination.ManagerScores.Any())
+                @if (User.IsInRole("EOM-Admin"))
                 {
-                    <table class="table table-bordered">
-                        <thead>
-                            <tr>
-                                <th>المعيار الفرعي</th>
-                                <th>الدرجة</th>
-                                <th>ملاحظة</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach (var ms in Model.Nomination.ManagerScores)
-                            {
+                    if (Model.Nomination?.ManagerScores != null && Model.Nomination.ManagerScores.Any())
+                    {
+                        <table class="table table-bordered">
+                            <thead>
                                 <tr>
-                                    <td>@ms.SubCriteria?.Name</td>
-                                    <td>@ms.Score</td>
-                                    <td>@ms.Note</td>
+                                    <th>المعيار الفرعي</th>
+                                    <th>الدرجة</th>
+                                    <th>ملاحظة</th>
                                 </tr>
-                            }
-                        </tbody>
-                    </table>
+                            </thead>
+                            <tbody>
+                                @foreach (var ms in Model.Nomination.ManagerScores)
+                                {
+                                    <tr>
+                                        <td>@ms.SubCriteria?.Name</td>
+                                        <td>@ms.Score</td>
+                                        <td>@ms.Note</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    }
+                    else
+                    {
+                        <div class="alert alert-warning">لا يوجد تقييم مدير بعد.</div>
+                    }
                 }
                 else
                 {
-                    <div class="alert alert-warning">لا يوجد تقييم مدير بعد.</div>
+                    <div class="alert alert-info">ملاحظات المدير ستظهر بجانب كل معيار فرعي في نموذج التقييم.</div>
                 }
+                <hr />
+                <div>
+                    <b>مرفق المدير:</b>
+                    @if (!string.IsNullOrEmpty(Model.Nomination?.SupportingDocPath))
+                    {
+                        <a href="@Url.Action("Supporting", "Files", new { fileName = Model.Nomination.SupportingDocPath })" target="_blank" class="btn btn-outline-primary">
+                            <i class="fas fa-file-pdf"></i> عرض الملف المرفق
+                        </a>
+                    }
+                    else
+                    {
+                        <span class="text-muted">لا يوجد ملف مرفق من المدير.</span>
+                    }
+                </div>
             }
             else
             {
-                <div class="alert alert-info">ملاحظات المدير ستظهر بجانب كل معيار فرعي في نموذج التقييم.</div>
+                <!-- Self-nomination details -->
+                <div class="row">
+                    <div class="col-md-12 mb-3">
+                        <strong>العنوان:</strong>
+                        <p class="mt-1">@(Model.Nomination?.Title ?? "غير محدد")</p>
+                    </div>
+                    <div class="col-md-12 mb-3">
+                        <strong>تفاصيل المبادرة/الابتكار:</strong>
+                        <div class="mt-1 p-3 bg-light rounded">
+                            @if (!string.IsNullOrEmpty(Model.Nomination?.InitiativeDetails))
+                            {
+                                @Html.Raw(Model.Nomination.InitiativeDetails.Replace("\n", "<br>"))
+                            }
+                            else
+                            {
+                                <em class="text-muted">لا توجد تفاصيل مضافة</em>
+                            }
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <strong>تاريخ الترشيح:</strong>
+                        <p class="mt-1">@Model.Nomination?.CreatedAt.ToString("dd/MM/yyyy HH:mm")</p>
+                    </div>
+                    <div class="col-md-6">
+                        <strong>المرفقات:</strong>
+                        @if (!string.IsNullOrEmpty(Model.Nomination?.AttachmentPath))
+                        {
+                            <p class="mt-1">
+                                <a href="@Url.Action("DownloadAttachment", "SelfNomination", new { id = Model.Nomination.NominationId })" target="_blank" class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-file-pdf"></i>
+                                    عرض المرفق
+                                </a>
+                            </p>
+                        }
+                        else
+                        {
+                            <p class="mt-1 text-muted">لا توجد مرفقات</p>
+                        }
+                    </div>
+                </div>
+
+                <!-- Group Members for self-nominations -->
+                @if (Model.Nomination?.GroupMembers != null && Model.Nomination.GroupMembers.Any())
+                {
+                    <hr />
+                    <div class="mt-3">
+                        <h6 class="text-info">
+                            <i class="fas fa-users"></i>
+                            أعضاء الفريق (@Model.Nomination.GroupMembers.Count() موظف إضافي)
+                        </h6>
+                        <div class="row">
+                            @foreach (var member in Model.Nomination.GroupMembers)
+                            {
+                                <div class="col-md-6 mb-2">
+                                    <div class="border rounded p-2">
+                                        <div class="d-flex align-items-center">
+                                            <div class="me-2">
+                                                <i class="fas fa-user-circle fa-lg text-secondary"></i>
+                                            </div>
+                                            <div>
+                                                <small class="fw-bold">@member.Employee?.FirstName @member.Employee?.LastName</small><br>
+                                                <small class="text-muted">رقم الموظف: @member.Employee?.EmployeeId</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                }
             }
-            <hr />
-            <div>
-                <b>مرفق المدير:</b>
-                @if (!string.IsNullOrEmpty(Model.Nomination?.SupportingDocPath))
-                {
-                    <a href="@Url.Action("Supporting", "Files", new { fileName = Model.Nomination.SupportingDocPath })" target="_blank" class="btn btn-outline-primary">
-                        <i class="fas fa-file-pdf"></i> عرض الملف المرفق
-                    </a>
-                }
-                else
-                {
-                    <span class="text-muted">لا يوجد ملف مرفق من المدير.</span>
-                }
-            </div>
         </div>
     </div>
 </div>

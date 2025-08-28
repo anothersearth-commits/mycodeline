@@ -39,7 +39,17 @@ public class HomeController : BaseController
             .ThenByDescending(a => a.Month)
             .ToListAsync();
             
+        // Get self-nomination cycles specifically
+        var selfNominationCycles = await _context.AwardCycles
+            .Include(a => a.AwardType)
+            .Where(a => a.Status == CycleStatus.Nomination && 
+                       a.AwardType.IsSelfNomination == true)
+            .OrderByDescending(a => a.Year)
+            .ThenByDescending(a => a.Month)
+            .ToListAsync();
+            
         ViewBag.OpenCycles = openCycles;
+        ViewBag.SelfNominationCycles = selfNominationCycles;
 
         // Get department nominations for all employees to show at the top
         var currentEmployeeId = int.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "0");
@@ -388,34 +398,50 @@ public class HomeController : BaseController
     // GET: Home/Leaderboard
     public async Task<IActionResult> Leaderboard()
     {
-        // Get the last closed cycle
-        var lastClosedCycle = await _context.AwardCycles
+        // Get the latest closed cycle for each award type
+        var latestCyclesByType = await _context.AwardCycles
             .Include(ac => ac.AwardType)
             .Where(ac => ac.Status == CycleStatus.Closed || ac.Status == CycleStatus.Published)
-            .OrderByDescending(ac => ac.Year)
-            .ThenByDescending(ac => ac.Month)
-            .FirstOrDefaultAsync();
+            .GroupBy(ac => ac.AwardTypeId)
+            .Select(g => g.OrderByDescending(ac => ac.Year)
+                         .ThenByDescending(ac => ac.Month)
+                         .FirstOrDefault())
+            .ToListAsync();
 
-        if (lastClosedCycle == null)
+        if (!latestCyclesByType.Any())
         {
             ViewBag.Message = "لا توجد دورات مكتملة لعرض النتائج";
             return View(new List<Nomination>());
         }
 
-        // Get all winners from the last closed cycle with their employee data
-        var winners = await _context.Nominations
+        // Get the cycle IDs
+        var cycleIds = latestCyclesByType.Select(c => c.CycleId).ToList();
+
+        // Get all winners from these latest cycles
+        var allWinners = await _context.Nominations
             .Include(n => n.Employee)
             .Include(n => n.AwardCycle)
             .ThenInclude(ac => ac.AwardType)
             .Include(n => n.SelectedByCommitteeMember)
-            .Where(n => n.CycleId == lastClosedCycle.CycleId && n.IsWinner == 1)
-            .OrderBy(n => n.Employee.FirstName)
+            .Include(n => n.GroupMembers)
+            .ThenInclude(gm => gm.Employee)
+            .Where(n => cycleIds.Contains(n.CycleId) && n.IsWinner == 1)
+            .OrderBy(n => n.AwardCycle.AwardTypeId)
+            .ThenBy(n => n.Employee.FirstName)
             .ToListAsync();
 
-        ViewBag.CycleInfo = lastClosedCycle;
-        ViewBag.TotalWinners = winners.Count;
+        // Get the most recent date from all cycles
+        var mostRecentCycle = latestCyclesByType
+            .OrderByDescending(c => c.Year)
+            .ThenByDescending(c => c.Month)
+            .FirstOrDefault();
+
+        ViewBag.ClosedCycles = latestCyclesByType;
+        ViewBag.LatestMonth = mostRecentCycle?.Month ?? 0;
+        ViewBag.LatestYear = mostRecentCycle?.Year ?? 0;
+        ViewBag.TotalWinners = allWinners.Count;
         
-        return View(winners);
+        return View(allWinners);
     }
 
     [HttpGet]

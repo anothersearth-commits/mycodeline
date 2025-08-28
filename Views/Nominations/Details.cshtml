@@ -22,7 +22,7 @@
                     <div class="rounded-circle me-3 position-relative" style="width: 60px; height: 60px; overflow: hidden; border: 3px solid rgba(255,255,255,0.3);">
                         <img id="@employeeAvatarId" 
                              data-aduser="@employeeAdUser" 
-                             src="/img/default-user.png" 
+                             src="@Url.Content("~/img/default-user.png")" 
                              alt="صورة الموظف" 
                              style="width: 100%; height: 100%; object-fit: cover;" />
                         <div class="fallback-icon  bg-opacity-20 d-flex align-items-center justify-content-center" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: none;">
@@ -378,7 +378,7 @@ $(document).ready(function() {
         var adUser = $img.data('aduser');
         
         if (adUser) {
-            var url = '/Home/WinnerPhoto?adUser=' + encodeURIComponent(adUser);
+            var url = '@Url.Action("WinnerPhoto", "Home")' + '?adUser=' + encodeURIComponent(adUser);
             // Preload image, then set src if successful
             var image = new Image();
             image.onload = function() { 

@@ -12,9 +12,15 @@ public class Nomination
     
     public int EmployeeId { get; set; }
     
-    public int ManagerId { get; set; }
+    public int? ManagerId { get; set; } // Nullable for self-nominations
     
     public string? SupportingDocPath { get; set; }
+    
+    // Self-nomination fields
+    public bool IsSelfNomination { get; set; } = false;
+    public string? Title { get; set; } // Title of the self-nomination
+    public string? InitiativeDetails { get; set; } // Details about the initiative/innovation
+    public string? AttachmentPath { get; set; } // PDF attachment for self-nominations
     
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     
@@ -31,6 +37,9 @@ public class Nomination
 
     [ForeignKey(nameof(ManagerId))]
     public virtual Employee? Manager { get; set; }
+    
+    // Group nomination support
+    public virtual ICollection<GroupNominationMember> GroupMembers { get; set; } = new List<GroupNominationMember>();
 
     [ForeignKey(nameof(SelectedByCommitteeMemberId))]
     public virtual Employee? SelectedByCommitteeMember { get; set; }

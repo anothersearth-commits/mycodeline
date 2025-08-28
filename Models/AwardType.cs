@@ -17,6 +17,9 @@ public class AwardType
     [Required]
     public int WinnerCount { get; set; } = 1;
     
+    // Self-nomination flag
+    public bool IsSelfNomination { get; set; } = false;
+    
     // Navigation properties
     public virtual ICollection<AwardCycle> AwardCycles { get; set; } = new List<AwardCycle>();
     public virtual ICollection<Criterion> Criteria { get; set; } = new List<Criterion>();

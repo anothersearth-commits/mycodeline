@@ -1,8 +1,10 @@
 @model IEnumerable<EOM.Web.Models.Nomination>
 @{
     ViewData["Title"] = "الفائزون";
-    var cycleInfo = ViewBag.CycleInfo as EOM.Web.Models.AwardCycle;
+    var closedCycles = ViewBag.ClosedCycles as List<EOM.Web.Models.AwardCycle> ?? new List<EOM.Web.Models.AwardCycle>();
     var totalWinners = ViewBag.TotalWinners as int? ?? 0;
+    var latestMonth = ViewBag.LatestMonth as int? ?? 0;
+    var latestYear = ViewBag.LatestYear as int? ?? 0;
 }
 
 <style>
@@ -114,11 +116,6 @@ body, .leaderboard-bg {
     color: #222;
     margin-bottom: 0.2rem;
 }
-.winner-job {
-    color: #666;
-    font-size: 0.98rem;
-    margin-bottom: 0.7rem;
-}
 .winner-meta {
     color: #888;
     font-size: 0.92rem;
@@ -153,23 +150,44 @@ body, .leaderboard-bg {
     font-size: 1.05rem;
     margin-bottom: 2rem;
 }
+.award-type-section {
+    background: rgba(255, 255, 255, 0.5);
+    border-radius: 1.5rem;
+    padding: 2rem 1rem;
+    margin-bottom: 2rem;
+}
+
+.award-type-section h3 {
+    border-bottom: 3px solid #4f8cff;
+    padding-bottom: 1rem;
+    margin-bottom: 2rem;
+    display: inline-block;
+    width: 100%;
+}
+
+.winner-meta .group-members {
+    max-height: 50px;
+    overflow-y: auto;
+    padding: 0.25rem;
+    line-height: 1.4;
+}
+
 @@media (max-width: 600px) {
     .leaderboard-hero .hero-title { font-size: 1.5rem; }
     .stat-card { padding: 1rem 0.5rem; }
     .winners-grid { gap: 1rem; }
     .winner-card { padding: 1.2rem 0.5rem; }
+    .award-type-section { padding: 1rem 0.5rem; }
 }
 </style>
 
 <div class="leaderboard-bg">
     <div class="leaderboard-hero">
         <div class="hero-icon"><i class="fas fa-trophy"></i></div>
-        @if (cycleInfo != null)
-        {
-            <div class="hero-subtitle">
-                فائزو <span style="color:#4f8cff;font-weight:600;">@cycleInfo.AwardType.Name</span> - @cycleInfo.Month/@cycleInfo.Year
-            </div>
-        }
+        <div class="hero-title">الفائزون</div>
+        <div class="hero-subtitle">
+            آخر الفائزين من جميع فئات الجوائز
+        </div>
     </div>
 
     @if (!string.IsNullOrEmpty(ViewBag.Message as string))
@@ -196,31 +214,60 @@ body, .leaderboard-bg {
             </div>
             <div class="stat-card">
                 <div class="stat-icon"><i class="fas fa-medal"></i></div>
-                <div class="stat-number">@cycleInfo?.AwardType.Name</div>
-                <div class="stat-label">نوع الجائزة</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-icon"><i class="fas fa-calendar-alt"></i></div>
-                <div class="stat-number">@cycleInfo?.Month/@cycleInfo?.Year</div>
-                <div class="stat-label">تاريخ الدورة</div>
+                <div class="stat-number">@closedCycles.Count</div>
+                <div class="stat-label">عدد الجوائز</div>
             </div>
         </div>
 
-        <div class="winners-grid">
-            @foreach (var winner in Model)
-            {
-                var adUser = winner.Employee?.ActiveDirectoryId;
-                var winnerId = $"winner-img-{winner.NominationId}";
-                <div class="winner-card">
-                    <div class="winner-avatar">
-                        <img id="@winnerId" data-aduser="@adUser" src="/img/default-user.png" alt="صورة الفائز" class="rounded-circle" style="width: 70px; height: 70px; object-fit: cover;" />
-                    </div>
-                    <div class="winner-badge"><i class="fas fa-star"></i> فائز</div>
-                    <div class="winner-name">@winner.Employee?.FirstName</div>
-                    @* <div class="winner-job"><i class="fas fa-briefcase me-1"></i>@winner.Employee?.JobTitle</div> *@
+        @foreach (var awardTypeGroup in Model.GroupBy(n => n.AwardCycle?.AwardType).OrderBy(g => g.Key?.AwardTypeId))
+        {
+            var cycleInfo = awardTypeGroup.FirstOrDefault()?.AwardCycle;
+            <div class="award-type-section mb-5">
+                <h3 class="text-center mb-4" style="color: #4f8cff; font-weight: 700;">
+                    <i class="fas fa-award me-2"></i>
+                    @awardTypeGroup.Key?.Name
+                    <span style="font-size: 0.8em; color: #666; font-weight: 500;">
+                        (@cycleInfo?.Month/@cycleInfo?.Year)
+                    </span>
+                </h3>
+                <div class="winners-grid">
+                    @foreach (var winner in awardTypeGroup)
+                    {
+                        var adUser = winner.Employee?.ActiveDirectoryId;
+                        var winnerId = $"winner-img-{winner.NominationId}";
+                        <div class="winner-card">
+                            <div class="winner-avatar">
+                                <img id="@winnerId" data-aduser="@adUser" src="@Url.Content("~/img/default-user.png")" alt="صورة الفائز" class="rounded-circle" style="width: 70px; height: 70px; object-fit: cover;" />
+                            </div>
+                            <div class="winner-badge"><i class="fas fa-star"></i> فائز</div>
+                            <div class="winner-name">@winner.Employee?.FirstName @winner.Employee?.LastName</div>
+                            @if (winner.AwardCycle?.AwardTypeId != 1)
+                            {
+                                @if (!string.IsNullOrEmpty(winner.Title))
+                                {
+                                    <div class="winner-initiative" style="font-size: 0.9rem; color: #666; text-align: center; margin-top: 0.5rem;">
+                                        <i class="fas fa-lightbulb me-1"></i>
+                                        <span class="text-truncate d-inline-block" style="max-width: 200px;" title="@winner.Title">
+                                            @winner.Title
+                                        </span>
+                                    </div>
+                                }
+                                @if (winner.GroupMembers?.Any() == true)
+                                {
+                                    <div class="winner-meta text-center mt-2" style="font-size: 0.85rem;">
+                                        <i class="fas fa-users me-1"></i>
+                                        <span>الفريق:</span>
+                                        <div class="group-members" style="font-size: 0.8rem; color: #888; margin-top: 0.3rem;">
+                                            @string.Join("، ", winner.GroupMembers.Select(gm => $"{gm.Employee?.FirstName} {gm.Employee?.LastName}"))
+                                        </div>
+                                    </div>
+                                }
+                            }
+                        </div>
+                    }
                 </div>
-            }
-        </div>
+            </div>
+        }
 
  
     }
@@ -232,11 +279,11 @@ $(document).ready(function() {
         var $img = $(this);
         var adUser = $img.data('aduser');
         if (adUser) {
-            var url = '/Home/WinnerPhoto?adUser=' + encodeURIComponent(adUser);
+            var url = '@Url.Action("WinnerPhoto", "Home")' + '?adUser=' + encodeURIComponent(adUser);
             // Preload image, then set src if successful
             var image = new Image();
             image.onload = function() { $img.attr('src', url); };
-            image.onerror = function() { $img.attr('src', '/img/default-user.png'); };
+            image.onerror = function() { $img.attr('src', '@Url.Content("~/img/default-user.png")'); };
             image.src = url;
         }
     });

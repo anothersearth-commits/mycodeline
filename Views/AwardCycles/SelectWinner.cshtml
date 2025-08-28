@@ -46,7 +46,30 @@
                             <strong>@item.Nomination.Employee?.FirstName @item.Nomination.Employee?.LastName</strong><br />
                             <small class="text-muted">@item.Nomination.Employee?.JobTitle</small><br />
                             <small class="text-info">الدائرة: @(item.Nomination.Employee?.Department?.Description ?? "غير محدد")</small><br />
-                            <small class="text-success">المدير: @(item.Nomination.Manager?.FirstName ?? "غير محدد") @item.Nomination.Manager?.LastName</small>
+                            @if (Model.AwardType?.AwardTypeId == 1)
+                            {
+                                <small class="text-success">المدير: @(item.Nomination.Manager?.FirstName ?? "غير محدد") @item.Nomination.Manager?.LastName</small>
+                            }
+                            else
+                            {
+                                <small class="text-primary"><strong>العنوان:</strong> @(string.IsNullOrEmpty(item.Nomination.Title) ? "غير محدد" : item.Nomination.Title)</small><br />
+                                @if (!string.IsNullOrEmpty(item.Nomination.InitiativeDetails))
+                                {
+                                    <small class="text-info" title="@item.Nomination.InitiativeDetails">
+                                        <strong>التفاصيل:</strong> 
+                                        <span class="text-truncate d-inline-block" style="max-width: 300px;">
+                                            @item.Nomination.InitiativeDetails
+                                        </span>
+                                    </small><br />
+                                }
+                                @if (item.Nomination.GroupMembers?.Any() == true)
+                                {
+                                    <small class="text-warning">
+                                        <strong>الفريق:</strong> 
+                                        @string.Join("، ", item.Nomination.GroupMembers.Select(gm => $"{gm.Employee?.FirstName} {gm.Employee?.LastName}"))
+                                    </small>
+                                }
+                            }
                         </td>
                         <td class="text-center"><span class="badge bg-info">@item.AverageScore.ToString("F1")</span></td>
                         <td class="text-center">
@@ -100,6 +123,17 @@
 
 .non-winner-row {
     background-color: rgba(0, 0, 0, 0.02);
+}
+
+/* Make text-truncate work properly in table cells */
+td .text-truncate {
+    display: inline-block !important;
+    vertical-align: middle;
+}
+
+/* Improve small text readability */
+td small {
+    line-height: 1.4;
 }
 </style>
 

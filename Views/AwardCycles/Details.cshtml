@@ -32,7 +32,7 @@
                             <div class="stat-card">
                                 <div style="font-size: 2rem; margin-bottom: 0.5rem;">🏆</div>
                                 <h6>نوع الجائزة</h6>
-                                <p class="text-primary">@Model.AwardType.Name</p>
+                                <p class="text-primary">@Model.AwardType?.Name</p>
                             </div>
                         </div>
                         <div class="col-md-6">
@@ -188,7 +188,14 @@
                                 <th>اسم المرشح</th>
                                 <th>المسمى الوظيفي</th>
                                 <th>الدائرة</th>
-                                <th>المرشح من قبل</th>
+                                @if (Model.AwardTypeId != 1)
+                                {
+                                    <th>عنوان المبادرة</th>
+                                }
+                                @if (Model.AwardTypeId == 1)
+                                {
+                                    <th>المرشح من قبل</th>
+                                }
                                 <th>تاريخ الترشيح</th>
                                 <th>عدد التقييمات</th>
                                 <th>الإجراءات</th>
@@ -199,15 +206,26 @@
                             {
                                 <tr>
                                     <td>
-                                        @nomination.Employee.FirstName
+                                        @nomination.Employee?.FirstName @nomination.Employee?.LastName
                                         @if (nomination.IsWinner == 1)
                                         {
                                             <span class="badge bg-success ms-2">🏆 وسام الفائز</span>
                                         }
                                     </td>
-                                    <td>@nomination.Employee.JobTitle</td>
-                                    <td>@(nomination.Employee.Department?.Name ?? "")</td>
-                                    <td>@nomination.Manager.FirstName</td>
+                                    <td>@nomination.Employee?.JobTitle</td>
+                                    <td>@(nomination.Employee?.Department?.Name ?? "")</td>
+                                    @if (Model.AwardTypeId != 1)
+                                    {
+                                        <td>
+                                            <span class="text-truncate d-inline-block" style="max-width: 200px;" title="@nomination.Title">
+                                                @nomination.Title
+                                            </span>
+                                        </td>
+                                    }
+                                    @if (Model.AwardTypeId == 1)
+                                    {
+                                        <td>@nomination.Manager?.FirstName @nomination.Manager?.LastName</td>
+                                    }
                                     <td>@nomination.CreatedAt.ToString("dd/MM/yyyy")</td>
                                     <td>
                                         <span class="badge badge-info">@nomination.Evaluations.Count</span>
