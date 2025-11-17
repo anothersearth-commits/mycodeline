@@ -20,6 +20,11 @@ public class AwardType
     // Self-nomination flag
     public bool IsSelfNomination { get; set; } = false;
     
+    // Indicates if this award type uses committees per directorate (Mode A)
+    // When true, each nomination is evaluated only by committee members whose
+    // (AwardTypeId, Directorate) matches the nominee's (AwardTypeId, Directorate).
+    public bool UsesDirectorateCommittees { get; set; } = false;
+    
     // Navigation properties
     public virtual ICollection<AwardCycle> AwardCycles { get; set; } = new List<AwardCycle>();
     public virtual ICollection<Criterion> Criteria { get; set; } = new List<Criterion>();

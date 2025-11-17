@@ -32,19 +32,34 @@ public class AwardCyclesController : BaseController
 
         // Calculate evaluation completion status for each cycle
         var evaluationStatus = new Dictionary<int, bool>();
-        var allCommitteeMembers = await _context.CommitteeMembers
-            .Where(cm => cm.IsActive)
-            .ToListAsync();
-
         foreach (var cycle in cycles)
         {
             if (cycle.Status == CycleStatus.Evaluating)
             {
-                var nominationsCount = await _context.Nominations
+                // For Mode A (by-directorate committees):
+                // Expected evaluations = sum over each directorate of:
+                //   (#nominations in that directorate) * (#committee members for (AwardTypeId, Directorate))
+                var nominations = await _context.Nominations
+                    .Include(n => n.Employee)
                     .Where(n => n.CycleId == cycle.CycleId)
-                    .CountAsync();
+                    .ToListAsync();
 
-                var expectedEvaluations = allCommitteeMembers.Count * nominationsCount;
+                var expectedEvaluations = 0;
+
+                foreach (var group in nominations.GroupBy(n => n.Employee!.Directorate))
+                {
+                    var directorate = group.Key;
+                    var nominationsInDirectorate = group.Count();
+
+                    var committeeCountForDirectorate = await _context.CommitteeMembers
+                        .Where(cm => cm.IsActive &&
+                                     cm.AwardTypeId == cycle.AwardTypeId &&
+                                     cm.Directorate == directorate)
+                        .CountAsync();
+
+                    expectedEvaluations += nominationsInDirectorate * committeeCountForDirectorate;
+                }
+
                 var actualEvaluations = await _context.Evaluations
                     .Where(e => e.Nomination.CycleId == cycle.CycleId)
                     .CountAsync();

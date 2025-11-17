@@ -204,14 +204,26 @@ public class ApplicationDbContext : DbContext
         builder.Entity<AwardType>()
             .Property(at => at.IsActive)
             .HasColumnType("NUMBER(1)");
-            
+
         builder.Entity<AwardType>()
             .Property(at => at.IsSelfNomination)
+            .HasColumnType("NUMBER(1)");
+        
+        builder.Entity<AwardType>()
+            .Property(at => at.UsesDirectorateCommittees)
             .HasColumnType("NUMBER(1)");
             
         builder.Entity<CommitteeMember>()
             .Property(cm => cm.IsActive)
             .HasColumnType("NUMBER(1)");
+        
+        builder.Entity<CommitteeMember>()
+            .Property(cm => cm.AwardTypeId)
+            .HasColumnType("NUMBER(10)");
+        
+        builder.Entity<CommitteeMember>()
+            .Property(cm => cm.Directorate)
+            .HasColumnType("NUMBER(10)");
             
         // Configure byte fields for Oracle
         builder.Entity<SubCriteria>()

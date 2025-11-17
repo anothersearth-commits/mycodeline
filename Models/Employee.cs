@@ -23,6 +23,11 @@ public class Employee
     [Column("DEPARTMENTID")]
     public long DepartmentId { get; set; }
     
+    // High-level organizational unit (DIRECTORATE) from HR employee view
+    // Used to route nominations to the correct committee per directorate
+    [Column("DIRECTORATE")]
+    public int? Directorate { get; set; }
+    
     [Column("JOBTITLE")]
     public string? JobTitle { get; set; }
     

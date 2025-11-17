@@ -175,29 +175,55 @@ public class HomeController : BaseController
         {
             var employeeId = int.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "0");
             
-            // Check if user is active committee member
-            var committeeMember = await _context.CommitteeMembers
-                .FirstOrDefaultAsync(cm => cm.EmployeeId == employeeId && cm.IsActive == true);
+            // Get all active committee memberships for this employee (can be for multiple award types/directorates)
+            var committeeMemberships = await _context.CommitteeMembers
+                .Include(cm => cm.AwardType)
+                .Where(cm => cm.EmployeeId == employeeId && cm.IsActive == true)
+                .ToListAsync();
                 
-            if (committeeMember != null)
+            if (committeeMemberships.Any())
             {
-                // Get evaluation cycles (cycles in evaluation status)
+                var membershipAwardTypeIds = committeeMemberships
+                    .Select(cm => cm.AwardTypeId)
+                    .Distinct()
+                    .ToList();
+
+                // Get evaluation cycles (cycles in evaluation status) for the award types this member serves on
                 var evaluationCycles = await _context.AwardCycles
                     .Include(ac => ac.AwardType)
-                    .Where(ac => ac.Status == CycleStatus.Evaluating)
+                    .Where(ac => ac.Status == CycleStatus.Evaluating &&
+                                 membershipAwardTypeIds.Contains(ac.AwardTypeId))
                     .ToListAsync();
                 
                 ViewBag.EvaluationCycles = evaluationCycles;
 
-                // Get all nominations that need evaluation from this committee member
-                var pendingNominations = await _context.Nominations
-                    .AsNoTracking()
-                    .Include(n => n.Employee)
-                    .Include(n => n.AwardCycle)
-                    .ThenInclude(ac => ac.AwardType)
-                    .Where(n => evaluationCycles.Select(ec => ec.CycleId).Contains(n.CycleId) &&
-                               !n.Evaluations.Any(e => e.CommitteeMemberId == committeeMember.Id))
-                    .ToListAsync();
+                // Build pending nominations list based on membership (award type + directorate)
+                var pendingNominations = new List<Nomination>();
+
+                foreach (var membership in committeeMemberships)
+                {
+                    var cyclesForAwardType = evaluationCycles
+                        .Where(ec => ec.AwardTypeId == membership.AwardTypeId)
+                        .Select(ec => ec.CycleId)
+                        .ToList();
+
+                    if (!cyclesForAwardType.Any())
+                        continue;
+
+                    var query = _context.Nominations
+                        .AsNoTracking()
+                        .Include(n => n.Employee)
+                        .Include(n => n.AwardCycle)
+                        .ThenInclude(ac => ac.AwardType)
+                        .Where(n => cyclesForAwardType.Contains(n.CycleId) &&
+                                    !n.Evaluations.Any(e => e.CommitteeMemberId == membership.Id));
+
+                    // Mode A: committee per (AwardTypeId, Directorate) – only see nominations for employees in that directorate
+                    query = query.Where(n => n.Employee != null &&
+                                             n.Employee.Directorate == membership.Directorate);
+
+                    pendingNominations.AddRange(await query.ToListAsync());
+                }
                 
                 // Remove any duplicates based on NominationId
                 pendingNominations = pendingNominations
@@ -208,7 +234,9 @@ public class HomeController : BaseController
                 ViewBag.PendingEvaluations = pendingNominations;
                 ViewBag.PendingCount = pendingNominations.Count();
 
-                // Get completed evaluations by this committee member
+                // Get completed evaluations by this committee member across all memberships
+                var membershipIds = committeeMemberships.Select(cm => cm.Id).ToList();
+
                 var completedEvaluations = await _context.Evaluations
                     .AsNoTracking()
                     .Include(e => e.Nomination)
@@ -220,8 +248,8 @@ public class HomeController : BaseController
                     .ThenInclude(c => c.SubCriteria)
                     .Include(e => e.EvaluationScores)
                     .ThenInclude(es => es.SubCriteria)
-                    .Where(e => e.CommitteeMemberId == committeeMember.Id &&
-                               evaluationCycles.Select(ec => ec.CycleId).Contains(e.Nomination.CycleId))
+                    .Where(e => membershipIds.Contains(e.CommitteeMemberId) &&
+                                evaluationCycles.Select(ec => ec.CycleId).Contains(e.Nomination.CycleId))
                     .ToListAsync();
                 
                 // Remove any duplicates based on EvaluationId
@@ -234,8 +262,8 @@ public class HomeController : BaseController
                 
                 // Get the actual count before limiting to 10
                 var actualCompletedCount = await _context.Evaluations
-                    .Where(e => e.CommitteeMemberId == committeeMember.Id &&
-                               evaluationCycles.Select(ec => ec.CycleId).Contains(e.Nomination.CycleId))
+                    .Where(e => membershipIds.Contains(e.CommitteeMemberId) &&
+                                evaluationCycles.Select(ec => ec.CycleId).Contains(e.Nomination.CycleId))
                     .Select(e => e.EvaluationId)
                     .Distinct()
                     .CountAsync();
@@ -260,7 +288,6 @@ public class HomeController : BaseController
 
                 // Get the latest cycle (most recent by year/month) for committee review
                 // Note: Excluding Employee include due to VW_EOM_EMPLOYEES database link issues
-
             }
         }
         
