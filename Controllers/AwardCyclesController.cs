@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using EOM.Web.Data;
 using EOM.Web.Models;
 using System.Linq;
+using OfficeOpenXml;
 
 namespace EOM.Web.Controllers;
 
@@ -582,5 +583,160 @@ public class AwardCyclesController : BaseController
     private bool AwardCycleExists(int id)
     {
         return _context.AwardCycles.Any(e => e.CycleId == id);
+    }
+
+    // GET: AwardCycles/ExportWinnersToExcel/5
+    [HttpGet]
+    public async Task<IActionResult> ExportWinnersToExcel(int? id)
+    {
+        if (id == null)
+        {
+            return NotFound();
+        }
+
+        ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
+
+        var cycle = await _context.AwardCycles
+            .Include(c => c.AwardType)
+            .FirstOrDefaultAsync(c => c.CycleId == id);
+
+        if (cycle == null)
+        {
+            return NotFound();
+        }
+
+        // Get ranking information for the cycle
+        var rankedNominations = await _rankingService.GetRankedNominationsFastAsync(id.Value);
+        
+        if (rankedNominations == null || !rankedNominations.Any())
+        {
+            return NotFound();
+        }
+        
+        // Create view model to match the SelectWinner view
+        var viewModel = new NominationRankingViewModel
+        {
+            CycleId = id.Value,
+            AwardType = cycle.AwardType,
+            RankedNominations = rankedNominations
+        };
+
+        using var package = new ExcelPackage();
+        var worksheet = package.Workbook.Worksheets.Add($"نتائج الدورة {id}");
+        
+        // Style header row
+        var headerRange = worksheet.Cells[1, 1, 1, 11];
+        headerRange.Style.Font.Bold = true;
+        headerRange.Style.Fill.PatternType = OfficeOpenXml.Style.ExcelFillStyle.Solid;
+        headerRange.Style.Fill.BackgroundColor.SetColor(System.Drawing.Color.LightGray);
+        headerRange.Style.HorizontalAlignment = OfficeOpenXml.Style.ExcelHorizontalAlignment.Center;
+        
+        // Headers
+        worksheet.Cells[1, 1].Value = "الترتيب";
+        worksheet.Cells[1, 2].Value = "رقم الموظف";
+        worksheet.Cells[1, 3].Value = "اسم الموظف";
+        worksheet.Cells[1, 4].Value = "الوظيفة";
+        worksheet.Cells[1, 5].Value = "الدائرة";
+        worksheet.Cells[1, 6].Value = "المدير";
+        worksheet.Cells[1, 7].Value = "متوسط الدرجة";
+        worksheet.Cells[1, 8].Value = "الحالة";
+        worksheet.Cells[1, 9].Value = "العنوان";
+        worksheet.Cells[1, 10].Value = "تفاصيل المبادرة";
+        worksheet.Cells[1, 11].Value = "أعضاء الفريق";
+
+        // Data rows
+        for (int i = 0; i < viewModel.RankedNominations.Count; i++)
+        {
+            var item = viewModel.RankedNominations[i];
+            var row = i + 2;
+
+            worksheet.Cells[row, 1].Value = i + 1;
+            worksheet.Cells[row, 2].Value = item.Nomination.Employee?.EmployeeId;
+            worksheet.Cells[row, 3].Value = $"{item.Nomination.Employee?.FirstName} {item.Nomination.Employee?.LastName}";
+            worksheet.Cells[row, 4].Value = item.Nomination.Employee?.JobTitle;
+            worksheet.Cells[row, 5].Value = item.Nomination.Employee?.Department?.Description ?? "غير محدد";
+            
+            // Manager info for Award Type 1, or "ترشيح ذاتي" for self-nominations
+            if (viewModel.AwardType?.AwardTypeId == 1)
+            {
+                worksheet.Cells[row, 6].Value = $"{item.Nomination.Manager?.FirstName ?? ""} {item.Nomination.Manager?.LastName ?? ""}".Trim();
+            }
+            else
+            {
+                worksheet.Cells[row, 6].Value = "ترشيح ذاتي";
+            }
+
+            worksheet.Cells[row, 7].Value = item.AverageScore;
+            worksheet.Cells[row, 7].Style.Numberformat.Format = "0.00";
+            
+            // Winner status
+            string status = "مرشح";
+            if (item.Nomination.IsWinner == 1)
+            {
+                status = "فائز نهائي";
+                worksheet.Cells[row, 8].Style.Fill.PatternType = OfficeOpenXml.Style.ExcelFillStyle.Solid;
+                worksheet.Cells[row, 8].Style.Fill.BackgroundColor.SetColor(System.Drawing.Color.LightGreen);
+            }
+            else if (item.Nomination.IsWinner == 2)
+            {
+                status = "فائز مبدئي";
+                worksheet.Cells[row, 8].Style.Fill.PatternType = OfficeOpenXml.Style.ExcelFillStyle.Solid;
+                worksheet.Cells[row, 8].Style.Fill.BackgroundColor.SetColor(System.Drawing.Color.LightYellow);
+            }
+            worksheet.Cells[row, 8].Value = status;
+
+            // Title and details for self-nomination awards
+            worksheet.Cells[row, 9].Value = item.Nomination.Title ?? "";
+            worksheet.Cells[row, 10].Value = item.Nomination.InitiativeDetails ?? "";
+            
+            // Group members if any
+            if (item.Nomination.GroupMembers?.Any() == true)
+            {
+                var groupMemberNames = string.Join("، ", 
+                    item.Nomination.GroupMembers.Select(gm => 
+                        $"{gm.Employee?.FirstName} {gm.Employee?.LastName}".Trim()));
+                worksheet.Cells[row, 11].Value = groupMemberNames;
+            }
+            else
+            {
+                worksheet.Cells[row, 11].Value = "";
+            }
+        }
+
+        // Auto-fit columns
+        worksheet.Cells[worksheet.Dimension.Address].AutoFitColumns();
+        
+        // Set minimum column widths for better readability
+        for (int col = 1; col <= 11; col++)
+        {
+            if (worksheet.Column(col).Width < 10)
+                worksheet.Column(col).Width = 10;
+            if (col == 10 && worksheet.Column(col).Width > 50) // Limit details column width
+                worksheet.Column(col).Width = 50;
+        }
+
+        // Add summary information at the bottom
+        var summaryRow = viewModel.RankedNominations.Count + 4;
+        worksheet.Cells[summaryRow, 1].Value = "ملخص الدورة";
+        worksheet.Cells[summaryRow, 1].Style.Font.Bold = true;
+        
+        worksheet.Cells[summaryRow + 1, 1].Value = "نوع الجائزة:";
+        worksheet.Cells[summaryRow + 1, 2].Value = viewModel.AwardType?.Name;
+        
+        worksheet.Cells[summaryRow + 2, 1].Value = "عدد المرشحين:";
+        worksheet.Cells[summaryRow + 2, 2].Value = viewModel.RankedNominations.Count;
+        
+        worksheet.Cells[summaryRow + 3, 1].Value = "عدد الفائزين المطلوب:";
+        worksheet.Cells[summaryRow + 3, 2].Value = viewModel.AwardType?.WinnerCount ?? 1;
+        
+        worksheet.Cells[summaryRow + 4, 1].Value = "تاريخ التصدير:";
+        worksheet.Cells[summaryRow + 4, 2].Value = DateTime.Now.ToString("yyyy-MM-dd HH:mm");
+
+        var stream = new MemoryStream();
+        package.SaveAs(stream);
+        stream.Position = 0;
+
+        var fileName = $"Winners_Cycle_{id}_{DateTime.Now:yyyyMMdd_HHmm}.xlsx";
+        return File(stream, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileName);
     }
 }

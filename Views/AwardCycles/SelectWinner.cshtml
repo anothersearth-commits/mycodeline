@@ -8,7 +8,13 @@
 }
 
 <div class="page-header glass-fade-in mb-4">
-    <h1 class="m-0">@stageTitle - الدورة رقم @Model.CycleId</h1>
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1 class="m-0">@stageTitle - الدورة رقم @Model.CycleId</h1>
+        <a href="@Url.Action("ExportWinnersToExcel", "AwardCycles", new { id = Model.CycleId })" 
+           class="btn btn-success">
+            <i class="fas fa-file-excel"></i> تصدير إلى Excel
+        </a>
+    </div>
     @if (Model.IsSecondStage)
     {
         <div class="alert alert-warning">

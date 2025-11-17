@@ -529,6 +529,24 @@ public class SelfNominationController : BaseController
             ViewData["CycleId"] = new SelectList(activeCycles, "CycleId", "AwardType.Name", model.CycleId);
             ViewData["CurrentEmployee"] = currentEmployee;
             ViewData["GroupMembers"] = validGroupMembers;
+            ViewBag.SelectedCycleId = model.CycleId;
+            ViewBag.HideCycleSelect = true; // Always hide on error since they already selected
+            
+            // Load criteria for the selected cycle
+            if (cycle != null)
+            {
+                var criteria = await _context.Criteria
+                    .Include(c => c.SubCriteria)
+                    .Where(c => c.AwardTypeId == cycle.AwardTypeId)
+                    .OrderBy(c => c.CriterionId)
+                    .ToListAsync();
+                ViewData["Criteria"] = criteria;
+            }
+            else
+            {
+                ViewData["Criteria"] = new List<Criterion>();
+            }
+            
             return View(model);
         }
 
